@@ -24,10 +24,8 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
-CORS(app)
-
 app = Flask(__name__, static_folder='../frontend')
+CORS(app)
 
 # Configuration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
@@ -1886,4 +1884,5 @@ if __name__ == '__main__':
     print("\n🔑 Practice Mode Password: Arch1t3ch_Joh@N!X#P1_Pro@2025")
     print("🔑 Exam Mode Password: Arch1t3ch_Joh@N!X#Exam_2025")
     
+
     app.run(debug=True, host='0.0.0.0', port=5000)
