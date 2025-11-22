@@ -775,52 +775,131 @@
 
     <script>
         // Matrix Digital Rain Animation
-        const canvas = document.getElementById('matrix-canvas');
-        const ctx = canvas.getContext('2d');
+         // Matrix Digital Rain Animation
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
+    const charArray = chars.split('');
+
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = [];
+
+    for (let i = 0; i < columns; i++) {
+        drops[i] = Math.random() * -100;
+    }
+
+    function drawMatrix() {
+        ctx.fillStyle = 'rgba(2, 4, 10, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#00FFB3';
+        ctx.font = `${fontSize}px monospace`;
+
+        for (let i = 0; i < drops.length; i++) {
+            const char = charArray[Math.floor(Math.random() * charArray.length)];
+            const x = i * fontSize;
+            const y = drops[i] * fontSize;
+
+            ctx.fillText(char, x, y);
+
+            if (y > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
         }
-        resizeCanvas();
+    }
 
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
-        const charArray = chars.split('');
+    const matrixInterval = setInterval(drawMatrix, 50);
+    window.addEventListener('resize', resizeCanvas);
 
-        const fontSize = 16;
-        const columns = canvas.width / fontSize;
-        const drops = [];
-
-        for (let i = 0; i < columns; i++) {
-            drops[i] = Math.random() * -100;
+    // Authentication and Practice Test Logic
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check authentication first
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            alert('Please login first to access practice sets');
+            window.location.href = 'index.html';
+            return;
         }
 
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(2, 4, 10, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = '#00FFB3';
-            ctx.font = `${fontSize}px monospace`;
-
-            for (let i = 0; i < drops.length; i++) {
-                const char = charArray[Math.floor(Math.random() * charArray.length)];
-                const x = i * fontSize;
-                const y = drops[i] * fontSize;
-
-                ctx.fillText(char, x, y);
-
-                if (y > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
+        // Verify token with server
+        fetch('/api/validate-token', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Invalid token');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.valid) {
+                window.location.href = 'index.html';
+            } else {
+                // Check if practice set is verified
+                const practiceSetVerified = sessionStorage.getItem('practice_set_1_verified');
+                if (!practiceSetVerified) {
+                    verifyPracticeAccess();
+                } else {
+                    initializePracticeTest();
                 }
-                drops[i]++;
+            }
+        })
+        .catch(error => {
+            console.error('Auth check failed:', error);
+            localStorage.removeItem('auth_token');
+            window.location.href = 'index.html';
+        });
+
+        // Practice set password verification
+        function verifyPracticeAccess() {
+            const password = prompt('🔐 Enter password for Practice Set 1:');
+            if (password) {
+                fetch('/api/verify-practice-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        password: password,
+                        practice_set: 'practice_set_1'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        sessionStorage.setItem('practice_set_1_verified', 'true');
+                        initializePracticeTest();
+                    } else {
+                        alert('❌ Incorrect password! Redirecting to practice sets...');
+                        window.location.href = 'practice_sets.html';
+                    }
+                })
+                .catch(error => {
+                    console.error('Password verification failed:', error);
+                    alert('❌ Verification failed. Please try again.');
+                    window.location.href = 'practice_sets.html';
+                });
+            } else {
+                window.location.href = 'practice_sets.html';
             }
         }
 
-        const matrixInterval = setInterval(drawMatrix, 50);
-        window.addEventListener('resize', resizeCanvas);
-
-        // Practice Test Logic
-        document.addEventListener('DOMContentLoaded', function() {
+        // Initialize practice test after authentication
+        function initializePracticeTest() {
             const startScreen = document.getElementById('start-screen');
             const testContainer = document.getElementById('test-container');
             const resultsScreen = document.getElementById('results-screen');
@@ -856,7 +935,6 @@
             let userAnswers = new Array(125).fill(null);
             let showAnswer = false;
             let testCompleted = false;
-
             // All 125 CEH v13 Questions
             const questions = [
                 // Questions 1-10
@@ -2617,7 +2695,7 @@
             // Fill in remaining questions 17-124
            
 
-            // Sort questions by number to ensure proper order
+           // Sort questions by number to ensure proper order
             questions.sort((a, b) => a.number - b.number);
 
             // Start the test
@@ -2819,67 +2897,48 @@
                 showAnswer = false;
                 testCompleted = false;
             });
-        });
+        }
 
+        // Logout functionality
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    // Clear all storage
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('token_timestamp');
+                    localStorage.removeItem('username');
+                    sessionStorage.clear();
+                    
+                    // Redirect to login
+                    window.location.href = 'index.html';
+                }
+            });
+        }
 
+        // Auto-logout after inactivity
+        let inactivityTimer;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                if (confirm('Session expired due to inactivity. Please login again.')) {
+                    localStorage.removeItem('auth_token');
+                    window.location.href = 'index.html';
+                }
+            }, 30 * 60 * 1000); // 30 minutes
+        }
 
-
-         // Logout functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const logoutBtn = document.getElementById('logout-btn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (confirm('Are you sure you want to logout?')) {
-                        localStorage.removeItem('auth_token');
-                        localStorage.removeItem('token_timestamp');
-                        localStorage.removeItem('username');
-                        sessionStorage.clear();
-                        window.location.href = 'index.html';
-                    }
-                });
-            }
-
-            // Check authentication
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                window.location.href = 'index.html';
-                return;
-            }
-        });
-
-
-        function verifyPracticeAccess() {
-    const password = prompt('Enter password for Practice Set 1:');
-    if (password) {
-        fetch('/api/verify-practice-password', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                password: password,
-                practice_set: 'practice_set_1'
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                sessionStorage.setItem('practice_set_1', 'true');
-                // Continue with practice set
-            } else {
-                alert('Incorrect password!');
-                window.location.href = 'practice_sets.html';
-            }
-        });
-    } else {
-        window.location.href = 'practice_sets.html';
-    }
-}
+        // Set up inactivity monitoring
+        document.addEventListener('mousemove', resetInactivityTimer);
+        document.addEventListener('keypress', resetInactivityTimer);
+        document.addEventListener('click', resetInactivityTimer);
+        resetInactivityTimer();
+    });
 
     </script>
 </body>
 
 </html>
+
 
