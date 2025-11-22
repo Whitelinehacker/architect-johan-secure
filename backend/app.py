@@ -1870,20 +1870,11 @@ def serve_incident_response_course():
 
 
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
-    print("🔐 Authentication System: ENABLED")
-    print("📧 Password Reset: " + ("ENABLED" if EMAIL_PASSWORD and EMAIL_USER != 'your-email@gmail.com' else "DISABLED (Configure .env)"))
-    print("👥 User Registration: ENABLED")
-    print("💾 Database: users.db")
-    print("🔒 Passwords: Encrypted with bcrypt")
-    print("🌐 Frontend: ../frontend")
-    print("📁 Static files serving: ENABLED")
-    print("\n🔑 Default Admin Credentials:")
-    print("   Username: ArchitectJohan")
-    print("   Password: Arch1t3ch_Joh@N!X#2025")
-    print("\n🔑 Practice Mode Password: Arch1t3ch_Joh@N!X#P1_Pro@2025")
-    print("🔑 Exam Mode Password: Arch1t3ch_Joh@N!X#Exam_2025")
+    print(f"🔐 Authentication System: ENABLED")
+    print(f"🌐 Server running on port: {port}")
     
+    app.run(debug=False, host='0.0.0.0', port=port)
 
-    app.run(debug=True, host='0.0.0.0', port=5000)
 
