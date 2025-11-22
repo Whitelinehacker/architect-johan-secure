@@ -7,7 +7,6 @@ import os
 from dotenv import load_dotenv
 from functools import wraps
 import secrets
-import sqlite3
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -15,7 +14,8 @@ import threading
 import logging
 import re
 import json
-
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 # Load environment variables
 load_dotenv()
@@ -55,11 +55,6 @@ PRACTICE_PASSWORDS = {
     'practice_mode': bcrypt.hashpw('Arch1t3ch_Joh@N!X#P1_Pro@2025'.encode('utf-8'), bcrypt.gensalt())
 }
 
-# Exam mode passwords
-#EXAM_PASSWORDS = {
-   # 'exam_mode': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Exam_2025'.encode('utf-8'), bcrypt.gensalt())
-#}
-
 # Exam level passwords
 EXAM_LEVEL_PASSWORDS = {
     'exam_level_1': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Exam1_2025'.encode('utf-8'), bcrypt.gensalt()),
@@ -75,27 +70,52 @@ login_attempts = {}
 MAX_ATTEMPTS = 5
 LOCKOUT_TIME = 900  # 15 minutes
 
-# Initialize SQLite database
-def init_db():
+# PostgreSQL Database Connection
+def get_db_connection():
+    """Get PostgreSQL database connection"""
     try:
-        conn = sqlite3.connect('users.db')
+        # Use DATABASE_URL from environment (provided by Render)
+        database_url = os.getenv('DATABASE_URL')
+        
+        if database_url and database_url.startswith('postgres://'):
+            # Render provides postgres:// but we need postgresql://
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        
+        conn = psycopg2.connect(
+            database_url,
+            cursor_factory=RealDictCursor
+        )
+        return conn
+    except Exception as e:
+        logger.error(f"Database connection error: {e}")
+        return None
+
+# Initialize PostgreSQL database
+def init_db():
+    """Initialize PostgreSQL database tables"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            logger.error("Failed to connect to database")
+            return False
+            
         cursor = conn.cursor()
         
         # Users table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                full_name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL,
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) UNIQUE NOT NULL,
+                full_name VARCHAR(200) NOT NULL,
+                email VARCHAR(200) UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
-                mobile_no TEXT NOT NULL,
-                role TEXT DEFAULT 'user',
+                mobile_no VARCHAR(20) NOT NULL,
+                role VARCHAR(20) DEFAULT 'user',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 last_login TIMESTAMP,
                 failed_attempts INTEGER DEFAULT 0,
                 locked_until TIMESTAMP,
-                is_active BOOLEAN DEFAULT 1,
+                is_active BOOLEAN DEFAULT TRUE,
                 reset_token TEXT,
                 reset_token_expiry TIMESTAMP
             )
@@ -104,11 +124,11 @@ def init_db():
         # User activity log table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS user_activity (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL,
-                action TEXT NOT NULL,
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) NOT NULL,
+                action VARCHAR(100) NOT NULL,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                ip_address TEXT,
+                ip_address VARCHAR(45),
                 user_agent TEXT
             )
         ''')
@@ -116,66 +136,97 @@ def init_db():
         # Practice set access log
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS practice_access (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL,
-                practice_set TEXT NOT NULL,
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) NOT NULL,
+                practice_set VARCHAR(100) NOT NULL,
                 access_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                ip_address TEXT,
-                status TEXT DEFAULT 'success'
+                ip_address VARCHAR(45),
+                status VARCHAR(20) DEFAULT 'success'
             )
         ''')
         
-        # Insert default admin user if not exists
-        cursor.execute('SELECT * FROM users WHERE username = ?', ('ArchitectJohan',))
-        if not cursor.fetchone():
+        # Video access log table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS video_access (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) NOT NULL,
+                video_id VARCHAR(100) NOT NULL,
+                access_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                ip_address VARCHAR(45),
+                status VARCHAR(20) DEFAULT 'success'
+            )
+        ''')
+        
+        # User video progress table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_video_progress (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) NOT NULL,
+                video_id VARCHAR(100) NOT NULL,
+                progress_percent INTEGER DEFAULT 0,
+                last_watched TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                completed BOOLEAN DEFAULT FALSE,
+                UNIQUE(username, video_id)
+            )
+        ''')
+        
+        # Check if admin user exists
+        cursor.execute('SELECT * FROM users WHERE username = %s', ('ArchitectJohan',))
+        admin_exists = cursor.fetchone()
+        
+        if not admin_exists:
+            # Create default admin user
             admin_password_hash = bcrypt.hashpw(default_admin_password.encode('utf-8'), bcrypt.gensalt())
             cursor.execute('''
                 INSERT INTO users (username, full_name, email, password_hash, mobile_no, role)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s)
             ''', (
                 'ArchitectJohan',
                 'Architect Johan',
                 'admin@architectjohan.com',
-                admin_password_hash,
+                admin_password_hash.decode('utf-8'),
                 '0000000000',
                 'admin'
             ))
             logger.info("Default admin user created")
         
         conn.commit()
+        cursor.close()
         conn.close()
-        logger.info("Database initialized successfully")
+        
+        logger.info("PostgreSQL database initialized successfully")
+        return True
+        
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
+        return False
 
-init_db()
+# Initialize database on startup
+@app.before_first_request
+def initialize_database():
+    """Initialize database before first request"""
+    logger.info("Initializing PostgreSQL database...")
+    init_db()
 
+# Database helper functions
 def get_user_by_username(username):
     """Get user from database by username"""
     try:
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return None
+            
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE username = ? AND is_active = 1', (username,))
+        cursor.execute(
+            'SELECT * FROM users WHERE username = %s AND is_active = TRUE', 
+            (username,)
+        )
         user = cursor.fetchone()
+        cursor.close()
         conn.close()
         
         if user:
-            return {
-                'id': user[0],
-                'username': user[1],
-                'full_name': user[2],
-                'email': user[3],
-                'password_hash': user[4],
-                'mobile_no': user[5],
-                'role': user[6],
-                'created_at': user[7],
-                'last_login': user[8],
-                'failed_attempts': user[9],
-                'locked_until': user[10],
-                'is_active': user[11],
-                'reset_token': user[12],
-                'reset_token_expiry': user[13]
-            }
+            return dict(user)  # Convert RealDictRow to regular dict
         return None
     except Exception as e:
         logger.error(f"Error getting user: {e}")
@@ -184,29 +235,21 @@ def get_user_by_username(username):
 def get_user_by_email(email):
     """Get user from database by email"""
     try:
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return None
+            
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE email = ? AND is_active = 1', (email,))
+        cursor.execute(
+            'SELECT * FROM users WHERE email = %s AND is_active = TRUE', 
+            (email,)
+        )
         user = cursor.fetchone()
+        cursor.close()
         conn.close()
         
         if user:
-            return {
-                'id': user[0],
-                'username': user[1],
-                'full_name': user[2],
-                'email': user[3],
-                'password_hash': user[4],
-                'mobile_no': user[5],
-                'role': user[6],
-                'created_at': user[7],
-                'last_login': user[8],
-                'failed_attempts': user[9],
-                'locked_until': user[10],
-                'is_active': user[11],
-                'reset_token': user[12],
-                'reset_token_expiry': user[13]
-            }
+            return dict(user)
         return None
     except Exception as e:
         logger.error(f"Error getting user by email: {e}")
@@ -215,29 +258,21 @@ def get_user_by_email(email):
 def get_user_by_reset_token(reset_token):
     """Get user from database by reset token"""
     try:
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return None
+            
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE reset_token = ? AND is_active = 1', (reset_token,))
+        cursor.execute(
+            'SELECT * FROM users WHERE reset_token = %s AND is_active = TRUE', 
+            (reset_token,)
+        )
         user = cursor.fetchone()
+        cursor.close()
         conn.close()
         
         if user:
-            return {
-                'id': user[0],
-                'username': user[1],
-                'full_name': user[2],
-                'email': user[3],
-                'password_hash': user[4],
-                'mobile_no': user[5],
-                'role': user[6],
-                'created_at': user[7],
-                'last_login': user[8],
-                'failed_attempts': user[9],
-                'locked_until': user[10],
-                'is_active': user[11],
-                'reset_token': user[12],
-                'reset_token_expiry': user[13]
-            }
+            return dict(user)
         return None
     except Exception as e:
         logger.error(f"Error getting user by reset token: {e}")
@@ -246,16 +281,19 @@ def get_user_by_reset_token(reset_token):
 def update_user(user):
     """Update user in database"""
     try:
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return False
+            
         cursor = conn.cursor()
         cursor.execute('''
             UPDATE users SET 
-                last_login = ?, 
-                failed_attempts = ?, 
-                locked_until = ?,
-                reset_token = ?,
-                reset_token_expiry = ?
-            WHERE username = ?
+                last_login = %s, 
+                failed_attempts = %s, 
+                locked_until = %s,
+                reset_token = %s,
+                reset_token_expiry = %s
+            WHERE username = %s
         ''', (
             user['last_login'],
             user['failed_attempts'],
@@ -265,6 +303,7 @@ def update_user(user):
             user['username']
         ))
         conn.commit()
+        cursor.close()
         conn.close()
         return True
     except Exception as e:
@@ -274,11 +313,14 @@ def update_user(user):
 def create_user(user_data):
     """Create new user in database"""
     try:
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return False
+            
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO users (username, full_name, email, password_hash, mobile_no, role)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s)
         ''', (
             user_data['username'],
             user_data['full_name'],
@@ -288,11 +330,9 @@ def create_user(user_data):
             user_data.get('role', 'user')
         ))
         conn.commit()
+        cursor.close()
         conn.close()
         return True
-    except sqlite3.IntegrityError as e:
-        logger.error(f"Integrity error creating user: {e}")
-        return False  # Username or email already exists
     except Exception as e:
         logger.error(f"Error creating user: {e}")
         return False
@@ -419,13 +459,17 @@ def verify_password(stored_hash, provided_password):
 def log_user_activity(username, action, ip_address=None, user_agent=None):
     """Log user activities for security monitoring"""
     try:
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return
+            
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO user_activity (username, action, ip_address, user_agent)
-            VALUES (?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s)
         ''', (username, action, ip_address, user_agent))
         conn.commit()
+        cursor.close()
         conn.close()
     except Exception as e:
         logger.error(f"Failed to log user activity: {e}")
@@ -433,16 +477,38 @@ def log_user_activity(username, action, ip_address=None, user_agent=None):
 def log_practice_access(username, practice_set, ip_address=None, status='success'):
     """Log practice set access attempts"""
     try:
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return
+            
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO practice_access (username, practice_set, ip_address, status)
-            VALUES (?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s)
         ''', (username, practice_set, ip_address, status))
         conn.commit()
+        cursor.close()
         conn.close()
     except Exception as e:
         logger.error(f"Failed to log practice access: {e}")
+
+def log_video_access(username, video_id, ip_address=None, status='success'):
+    """Log video access attempts"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return
+            
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO video_access (username, video_id, ip_address, status)
+            VALUES (%s, %s, %s, %s)
+        ''', (username, video_id, ip_address, status))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        logger.error(f"Failed to log video access: {e}")
 
 def token_required(f):
     @wraps(f)
@@ -511,6 +577,31 @@ def admin_required(f):
     
     return decorated
 
+# Database Initialization Route (Temporary - Remove after deployment)
+@app.route('/create-db')
+def create_db_route():
+    """Temporary route to initialize database tables"""
+    try:
+        success = init_db()
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Database tables created successfully! Admin user created.'
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create database tables'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Database creation error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Database creation failed: {str(e)}'
+        }), 500
+
 # Authentication Routes
 @app.route('/api/signup', methods=['POST'])
 def signup():
@@ -544,10 +635,14 @@ def signup():
             return jsonify({'error': 'Invalid mobile number format'}), 400
         
         # Check if username or email already exists
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE username = ? OR email = ?', (data['username'], data['email']))
+        cursor.execute('SELECT * FROM users WHERE username = %s OR email = %s', (data['username'], data['email']))
         existing_user = cursor.fetchone()
+        cursor.close()
         conn.close()
         
         if existing_user:
@@ -561,7 +656,7 @@ def signup():
             'username': data['username'],
             'full_name': data['full_name'],
             'email': data['email'],
-            'password_hash': password_hash,
+            'password_hash': password_hash.decode('utf-8'),
             'mobile_no': data['mobile_no'],
             'role': 'user'
         }
@@ -719,15 +814,19 @@ def forgot_password():
         print(f"🚀 Generated reset token: {reset_token}")
         
         # Update user with reset token in database
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
         cursor = conn.cursor()
         cursor.execute('''
             UPDATE users SET 
-                reset_token = ?, 
-                reset_token_expiry = ?
-            WHERE email = ?
+                reset_token = %s, 
+                reset_token_expiry = %s
+            WHERE email = %s
         ''', (reset_token, reset_token_expiry, email))
         conn.commit()
+        cursor.close()
         conn.close()
         
         print(f"🚀 Attempting to send reset email to: {email}")
@@ -795,18 +894,22 @@ def reset_password():
         new_password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
         
         # Update user password and clear reset token
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
         cursor = conn.cursor()
         cursor.execute('''
             UPDATE users SET 
-                password_hash = ?, 
+                password_hash = %s, 
                 reset_token = NULL, 
                 reset_token_expiry = NULL, 
                 failed_attempts = 0,
                 locked_until = NULL
-            WHERE reset_token = ?
-        ''', (new_password_hash, reset_token))
+            WHERE reset_token = %s
+        ''', (new_password_hash.decode('utf-8'), reset_token))
         conn.commit()
+        cursor.close()
         conn.close()
         
         # Log password reset
@@ -882,8 +985,6 @@ def verify_practice_password(current_user):
             'success': False,
             'error': 'Verification failed'
         }), 500
-    
-
 
 # Serve practice set HTML files
 @app.route('/practice_1.html')
@@ -950,9 +1051,6 @@ def serve_practice_set_7():
 @app.route('/practice_set_8.html')
 def serve_practice_set_8():
     return send_from_directory('../frontend', 'practice_set_8.html')
-
-# Exam Mode Password Verification
-
 
 # Exam Level Password Verification
 @app.route('/api/verify-exam-level-password', methods=['POST'])
@@ -1070,17 +1168,31 @@ def internal_error(error):
 def debug_users():
     """Debug endpoint to check users in database"""
     try:
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'No database connection'}), 500
+            
         cursor = conn.cursor()
         
         # Check if table exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+        cursor.execute("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name = 'users'
+        """)
         table_exists = cursor.fetchone()
         
         if not table_exists:
+            # Get all tables
+            cursor.execute("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public'
+            """)
+            tables = cursor.fetchall()
             return jsonify({
                 'error': 'users table does not exist',
-                'tables': [table[0] for table in cursor.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
+                'tables': [table['table_name'] for table in tables]
             }), 500
         
         # Get all users (without passwords)
@@ -1088,26 +1200,32 @@ def debug_users():
         users = cursor.fetchall()
         
         # Get table schema
-        cursor.execute("PRAGMA table_info(users)")
+        cursor.execute("""
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'users' AND table_schema = 'public'
+        """)
         schema = cursor.fetchall()
         
+        cursor.close()
         conn.close()
         
         users_list = []
         for user in users:
             users_list.append({
-                'id': user[0],
-                'username': user[1],
-                'full_name': user[2],
-                'email': user[3],
-                'role': user[4],
-                'created_at': user[5],
-                'last_login': user[6]
+                'id': user['id'],
+                'username': user['username'],
+                'full_name': user['full_name'],
+                'email': user['email'],
+                'role': user['role'],
+                'created_at': user['created_at'].isoformat() if user['created_at'] else None,
+                'last_login': user['last_login'].isoformat() if user['last_login'] else None
             })
         
         return jsonify({
+            'database_type': 'PostgreSQL',
             'table_exists': True,
-            'table_schema': [{'name': col[1], 'type': col[2]} for col in schema],
+            'table_schema': [{'name': col['column_name'], 'type': col['data_type']} for col in schema],
             'user_count': len(users_list),
             'users': users_list
         }), 200
@@ -1193,10 +1311,9 @@ def debug_server():
         'server_status': 'running',
         'timestamp': datetime.datetime.utcnow().isoformat(),
         'python_version': os.sys.version,
-        'flask_version': '2.3.3'
+        'flask_version': '2.3.3',
+        'database_type': 'PostgreSQL'
     })
-
-
 
 @app.route('/exam_mode_2.html')
 def serve_exam_mode_2():
@@ -1269,7 +1386,8 @@ def debug_env():
         'EMAIL_PASSWORD': 'SET' if os.getenv('EMAIL_PASSWORD') else 'NOT_SET',
         'EMAIL_PASSWORD_LENGTH': len(os.getenv('EMAIL_PASSWORD', '')),
         'EMAIL_HOST': os.getenv('EMAIL_HOST', 'smtp.gmail.com'),
-        'EMAIL_PORT': os.getenv('EMAIL_PORT', '587')
+        'EMAIL_PORT': os.getenv('EMAIL_PORT', '587'),
+        'DATABASE_URL': 'SET' if os.getenv('DATABASE_URL') else 'NOT_SET'
     }
     return jsonify(env_vars)
 
@@ -1354,13 +1472,17 @@ def debug_email_send():
 def debug_user_emails():
     """Debug endpoint to see all user emails"""
     try:
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'No database connection'}), 500
+            
         cursor = conn.cursor()
         cursor.execute('SELECT username, email FROM users')
         users = cursor.fetchall()
+        cursor.close()
         conn.close()
         
-        user_emails = [{'username': u[0], 'email': u[1]} for u in users]
+        user_emails = [{'username': u['username'], 'email': u['email']} for u in users]
         
         return jsonify({
             'user_count': len(user_emails),
@@ -1375,7 +1497,10 @@ def debug_user_emails():
 def get_exam_access_logs(current_user):
     """Get exam access logs (admin only)"""
     try:
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'No database connection'}), 500
+            
         cursor = conn.cursor()
         cursor.execute('''
             SELECT username, practice_set, access_time, ip_address, status 
@@ -1384,16 +1509,17 @@ def get_exam_access_logs(current_user):
             LIMIT 100
         ''')
         logs = cursor.fetchall()
+        cursor.close()
         conn.close()
         
         logs_list = []
         for log in logs:
             logs_list.append({
-                'username': log[0],
-                'practice_set': log[1],
-                'access_time': log[2],
-                'ip_address': log[3],
-                'status': log[4]
+                'username': log['username'],
+                'practice_set': log['practice_set'],
+                'access_time': log['access_time'].isoformat() if log['access_time'] else None,
+                'ip_address': log['ip_address'],
+                'status': log['status']
             })
         
         return jsonify({
@@ -1405,7 +1531,6 @@ def get_exam_access_logs(current_user):
     except Exception as e:
         logger.error(f"Error getting exam access logs: {e}")
         return jsonify({'error': 'Failed to get access logs'}), 500
-    
 
 # Add these video category structures
 VIDEO_CATEGORIES = {
@@ -1553,11 +1678,7 @@ def get_category_subsections(current_user, category_id):
         logger.error(f"Error getting category subsections: {e}")
         return jsonify({'error': 'Failed to fetch category subsections'}), 500
 
-# Serve category pages
-
-
-    
-
+# Video Data
 VIDEO_DATA = {
     'cehv13': {
         'id': 'cehv13',
@@ -1627,59 +1748,21 @@ VIDEO_DATA = {
     }
 }
 
-# Add video access logging function
-def log_video_access(username, video_id, ip_address=None, status='success'):
-    """Log video access attempts"""
-    try:
-        conn = sqlite3.connect('users.db')
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO video_access (username, video_id, ip_address, status)
-            VALUES (?, ?, ?, ?)
-        ''', (username, video_id, ip_address, status))
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        logger.error(f"Failed to log video access: {e}")
-
-# Add video access table to database initialization
-def init_db():
-    try:
-        conn = sqlite3.connect('users.db')
-        cursor = conn.cursor()
-        
-        # Existing tables...
-        
-        # Video access log table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS video_access (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL,
-                video_id TEXT NOT NULL,
-                access_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                ip_address TEXT,
-                status TEXT DEFAULT 'success'
-            )
-        ''')
-        
-        # User video progress table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS user_video_progress (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL,
-                video_id TEXT NOT NULL,
-                progress_percent INTEGER DEFAULT 0,
-                last_watched TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                completed BOOLEAN DEFAULT 0,
-                UNIQUE(username, video_id)
-            )
-        ''')
-        
-        conn.commit()
-        conn.close()
-        logger.info("Database initialized successfully")
-    except Exception as e:
-        logger.error(f"Database initialization failed: {e}")
+def verify_video_password(video_id, provided_password):
+    """Verify password for video access"""
+    # You can create specific passwords for each video
+    video_passwords = {
+        'cehv13': 'CEHv13Secure2026!',
+        'web_app_security': 'WebApp2025!Secure',
+        'digital_forensics': 'Forensics2025!',
+        'penetration_testing': 'Pentest2025!',
+        'incident_response': 'Incident2025!'
+    }
+    
+    if video_id in video_passwords:
+        return provided_password == video_passwords[video_id]
+    
+    return False
 
 # Add API endpoints for videos
 @app.route('/api/videos', methods=['GET'])
@@ -1754,22 +1837,6 @@ def request_video_access(current_user, video_id):
         logger.error(f"Error accessing video: {e}")
         return jsonify({'error': 'Failed to access video'}), 500
 
-def verify_video_password(video_id, provided_password):
-    """Verify password for video access"""
-    # You can create specific passwords for each video
-    video_passwords = {
-        'cehv13': 'CEHv13Secure2026!',
-        'web_app_security': 'WebApp2025!Secure',
-        'digital_forensics': 'Forensics2025!',
-        'penetration_testing': 'Pentest2025!',
-        'incident_response': 'Incident2025!'
-    }
-    
-    if video_id in video_passwords:
-        return provided_password == video_passwords[video_id]
-    
-    return False
-
 @app.route('/api/videos/<video_id>/progress', methods=['POST'])
 @token_required
 def update_video_progress(current_user, video_id):
@@ -1779,16 +1846,25 @@ def update_video_progress(current_user, video_id):
         progress_percent = data.get('progress', 0)
         completed = data.get('completed', False)
         
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT OR REPLACE INTO user_video_progress 
+            INSERT INTO user_video_progress 
             (username, video_id, progress_percent, last_watched, completed)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (current_user, video_id, progress_percent, datetime.utcnow(), completed))
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (username, video_id) 
+            DO UPDATE SET 
+                progress_percent = EXCLUDED.progress_percent,
+                last_watched = EXCLUDED.last_watched,
+                completed = EXCLUDED.completed
+        ''', (current_user, video_id, progress_percent, datetime.datetime.utcnow(), completed))
         
         conn.commit()
+        cursor.close()
         conn.close()
         
         return jsonify({
@@ -1805,24 +1881,28 @@ def update_video_progress(current_user, video_id):
 def get_user_progress(current_user):
     """Get user's video progress"""
     try:
-        conn = sqlite3.connect('users.db')
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
         cursor = conn.cursor()
         
         cursor.execute('''
             SELECT video_id, progress_percent, completed, last_watched 
             FROM user_video_progress 
-            WHERE username = ?
+            WHERE username = %s
         ''', (current_user,))
         
         progress_data = cursor.fetchall()
+        cursor.close()
         conn.close()
         
         progress = {}
         for row in progress_data:
-            progress[row[0]] = {
-                'progress_percent': row[1],
-                'completed': bool(row[2]),
-                'last_watched': row[3]
+            progress[row['video_id']] = {
+                'progress_percent': row['progress_percent'],
+                'completed': bool(row['completed']),
+                'last_watched': row['last_watched'].isoformat() if row['last_watched'] else None
             }
         
         return jsonify({
@@ -1834,8 +1914,7 @@ def get_user_progress(current_user):
         logger.error(f"Error getting progress: {e}")
         return jsonify({'error': 'Failed to get progress'}), 500
 
-
-# Update these routes in app.py - remove @token_required from HTML serving routes
+# Serve category pages
 @app.route('/cehv13_course.html')
 def serve_cehv13_course():
     """Serve the CEHv13 category page"""
@@ -1866,15 +1945,47 @@ def serve_incident_response_course():
     """Serve the Incident Response category page"""
     return send_from_directory('../frontend', 'incident_response_course.html')
 
-
-
+# Database debug endpoint
+@app.route('/api/debug-db')
+def debug_db():
+    """Debug database connection"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'No database connection'}), 500
+            
+        cursor = conn.cursor()
+        
+        # Check tables
+        cursor.execute("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+        """)
+        tables = cursor.fetchall()
+        
+        # Check users
+        cursor.execute('SELECT COUNT(*) as user_count FROM users')
+        user_count = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'database_type': 'PostgreSQL',
+            'tables': [table['table_name'] for table in tables],
+            'user_count': user_count['user_count'] if user_count else 0,
+            'status': 'connected'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
     print(f"🔐 Authentication System: ENABLED")
+    print(f"🗄️ Database: PostgreSQL")
     print(f"🌐 Server running on port: {port}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
-
