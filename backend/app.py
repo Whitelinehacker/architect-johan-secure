@@ -77,6 +77,24 @@ login_attempts = {}
 MAX_ATTEMPTS = 5
 LOCKOUT_TIME = 900  # 15 minutes
 
+# Validate required environment variables
+def check_environment_variables():
+    required_vars = ['SECRET_KEY', 'JWT_SECRET', 'DATABASE_URL']
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    
+    if missing_vars:
+        logger.warning(f"Missing environment variables: {', '.join(missing_vars)}")
+        logger.warning("Some features may not work properly")
+    
+    # Check email configuration
+    if not EMAIL_USER or not EMAIL_PASSWORD:
+        logger.warning("Email configuration missing - password reset emails will not work")
+    else:
+        logger.info("Email configuration found - password reset emails are enabled")
+
+# Call this during startup
+check_environment_variables()
+
 # PostgreSQL Database Connection (psycopg3)
 def get_db_connection():
     """Get PostgreSQL database connection using psycopg3"""
@@ -218,6 +236,7 @@ def initialize_database():
         else:
             logger.error("Cannot initialize database - PostgreSQL not available")
         app.database_initialized = True
+
 # Database helper functions (updated for psycopg3)
 def get_user_by_username(username):
     """Get user from database by username"""
@@ -341,10 +360,16 @@ def create_user(user_data):
 def send_password_reset_email(email, reset_token):
     """Send password reset email using Gmail App Password"""
     try:
+        # Check if email configuration is available
+        if not EMAIL_USER or not EMAIL_PASSWORD:
+            logger.error("Email configuration not set - cannot send email")
+            print("❌ Email configuration missing - check environment variables")
+            return False
+        
         print(f"🚀 Starting email send to: {email}")
         
         # Create reset link
-        reset_link = f"https://{request.host}/reset-password.html?token={reset_token}"
+        reset_link = f"https://architect-johan-secure.onrender.com/reset-password.html?token={reset_token}"
         
         # Create message
         msg = MIMEMultipart('alternative')
@@ -369,33 +394,16 @@ If you didn't request this password reset, please ignore this email.
 Architect Johan Security Team
 """
         
-        # HTML version
+        # HTML version (simplified)
         html = f"""<html>
-<head>
-<style>
-body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }}
-.container {{ background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto; border: 2px solid #00FFB3; }}
-.header {{ color: #00FFB3; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; }}
-.button {{ background: #00FFB3; color: #02040A; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; }}
-.footer {{ margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }}
-</style>
-</head>
 <body>
-    <div class="container">
-        <div class="header">🔐 Architect Johan</div>
-        <h2>Password Reset Request</h2>
-        <p>You requested a password reset for your <strong>Architect Johan</strong> account.</p>
-        <p>Click the button below to reset your password:</p>
-        <p><a href="{reset_link}" class="button">Reset My Password</a></p>
-        <p>Or copy and paste this link in your browser:</p>
-        <p><code>{reset_link}</code></p>
-        <p><strong>Reset Token:</strong> {reset_token}</p>
-        <div class="footer">
-            <strong>⚠️ This link expires in 1 hour.</strong><br>
-            If you didn't request this reset, please ignore this email.<br><br>
-            <em>Architect Johan Security Team</em>
-        </div>
-    </div>
+<h2>Architect Johan - Password Reset</h2>
+<p>You requested a password reset for your account.</p>
+<p><a href="{reset_link}">Click here to reset your password</a></p>
+<p><strong>Reset Token:</strong> {reset_token}</p>
+<p>This link expires in 1 hour.</p>
+<hr>
+<p><em>Architect Johan Security Team</em></p>
 </body>
 </html>"""
         
@@ -405,20 +413,55 @@ body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f
         msg.attach(part1)
         msg.attach(part2)
         
-        # Send email
-        server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30)
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
-        server.login(EMAIL_USER, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_USER, email, msg.as_string())
-        server.quit()
+        print(f"📧 Email configured for: {email}")
+        print(f"🔗 Reset link: {reset_link}")
+        print(f"🔑 Reset token: {reset_token}")
         
-        logger.info(f"Password reset email sent to {email}")
-        return True
+        # Send email with better error handling
+        server = None
+        try:
+            server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30)
+            server.set_debuglevel(1)  # Enable debug output
+            
+            print("🔧 Starting TLS...")
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            
+            print("🔑 Logging in...")
+            server.login(EMAIL_USER, EMAIL_PASSWORD)
+            
+            print("📤 Sending email...")
+            server.sendmail(EMAIL_USER, email, msg.as_string())
+            print("✅ Email sent successfully!")
+            
+            server.quit()
+            
+            logger.info(f"Password reset email sent to {email}")
+            return True
+            
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error(f"SMTP Authentication failed: {e}")
+            print(f"❌ SMTP Authentication failed - check email credentials")
+            return False
+        except smtplib.SMTPException as e:
+            logger.error(f"SMTP error: {e}")
+            print(f"❌ SMTP error: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Email sending failed: {e}")
+            print(f"❌ Email sending failed: {e}")
+            return False
+        finally:
+            if server:
+                try:
+                    server.quit()
+                except:
+                    pass
         
     except Exception as e:
-        logger.error(f"Email sending failed: {e}")
+        logger.error(f"Email configuration error: {e}")
+        print(f"❌ Email configuration error: {e}")
         return False
 
 def generate_csrf_token():
@@ -817,18 +860,23 @@ def forgot_password():
             
             response_data = {
                 'success': True,
-                'message': 'If the email exists, a password reset link has been sent.'
+                'message': 'Password reset link has been sent to your email.',
+                'reset_token': reset_token,  # Include for testing
+                'reset_link': f"/reset-password.html?token={reset_token}"
             }
             
-            # Include token for development/testing
-            response_data['reset_token'] = reset_token
-            response_data['reset_link'] = f"/reset-password.html?token={reset_token}"
-            
-            print(f"✅ Password reset email sent successfully to {email}")
+            print(f"✅ Password reset process completed for {email}")
             return jsonify(response_data), 200
         else:
-            print(f"❌ Failed to send email to {email}")
-            return jsonify({'error': 'Failed to send email. Please try again later.'}), 500
+            print(f"❌ Email sending failed for {email}")
+            # Even if email fails, return the token for manual testing
+            return jsonify({
+                'success': True,
+                'message': 'Email service temporarily unavailable. Use this reset token:',
+                'reset_token': reset_token,
+                'reset_link': f"/reset-password.html?token={reset_token}",
+                'note': 'Copy this token to reset your password manually'
+            }), 200
             
     except Exception as e:
         logger.error(f"Forgot password error: {e}")
@@ -1182,5 +1230,10 @@ if __name__ == '__main__':
     print(f"🌐 Server running on port: {port}")
     print(f"📊 PostgreSQL Available: {POSTGRESQL_AVAILABLE}")
     
+    # Print environment status
+    print(f"📧 Email Configuration: {'✅ Available' if EMAIL_USER and EMAIL_PASSWORD else '❌ Missing'}")
+    print(f"🔑 SECRET_KEY: {'✅ Set' if os.getenv('SECRET_KEY') else '❌ Missing'}")
+    print(f"🔑 JWT_SECRET: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
+    print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
+    
     app.run(debug=False, host='0.0.0.0', port=port)
-
