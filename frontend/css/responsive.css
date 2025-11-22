@@ -1,0 +1,318 @@
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .main-content {
+        max-width: 1000px;
+        padding: 140px 40px 80px;
+    }
+}
+
+@media (max-width: 992px) {
+    .main-content {
+        padding: 130px 30px 70px;
+    }
+    
+    .page-header h1 {
+        font-size: 42px;
+    }
+    
+    .dashboard-grid,
+    .notes-grid,
+    .videos-grid,
+    .practice-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        padding: 15px 20px;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .nav-links {
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .main-content {
+        padding: 180px 20px 80px;
+    }
+
+    .page-header h1 {
+        font-size: 36px;
+        letter-spacing: 3px;
+    }
+
+    .page-header p {
+        font-size: 16px;
+    }
+
+    .dashboard-grid,
+    .notes-grid,
+    .videos-grid,
+    .practice-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .dashboard-card,
+    .note-card,
+    .video-card,
+    .practice-card {
+        padding: 30px 20px;
+    }
+
+    .contact-container {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .section-header,
+    .practice-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+
+    .section-icon,
+    .practice-icon {
+        margin-right: 0;
+    }
+
+    .back-buttons {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .back-btn {
+        text-align: center;
+        width: 100%;
+    }
+    
+    .note-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .note-icon {
+        margin-right: 0;
+    }
+
+    .note-image {
+        width: 200px;
+        height: 120px;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar {
+        padding: 12px 15px;
+    }
+
+    .nav-links {
+        gap: 10px;
+    }
+
+    .nav-links a {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+
+    .main-content {
+        padding: 160px 15px 60px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        letter-spacing: 2px;
+    }
+
+    .page-header p {
+        font-size: 14px;
+        letter-spacing: 2px;
+    }
+
+    .dashboard-card h3,
+    .note-title,
+    .practice-title {
+        font-size: 20px;
+    }
+
+    .section-title {
+        font-size: 22px;
+    }
+
+    .card-icon,
+    .note-icon,
+    .practice-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+    }
+
+    .section-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 20px;
+    }
+
+    .contact-info,
+    .support-form {
+        padding: 25px 20px;
+    }
+
+    .login-card {
+        padding: 40px 25px;
+    }
+
+    .login-header h1 {
+        font-size: 28px;
+    }
+
+    .logo {
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .page-header h1 {
+        font-size: 24px;
+    }
+
+    .page-header p {
+        font-size: 13px;
+    }
+
+    .dashboard-card,
+    .note-card,
+    .video-card,
+    .practice-card {
+        padding: 20px 15px;
+    }
+
+    .card-btn,
+    .back-btn {
+        padding: 12px 25px;
+        font-size: 14px;
+    }
+
+    .footer {
+        padding: 30px 20px;
+        font-size: 12px;
+    }
+
+    .security-info {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .chat-button {
+        width: 50px;
+        height: 50px;
+        bottom: 20px;
+        right: 20px;
+    }
+
+    .chat-icon {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 360px) {
+    .main-content {
+        padding: 150px 10px 50px;
+    }
+
+    .page-header h1 {
+        font-size: 22px;
+    }
+
+    .dashboard-card h3,
+    .note-title,
+    .practice-title {
+        font-size: 18px;
+    }
+
+    .nav-links a {
+        font-size: 11px;
+        padding: 5px 10px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .navbar,
+    .chat-button,
+    #matrix-canvas {
+        display: none;
+    }
+
+    body {
+        background: white;
+        color: black;
+    }
+
+    .main-content {
+        padding: 20px;
+        color: black;
+    }
+
+    .dashboard-card,
+    .note-card,
+    .video-card,
+    .practice-card {
+        background: white;
+        border: 1px solid #ccc;
+        box-shadow: none;
+        color: black;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    body {
+        background: #000000;
+        color: #ffffff;
+    }
+
+    .dashboard-card,
+    .note-card,
+    .video-card,
+    .practice-card {
+        background: #000000;
+        border-color: #ffffff;
+    }
+
+    .nav-links a {
+        color: #ffffff;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .login-card::before,
+    .login-card::after,
+    .logo,
+    .video-thumbnail::after {
+        animation: none;
+    }
+}

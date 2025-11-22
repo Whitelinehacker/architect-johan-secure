@@ -1,0 +1,301 @@
+/* Login page specific styles */
+body.login-page-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    padding: 20px;
+    background: #02040A;
+}
+
+body.login-page-body #matrix-canvas {
+    opacity: 0.3; /* Reduced opacity for better visibility */
+    z-index: 1;
+}
+
+body.login-page-body .login-content {
+    position: relative;
+    z-index: 10;
+    width: 90%;
+    max-width: 400px;
+}
+
+/* Ensure login card stays above matrix - REMOVED BACKDROP FILTER */
+.login-card {
+    position: relative;
+    z-index: 20;
+    background: rgba(2, 4, 10, 0.98); /* More opaque background */
+    border: 2px solid #00FFB3;
+    border-radius: 15px;
+    padding: 35px 30px;
+    box-shadow: 0 0 40px rgba(0, 255, 179, 0.4),
+                inset 0 0 40px rgba(0, 255, 179, 0.05);
+    transition: all 0.4s ease;
+}
+
+/* Remove any backdrop-filter that might cause white blur */
+.login-card::before,
+.login-card::after {
+    backdrop-filter: none !important;
+}
+
+/* Smaller logo */
+.login-header .logo {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 15px;
+    border: 2px solid #00FFB3;
+    font-size: 24px;
+    background: rgba(0, 255, 179, 0.1);
+    box-shadow: 0 0 20px rgba(0, 255, 179, 0.5);
+    animation: logoSpin 20s linear infinite;
+}
+
+/* Smaller header text */
+.login-header h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.login-header p {
+    font-size: 12px;
+}
+
+/* Smaller form elements */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+input {
+    padding: 14px 16px;
+    font-size: 14px;
+    background: rgba(0, 255, 179, 0.05);
+    border: 2px solid rgba(0, 255, 179, 0.3);
+    border-radius: 8px;
+    color: #00FFB3;
+    font-family: 'Courier New', Courier, monospace;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+input:focus {
+    border-color: #00FFB3;
+    box-shadow: 0 0 20px rgba(0, 255, 179, 0.5),
+                inset 0 0 10px rgba(0, 255, 179, 0.1);
+    background: rgba(0, 255, 179, 0.1);
+}
+
+/* Smaller login button */
+.login-btn {
+    padding: 16px;
+    font-size: 14px;
+    margin-top: 8px;
+    background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+    border: none;
+    border-radius: 8px;
+    color: #02040A;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.login-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.login-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 255, 179, 0.6);
+}
+
+/* Smaller security info */
+.security-info {
+    margin: 15px 0;
+    padding: 12px;
+    background: rgba(0, 255, 179, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 255, 179, 0.2);
+}
+
+.security-item {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #2EC6FF;
+}
+
+.security-icon {
+    font-size: 12px;
+}
+
+/* Smaller footer text */
+.footer-text {
+    margin-top: 20px;
+    font-size: 10px;
+    color: rgba(46, 198, 255, 0.6);
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+/* Smaller error/success messages */
+.error-message,
+.success-message {
+    margin-top: 15px;
+    padding: 12px;
+    font-size: 12px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
+    border-radius: 8px;
+    display: none;
+}
+
+.error-message {
+    background: rgba(255, 0, 76, 0.15);
+    border: 2px solid rgba(255, 0, 76, 0.6);
+    color: #FF004C;
+}
+
+.success-message {
+    background: rgba(0, 255, 179, 0.15);
+    border: 2px solid rgba(0, 255, 179, 0.6);
+    color: #00FFB3;
+}
+
+/* Smaller success overlay */
+.success-overlay {
+    width: 100px;
+    height: 100px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    z-index: 100;
+}
+
+.success-overlay.show {
+    animation: checkmarkShow 1s ease-in-out forwards;
+}
+
+@keyframes checkmarkShow {
+    0% { transform: translate(-50%, -50%) scale(0) rotate(-180deg); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.2) rotate(0deg); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+}
+
+.success-overlay svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 15px rgba(0, 255, 179, 0.8));
+}
+
+/* Smaller corner accents */
+.login-card::before,
+.login-card::after {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 2px solid #2EC6FF;
+    opacity: 0.6;
+    animation: cornerPulse 3s ease-in-out infinite;
+}
+
+.login-card::before {
+    top: 10px;
+    left: 10px;
+    border-right: none;
+    border-bottom: none;
+}
+
+.login-card::after {
+    bottom: 10px;
+    right: 10px;
+    border-left: none;
+    border-top: none;
+}
+
+@keyframes cornerPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; box-shadow: 0 0 15px rgba(46, 198, 255, 0.5); }
+}
+
+/* Fix for matrix canvas positioning */
+#matrix-canvas {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+}
+
+/* Float animation - slightly smaller movement */
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.login-content {
+    animation: float 6s ease-in-out infinite;
+}
+
+/* Logo spin animation */
+@keyframes logoSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Checkmark animation */
+@keyframes drawCheck {
+    to { stroke-dashoffset: 0; }
+}
+
+/* Error message animation */
+@keyframes errorFade {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.error-message.show {
+    display: block;
+    animation: errorFade 0.3s ease-in;
+}
+
+.success-message.show {
+    display: block;
+    animation: successFade 0.5s ease-in;
+}
+
+@keyframes successFade {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
