@@ -208,15 +208,16 @@ def init_db():
         return False
 
 # Initialize database on startup
-@app.before_first_request
+@app.before_request
 def initialize_database():
     """Initialize database before first request"""
-    logger.info("Initializing PostgreSQL database with psycopg3...")
-    if POSTGRESQL_AVAILABLE:
-        init_db()
-    else:
-        logger.error("Cannot initialize database - PostgreSQL not available")
-
+    if not hasattr(app, 'database_initialized'):
+        logger.info("Initializing PostgreSQL database with psycopg3...")
+        if POSTGRESQL_AVAILABLE:
+            init_db()
+        else:
+            logger.error("Cannot initialize database - PostgreSQL not available")
+        app.database_initialized = True
 # Database helper functions (updated for psycopg3)
 def get_user_by_username(username):
     """Get user from database by username"""
@@ -1182,3 +1183,4 @@ if __name__ == '__main__':
     print(f"📊 PostgreSQL Available: {POSTGRESQL_AVAILABLE}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
