@@ -21,4 +21,12 @@ class Config:
     
     # File Paths
     FRONTEND_PATH = '../frontend'
-    DATABASE_PATH = 'support.db'
+
+    # Database Configuration - PostgreSQL for Render
+    DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///users.db')
+    
+    # For PostgreSQL connection pooling
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_recycle": 300,
+        "pool_pre_ping": True
+    }
