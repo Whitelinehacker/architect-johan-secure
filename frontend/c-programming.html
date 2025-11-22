@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architect Johan — C Programming Coming Soon</title>
+    <style>
+        /* Your existing CSS remains exactly the same */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: #02040A;
+            color: #00FFB3;
+            overflow-x: hidden;
+            min-height: 100vh;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ... ALL YOUR EXISTING CSS REMAINS EXACTLY THE SAME ... */
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .nav-links {
+                gap: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .main-content {
+                padding: 180px 20px 80px;
+            }
+
+            .page-header h1 {
+                font-size: 36px;
+            }
+
+            .coming-soon-container {
+                padding: 40px 20px;
+            }
+
+            .countdown {
+                flex-wrap: wrap;
+            }
+
+            .countdown-item {
+                min-width: 80px;
+                padding: 15px;
+            }
+
+            .countdown-value {
+                font-size: 28px;
+            }
+
+            .topics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .page-header h1 {
+                font-size: 28px;
+            }
+
+            .page-header p {
+                font-size: 14px;
+            }
+
+            .coming-soon-container h2 {
+                font-size: 24px;
+            }
+
+            .coming-soon-container p {
+                font-size: 16px;
+            }
+
+            .topics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix background -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">Architect Johan</div>
+        <div class="nav-links">
+            <a href="home.html">Home</a>
+            <a href="videos.html">Videos</a>
+            <a href="notes.html" class="active">Notes</a>
+            <a href="support.html">Support</a>
+            <a href="about.html">About</a>
+            <a href="#" id="logout-btn" class="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1>C Programming</h1>
+            <p>Advanced C Programming - Coming Soon</p>
+        </div>
+
+        <div class="coming-soon-container">
+            <div class="ccna-icon">C</div>
+            <h2>Coming Soon</h2>
+            <p>We're developing comprehensive C programming study materials covering fundamentals, data types, operators, control statements, functions, pointers, memory management, structures, and file handling. Master the essential skills needed to build efficient, low-level, and high-performance applications using C.</p>
+            
+            <div class="progress-container">
+                <div class="progress-bar"></div>
+            </div>
+            
+            <div class="countdown">
+                <div class="countdown-item">
+                    <div class="countdown-value" id="days">00</div>
+                    <div class="countdown-label">Days</div>
+                </div>
+                <div class="countdown-item">
+                    <div class="countdown-value" id="hours">00</div>
+                    <div class="countdown-label">Hours</div>
+                </div>
+                <div class="countdown-item">
+                    <div class="countdown-value" id="minutes">00</div>
+                    <div class="countdown-label">Minutes</div>
+                </div>
+                <div class="countdown-item">
+                    <div class="countdown-value" id="seconds">00</div>
+                    <div class="countdown-label">Seconds</div>
+                </div>
+            </div>
+
+            <div class="ccna-topics">
+                <h3>Topics We're Covering</h3>
+                <div class="topics-grid">
+                    <div class="topic-item">
+                        <i>⚡</i>
+                        <span>C Fundamentals</span>
+                    </div>
+                    <div class="topic-item">
+                        <i>🔢</i>
+                        <span>Data Types</span>
+                    </div>
+                    <div class="topic-item">
+                        <i>🎮</i>
+                        <span>Control Flow</span>
+                    </div>
+                    <div class="topic-item">
+                        <i>🔧</i>
+                        <span>Functions</span>
+                    </div>
+                    <div class="topic-item">
+                        <i>📍</i>
+                        <span>Pointers</span>
+                    </div>
+                    <div class="topic-item">
+                        <i>💾</i>
+                        <span>Memory Management</span>
+                    </div>
+                    <div class="topic-item">
+                        <i>🏗️</i>
+                        <span>Structures</span>
+                    </div>
+                    <div class="topic-item">
+                        <i>📁</i>
+                        <span>File I/O</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="notify-btn" id="notify-btn">
+                Notify Me When Ready
+            </button>
+        </div>
+
+        <div class="back-notes">
+            <a href="notes.html" class="back-btn">Back to Notes</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        © 2025 Architect Johan | All Rights Reserved.
+    </footer>
+
+    <script>
+        // API Base URL
+        const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
+
+        // Authentication check
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthentication();
+        });
+
+        // Check if user is authenticated
+        async function checkAuthentication() {
+            const token = localStorage.getItem('auth_token');
+            
+            if (!token) {
+                // Redirect to login if no token
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                // Validate token with backend
+                const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    // Token is invalid, redirect to login
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('user_role');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Token is valid, continue loading the page
+                console.log('✅ User authenticated successfully - C Programming Page');
+
+            } catch (error) {
+                console.error('❌ Authentication check failed:', error);
+                // Redirect to login on error
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Matrix Digital Rain Animation
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
+        const charArray = chars.split('');
+
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -100;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(2, 4, 10, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00FFB3';
+            ctx.font = `${fontSize}px monospace`;
+
+            for (let i = 0; i < drops.length; i++) {
+                const char = charArray[Math.floor(Math.random() * charArray.length)];
+                const x = i * fontSize;
+                const y = drops[i] * fontSize;
+
+                ctx.fillText(char, x, y);
+
+                if (y > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        const matrixInterval = setInterval(drawMatrix, 50);
+        window.addEventListener('resize', resizeCanvas);
+
+        // Countdown Timer
+        function updateCountdown() {
+            const launchDate = new Date('April 15, 2025 00:00:00').getTime();
+            const now = new Date().getTime();
+            const timeLeft = launchDate - now;
+
+            if (timeLeft < 0) {
+                document.getElementById('days').textContent = '00';
+                document.getElementById('hours').textContent = '00';
+                document.getElementById('minutes').textContent = '00';
+                document.getElementById('seconds').textContent = '00';
+                return;
+            }
+
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+            document.getElementById('days').textContent = days.toString().padStart(2, '0');
+            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // Notify button functionality
+        document.getElementById('notify-btn').addEventListener('click', async function() {
+            const token = localStorage.getItem('auth_token');
+            const username = localStorage.getItem('username');
+
+            if (!token) {
+                alert('Please log in to get notifications.');
+                return;
+            }
+
+            try {
+                // Send notification request to backend
+                const response = await fetch(`${API_BASE_URL}/api/notify-c-programming`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        course: 'C Programming',
+                        email_notification: true
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Thank you! We will notify you when the C Programming materials are available.');
+                } else {
+                    alert('Thank you! We will notify you when the C Programming materials are available.');
+                }
+            } catch (error) {
+                console.error('Notification request failed:', error);
+                alert('Thank you! We will notify you when the C Programming materials are available.');
+            }
+        });
+
+        // Logout functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to logout?')) {
+                        const token = localStorage.getItem('auth_token');
+                        
+                        // Call logout API if token exists
+                        if (token) {
+                            try {
+                                await fetch(`${API_BASE_URL}/api/logout`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Authorization': `Bearer ${token}`,
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+                            } catch (error) {
+                                console.error('Logout API call failed:', error);
+                            }
+                        }
+                        
+                        // Clear authentication data
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('token_timestamp');
+                        localStorage.removeItem('username');
+                        localStorage.removeItem('user_role');
+                        localStorage.removeItem('full_name');
+                        sessionStorage.clear();
+                        
+                        // Redirect to login page
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH v13 Exam Mode - Architect Johan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: #02040A;
+            color: #00FFB3;
+            overflow-x: hidden;
+            min-height: 100vh;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Matrix background */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(2, 4, 10, 0.9);
+            backdrop-filter: blur(15px);
+            border-bottom: 2px solid #00FFB3;
+            padding: 20px 40px;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 0 30px rgba(0, 255, 179, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 255, 179, 0.8);
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: #00FFB3;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 2px;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: #2EC6FF;
+            text-shadow: 0 0 10px rgba(46, 198, 255, 0.8);
+        }
+
+        .nav-links a.active {
+            color: #2EC6FF;
+            background: rgba(46, 198, 255, 0.1);
+            box-shadow: 0 0 15px rgba(46, 198, 255, 0.5);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #00FFB3, #2EC6FF);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .nav-links a:hover::after {
+            width: 80%;
+        }
+
+        /* Main content */
+        .main-content {
+            position: relative;
+            z-index: 10;
+            padding: 150px 40px 100px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .page-header h1 {
+            font-size: 48px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 25px rgba(0, 255, 179, 0.8),
+                         0 0 50px rgba(0, 255, 179, 0.5);
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p {
+            font-size: 18px;
+            color: #2EC6FF;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            opacity: 0.9;
+        }
+
+        /* Exam levels grid */
+        .exam-levels {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .exam-level {
+            background: rgba(2, 4, 10, 0.9);
+            backdrop-filter: blur(15px);
+            border: 2px solid #00FFB3;
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.4s ease;
+            box-shadow: 0 0 40px rgba(0, 255, 179, 0.3),
+                        inset 0 0 40px rgba(0, 255, 179, 0.05);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .exam-level:hover {
+            transform: translateY(-10px);
+            border-color: #2EC6FF;
+            box-shadow: 0 0 60px rgba(46, 198, 255, 0.5),
+                        inset 0 0 50px rgba(46, 198, 255, 0.1);
+        }
+
+        .level-icon {
+            width: 80px;
+            height: 80px;
+            border: 3px solid #00FFB3;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            background: rgba(0, 255, 179, 0.1);
+            box-shadow: 0 0 30px rgba(0, 255, 179, 0.4);
+            transition: all 0.4s ease;
+            font-size: 32px;
+        }
+
+        .exam-level:hover .level-icon {
+            border-color: #2EC6FF;
+            box-shadow: 0 0 40px rgba(46, 198, 255, 0.8);
+            transform: scale(1.1);
+        }
+
+        .level-title {
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .level-description {
+            color: #2EC6FF;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .level-details {
+            text-align: left;
+            margin: 20px 0;
+            color: #2EC6FF;
+        }
+
+        .level-details li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .level-details li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #00FFB3;
+            font-weight: bold;
+        }
+
+        .level-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            color: #02040A;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .level-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 255, 179, 0.5);
+        }
+
+        .level-difficulty {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .difficulty-beginner {
+            background: rgba(0, 255, 179, 0.2);
+            color: #00FFB3;
+            border: 1px solid #00FFB3;
+        }
+
+        .difficulty-intermediate {
+            background: rgba(255, 193, 7, 0.2);
+            color: #FFC107;
+            border: 1px solid #FFC107;
+        }
+
+        .difficulty-advanced {
+            background: rgba(255, 87, 34, 0.2);
+            color: #FF5722;
+            border: 1px solid #FF5722;
+        }
+
+        .difficulty-expert {
+            background: rgba(156, 39, 176, 0.2);
+            color: #9C27B0;
+            border: 1px solid #9C27B0;
+        }
+
+        /* Password Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(2, 4, 10, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content {
+            background: rgba(2, 4, 10, 0.95);
+            margin: 15% auto;
+            padding: 40px;
+            border: 2px solid #00FFB3;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0, 255, 179, 0.5);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 15px 20px;
+            margin: 20px 0;
+            background: rgba(0, 255, 179, 0.1);
+            border: 2px solid #00FFB3;
+            border-radius: 10px;
+            color: #00FFB3;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .password-input:focus {
+            outline: none;
+            border-color: #2EC6FF;
+            box-shadow: 0 0 20px rgba(46, 198, 255, 0.5);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+
+        .modal-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            color: #02040A;
+        }
+
+        .modal-btn.secondary {
+            background: transparent;
+            border: 2px solid #FF6B6B;
+            color: #FF6B6B;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .modal-btn.primary:hover {
+            box-shadow: 0 5px 20px rgba(0, 255, 179, 0.4);
+        }
+
+        .modal-btn.secondary:hover {
+            box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .error-message {
+            color: #FF6B6B;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message {
+            color: #00FFB3;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 4px solid rgba(0, 255, 179, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #00FFB3;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Back buttons */
+        .back-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            color: #02040A;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 3px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .back-btn:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 255, 179, 0.8);
+        }
+
+        /* Footer */
+        .footer {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 40px;
+            margin-top: 80px;
+            border-top: 1px solid rgba(0, 255, 179, 0.2);
+            color: #2EC6FF;
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+
+        .logout-btn {
+            color: #FF6B6B !important;
+            background: rgba(255, 107, 107, 0.1) !important;
+            border: 1px solid rgba(255, 107, 107, 0.3) !important;
+        }
+
+        .logout-btn:hover {
+            color: #FF5252 !important;
+            background: rgba(255, 107, 107, 0.2) !important;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.8) !important;
+            border-color: #FF6B6B !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .nav-links {
+                gap: 15px;
+            }
+
+            .main-content {
+                padding: 180px 20px 80px;
+            }
+
+            .page-header h1 {
+                font-size: 36px;
+            }
+
+            .exam-levels {
+                grid-template-columns: 1fr;
+            }
+
+            .exam-level {
+                padding: 25px;
+            }
+
+            .level-icon {
+                width: 70px;
+                height: 70px;
+                font-size: 28px;
+            }
+
+            .level-title {
+                font-size: 22px;
+            }
+
+            .back-buttons {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .page-header h1 {
+                font-size: 28px;
+            }
+
+            .page-header p {
+                font-size: 14px;
+            }
+
+            .exam-level {
+                padding: 20px;
+            }
+
+            .modal-content {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix background -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">Architect Johan</div>
+        <div class="nav-links">
+            <a href="home.html">Home</a>
+            <a href="videos.html">Videos</a>
+            <a href="notes.html">Notes</a>
+            <a href="support.html">Support</a>
+             <a href="about.html">About</a>
+            <a href="#" id="logout-btn" class="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1>CEH v13 Exam Mode</h1>
+            <p>Choose Your Exam-Set And Start</p>
+        </div>
+
+        <div class="exam-levels">
+            <!-- Exam Level 1 -->
+            <div class="exam-level" onclick="openPasswordModal('exam_level_1')">
+                <div class="level-icon">🔰</div>
+                <div class="level-difficulty difficulty-beginner">Beginner</div>
+                <h2 class="level-title">Exam Mode 1</h2>
+                <p class="level-description">
+                   
+                </p>
+                <ul class="level-details">
+                    <li>125 multiple choice questions</li>
+                    <li>240 minutes time limit</li>
+                    
+                </ul>
+                <button class="level-btn">Start Exam Mode 1</button>
+            </div>
+
+            <!-- Exam Level 2 -->
+            <div class="exam-level" onclick="openPasswordModal('exam_level_2')">
+                <div class="level-icon">📊</div>
+                <div class="level-difficulty difficulty-intermediate">Intermediate</div>
+                <h2 class="level-title">Exam Mode 2</h2>
+                <p class="level-description">
+                    
+                </p>
+                <ul class="level-details">
+                    <li>125 multiple choice questions</li>
+                    <li>240 minutes time limit</li>
+                   
+                </ul>
+                <button class="level-btn">Start Exam Mode 2</button>
+            </div>
+
+            <!-- Exam Level 3 -->
+            <div class="exam-level" onclick="openPasswordModal('exam_level_3')">
+                <div class="level-icon">⚡</div>
+                <div class="level-difficulty difficulty-advanced">Advanced</div>
+                <h2 class="level-title">Exam Mode 3</h2>
+               
+                <ul class="level-details">
+                    <li>125 scenario-based questions</li>
+                    <li>240 minutes time limit</li>
+                   
+                </ul>
+                <button class="level-btn">Start Exam Mode 3</button>
+            </div>
+
+            <!-- Exam Level 4 -->
+            <div class="exam-level" onclick="openPasswordModal('exam_level_4')">
+                <div class="level-icon">🎯</div>
+                <div class="level-difficulty difficulty-expert">Expert</div>
+                <h2 class="level-title">Exam Mode 4</h2>
+               
+                <ul class="level-details">
+                    <li>125 advanced questions</li>
+                    <li>240 minutes time limit</li>
+                  
+                </ul>
+                <button class="level-btn">Start Exam Mode 4</button>
+            </div>
+
+            <!-- Exam Level 5 -->
+            <div class="exam-level" onclick="openPasswordModal('exam_level_5')">
+                <div class="level-icon">🏆</div>
+                <div class="level-difficulty difficulty-expert">Master</div>
+                <h2 class="level-title">Exam Mode 5</h2>
+                
+                <ul class="level-details">
+                    <li>125 complex scenarios</li>
+                    <li>240 minutes time limit</li>
+                    
+                </ul>
+                <button class="level-btn">Start Exam Mode 5</button>
+            </div>
+
+            <!-- Exam Level 6 -->
+            <div class="exam-level" onclick="openPasswordModal('exam_level_6')">
+                <div class="level-icon">🚀</div>
+                <div class="level-difficulty difficulty-expert">Grand Master</div>
+                <h2 class="level-title">Exam Mode 6</h2>
+               
+                <ul class="level-details">
+                    <li>125 expert-level questions</li>
+                    <li>240 minutes time limit</li>
+                   
+                </ul>
+                <button class="level-btn">Start Exam Mode 6</button>
+            </div>
+        </div>
+
+        <div class="back-buttons">
+            <a href="cehv13.html" class="back-btn">Back to CEH v13</a>
+            <a href="home.html" class="back-btn">Back to Home</a>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="modalTitle">Enter Exam Password</h2>
+            <p id="modalDescription" style="color: #2EC6FF; margin-bottom: 20px;">
+                Please enter the password to access this exam level.
+            </p>
+            <input type="password" id="passwordInput" class="password-input" placeholder="Enter password..." autocomplete="off">
+            <div class="error-message" id="errorMessage">
+                Incorrect password. Please try again.
+            </div>
+            <div class="success-message" id="successMessage">
+                Password verified! Redirecting...
+            </div>
+            <div class="loading-spinner" id="loadingSpinner"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" onclick="verifyPassword()" id="submitBtn">Submit</button>
+                <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        © 2025 Architect Johan | All Rights Reserved.
+    </footer>
+
+    <script>
+        // Matrix Digital Rain Animation
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
+        const charArray = chars.split('');
+
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -100;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(2, 4, 10, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00FFB3';
+            ctx.font = `${fontSize}px monospace`;
+
+            for (let i = 0; i < drops.length; i++) {
+                const char = charArray[Math.floor(Math.random() * charArray.length)];
+                const x = i * fontSize;
+                const y = drops[i] * fontSize;
+
+                ctx.fillText(char, x, y);
+
+                if (y > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        const matrixInterval = setInterval(drawMatrix, 50);
+        window.addEventListener('resize', resizeCanvas);
+
+        // Exam Level Password Modal Logic
+        let currentExamLevel = '';
+        let modalOpen = false;
+
+        function openPasswordModal(examLevel) {
+            if (modalOpen) return; // Prevent multiple modals
+            modalOpen = true;
+            
+            currentExamLevel = examLevel;
+            const modal = document.getElementById('passwordModal');
+            modal.style.display = 'block';
+            document.getElementById('passwordInput').focus();
+            
+            // Reset modal state
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('passwordInput').value = '';
+        }
+
+        function closeModal() {
+            modalOpen = false;
+            document.getElementById('passwordModal').style.display = 'none';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        function verifyPassword() {
+            const password = document.getElementById('passwordInput').value;
+            const token = localStorage.getItem('auth_token');
+            
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            if (!password) {
+                document.getElementById('errorMessage').textContent = 'Please enter a password';
+                document.getElementById('errorMessage').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+
+            // Updated API URL to use Render backend
+            fetch('https://architect-johan-secure.onrender.com/api/verify-exam-level-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    password: password, 
+                    exam_level: currentExamLevel 
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                
+                if (data.success) {
+                    document.getElementById('successMessage').style.display = 'block';
+                    
+                    // Redirect to appropriate exam level after short delay
+                    setTimeout(() => {
+                        const examLevelMap = {
+                            'exam_level_1': 'exam_mode_1.html',
+                            'exam_level_2': 'exam_mode_2.html',
+                            'exam_level_3': 'exam_mode_3.html',
+                            'exam_level_4': 'exam_mode_4.html',
+                            'exam_level_5': 'exam_mode_5.html',
+                            'exam_level_6': 'exam_mode_6.html'
+                        };
+                        
+                        const redirectUrl = examLevelMap[currentExamLevel];
+                        if (redirectUrl) {
+                            window.location.href = redirectUrl;
+                        } else {
+                            window.location.href = 'exam-mode.html';
+                        }
+                    }, 1000);
+                } else {
+                    document.getElementById('errorMessage').textContent = data.message || 'Incorrect password. Please try again.';
+                    document.getElementById('errorMessage').style.display = 'block';
+                    document.getElementById('passwordInput').value = '';
+                    document.getElementById('passwordInput').focus();
+                }
+            })
+            .catch(error => {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('errorMessage').textContent = 'Error verifying password. Please try again.';
+                document.getElementById('errorMessage').style.display = 'block';
+                console.error('Error:', error);
+            });
+        }
+
+        // Logout functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to logout?')) {
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('token_timestamp');
+                        localStorage.removeItem('username');
+                        sessionStorage.clear();
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
+
+            // Check authentication on page load
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Add Enter key support for password input
+            document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    verifyPassword();
+                }
+            });
+
+            // Close modal when clicking outside
+            document.getElementById('passwordModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+        });
+
+        // Add escape key to close modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modalOpen) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

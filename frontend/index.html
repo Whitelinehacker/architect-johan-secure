@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="js/config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architect Johan — Secure Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <style>
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 255, 179, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 179, 0.2);
+        }
+
+        .auth-switch a {
+            color: #2EC6FF;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        .auth-switch a:hover {
+            color: #00FFB3;
+            text-decoration: underline;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .forgot-password a {
+            color: #2EC6FF;
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-password a:hover {
+            color: #00FFB3;
+            text-decoration: underline;
+        }
+
+        /* Additional styles for logo image */
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            border: 2px solid #00FFB3;
+            border-radius: 50%;
+            background: rgba(0, 255, 179, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 179, 0.5);
+            animation: logoSpin 20s linear infinite;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        /* Fallback if image doesn't load */
+        .logo::before {
+            content: 'AJ';
+            position: absolute;
+            font-size: 20px;
+            font-weight: bold;
+            color: #00FFB3;
+            display: none; /* Hidden when image loads */
+        }
+
+        .logo:not(:has(img))::before {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes logoSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="login-page-body">
+    <!-- Matrix background -->
+    <canvas id="matrix-canvas" class="login-background"></canvas>
+
+    <!-- Login container -->
+    <div class="login-content">
+        <div class="login-card" id="login-card">
+            <div class="login-header">
+                <div class="logo">
+                    <!-- Replace 'images/logo.jpg' with your actual image path -->
+                    <img src="assets/images/cropped_circle_image.png" alt="Architect Johan Logo" 
+                         onerror="this.style.display='none'; this.parentElement.innerHTML='AJ';">
+                </div>
+                <h1>Architect Johan</h1>
+                <p>Secure Access Terminal</p>
+            </div>
+
+            <form id="login-form">
+                <input type="hidden" id="csrf_token" name="csrf_token">
+                
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            placeholder="Enter your username"
+                            autocomplete="username"
+                            required
+                            maxlength="50"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                            maxlength="100"
+                        >
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn" id="login-btn">
+                    <span class="btn-text">Initialize Access</span>
+                </button>
+
+                <div class="forgot-password">
+                    <a href="forgot-password.html">Forgot Password?</a>
+                </div>
+
+                <div class="error-message" id="error-message">
+                    Access Denied — Invalid Credentials
+                </div>
+
+                <div class="success-message" id="success-message">
+                    Access Granted — Redirecting to Home...
+                </div>
+            </form>
+
+            <div class="auth-switch">
+                Don't have an account? <a href="signup.html">Create Account</a>
+            </div>
+
+            <div class="security-info">
+                <div class="security-item">
+                    <span class="security-icon">🔒</span>
+                    <span>Encrypted Connection</span>
+                </div>
+                <div class="security-item">
+                    <span class="security-icon">🛡️</span>
+                    <span>Rate Limiting Active</span>
+                </div>
+                <div class="security-item">
+                    <span class="security-icon">⚡</span>
+                    <span>Secure Authentication</span>
+                </div>
+            </div>
+
+            <div class="footer-text">
+                ENCRYPTED CONNECTION ESTABLISHED | CSRF PROTECTION ACTIVE
+            </div>
+
+            <div class="success-overlay" id="success-overlay">
+                <svg viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="25" fill="none" stroke="#00FFB3" stroke-width="3"/>
+                    <path fill="none" stroke="#00FFB3" stroke-width="4" stroke-linecap="round" 
+                          d="M14 27l7 7 16-16" 
+                          style="stroke-dasharray: 48; stroke-dashoffset: 48; animation: drawCheck 0.6s ease-in-out 0.3s forwards;"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/matrix.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/security.js"></script>
+   <script>
+    // Enhanced auth.js functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginForm = document.getElementById('login-form');
+        const loginBtn = document.getElementById('login-btn');
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+        const successOverlay = document.getElementById('success-overlay');
+        const csrfTokenInput = document.getElementById('csrf_token');
+
+        // Use Render backend URL directly
+        const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
+
+        // Check if user is already logged in
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            // Validate token with correct endpoint
+            fetch(`${API_BASE_URL}/api/validate-token`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = 'home.html';
+                } else {
+                    // Token is invalid, clear it
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('user_role');
+                }
+            })
+            .catch(() => {
+                // Token is invalid, clear it
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('username');
+                localStorage.removeItem('user_role');
+            });
+        }
+
+        // Get CSRF token
+        fetch(`${API_BASE_URL}/api/csrf-token`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.csrf_token) {
+                    csrfTokenInput.value = data.csrf_token;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching CSRF token:', error);
+            });
+
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
+
+            const formData = {
+                username: username,
+                password: password,
+                csrf_token: csrfTokenInput.value
+            };
+
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="btn-text">Authenticating...</span>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfTokenInput.value
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Store token and user info
+                    localStorage.setItem('auth_token', data.token);
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('user_role', data.role);
+                    localStorage.setItem('full_name', data.full_name);
+                    localStorage.setItem('csrf_token', data.csrf_token);
+
+                    showSuccess('Access granted! Redirecting...');
+                    
+                    // Show success animation
+                    successOverlay.classList.add('show');
+                    loginBtn.classList.add('success');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'home.html';
+                    }, 1500);
+                } else {
+                    showError(data.error || 'Authentication failed');
+                    loginBtn.classList.add('glitch');
+                    setTimeout(() => loginBtn.classList.remove('glitch'), 1000);
+                }
+            } catch (error) {
+                showError('Network error. Please check your connection.');
+                console.error('Login error:', error);
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<span class="btn-text">Initialize Access</span>';
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+            successMessage.classList.remove('show');
+            
+            const card = document.getElementById('login-card');
+            card.classList.add('shake');
+            setTimeout(() => card.classList.remove('shake'), 500);
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.classList.add('show');
+            errorMessage.classList.remove('show');
+        }
+
+        // Enter key support for form submission
+        document.getElementById('username').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('login-form').dispatchEvent(new Event('submit'));
+            }
+        });
+
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('login-form').dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Auto-focus on username field
+        document.getElementById('username').focus();
+    });
+</script>
+</body>
+</html>

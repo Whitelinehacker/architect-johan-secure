@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architect Johan — Create Account</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .login-page-body {
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .login-content {
+            width: 100%;
+            max-width: 450px;
+            margin: 40px auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .login-card {
+            background: rgba(2, 4, 10, 0.95);
+            backdrop-filter: blur(15px);
+            border: 2px solid #00FFB3;
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 0 50px rgba(0, 255, 179, 0.4),
+                        inset 0 0 50px rgba(0, 255, 179, 0.05);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 255, 179, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 179, 0.2);
+        }
+
+        .auth-switch a {
+            color: #2EC6FF;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        .auth-switch a:hover {
+            color: #00FFB3;
+            text-decoration: underline;
+        }
+
+        .password-requirements {
+            font-size: 12px;
+            color: #2EC6FF;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .mobile-input {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .country-code {
+            padding: 16px 12px;
+            background: rgba(0, 255, 179, 0.1);
+            border: 2px solid rgba(0, 255, 179, 0.3);
+            border-right: none;
+            border-radius: 10px 0 0 10px;
+            color: #00FFB3;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .mobile-input input {
+            border-radius: 0 10px 10px 0;
+            border-left: none;
+            width: 100%;
+            flex: 1;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        /* Custom scrollbar for the card */
+        .login-card::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .login-card::-webkit-scrollbar-track {
+            background: rgba(0, 255, 179, 0.1);
+            border-radius: 3px;
+        }
+
+        .login-card::-webkit-scrollbar-thumb {
+            background: #00FFB3;
+            border-radius: 3px;
+        }
+
+        .login-card::-webkit-scrollbar-thumb:hover {
+            background: #2EC6FF;
+        }
+
+        /* Logo styles */
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            border: 2px solid #00FFB3;
+            border-radius: 50%;
+            background: rgba(0, 255, 179, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 179, 0.5);
+            animation: logoSpin 20s linear infinite;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .logo::before {
+            content: 'AJ';
+            position: absolute;
+            font-size: 20px;
+            font-weight: bold;
+            color: #00FFB3;
+            display: none;
+        }
+
+        .logo:not(:has(img))::before {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes logoSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-height: 800px) {
+            .login-content {
+                margin: 20px auto;
+            }
+            
+            .login-card {
+                padding: 30px 25px;
+                max-height: 85vh;
+            }
+            
+            .form-group {
+                margin-bottom: 15px;
+            }
+        }
+
+        @media (max-height: 700px) {
+            .login-card {
+                padding: 25px 20px;
+                max-height: 80vh;
+            }
+            
+            .login-header {
+                margin-bottom: 20px;
+            }
+            
+            .login-header h1 {
+                font-size: 24px;
+            }
+            
+            .login-header p {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-page-body {
+                padding: 10px;
+                align-items: flex-start;
+            }
+            
+            .login-content {
+                margin: 20px auto;
+            }
+            
+            .login-card {
+                padding: 25px 20px;
+                border-width: 1px;
+            }
+            
+            .country-code {
+                padding: 12px 8px;
+                font-size: 14px;
+                min-width: 50px;
+            }
+            
+            input {
+                padding: 14px 16px;
+                font-size: 14px;
+            }
+            
+            .login-btn {
+                padding: 16px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .login-card {
+                padding: 20px 15px;
+            }
+            
+            .login-header h1 {
+                font-size: 22px;
+            }
+            
+            .form-group {
+                margin-bottom: 12px;
+            }
+        }
+    </style>
+</head>
+<body class="login-page-body">
+    <canvas id="matrix-canvas" class="login-background"></canvas>
+
+    <div class="login-content">
+        <div class="login-card" id="signup-card">
+            <div class="login-header">
+                <div class="logo">
+                    <img src="assets/images/cropped_circle_image.png" alt="Architect Johan Logo" 
+                         onerror="this.style.display='none'; this.parentElement.innerHTML='AJ';">
+                </div>
+                <h1>Create Account</h1>
+                <p>Join Architect Johan Community</p>
+            </div>
+
+            <form id="signup-form">
+                <input type="hidden" id="csrf_token" name="csrf_token">
+                
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            placeholder="Choose a username"
+                            autocomplete="username"
+                            required
+                            maxlength="50"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="full_name">Full Name</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="full_name" 
+                            name="full_name" 
+                            placeholder="Enter your full name"
+                            autocomplete="name"
+                            required
+                            maxlength="100"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="Enter your email"
+                            autocomplete="email"
+                            required
+                            maxlength="100"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="mobile_no">Mobile Number</label>
+                    <div class="mobile-input">
+                        <div class="country-code">+91</div>
+                        <input 
+                            type="tel" 
+                            id="mobile_no" 
+                            name="mobile_no" 
+                            placeholder="Enter your mobile number"
+                            autocomplete="tel"
+                            required
+                            maxlength="10"
+                            pattern="[0-9]{10}"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Create a password (min 8 characters)"
+                            autocomplete="new-password"
+                            required
+                            minlength="8"
+                            maxlength="100"
+                        >
+                    </div>
+                    <div class="password-requirements">
+                        Password must be at least 8 characters long
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="password" 
+                            id="confirm_password" 
+                            name="confirm_password" 
+                            placeholder="Confirm your password"
+                            autocomplete="new-password"
+                            required
+                            minlength="8"
+                            maxlength="100"
+                        >
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn" id="signup-btn">
+                    <span class="btn-text">Create Account</span>
+                </button>
+
+                <div class="error-message" id="error-message">
+                    Registration Failed
+                </div>
+
+                <div class="success-message" id="success-message">
+                    Account Created Successfully! Redirecting to login...
+                </div>
+            </form>
+
+            <div class="auth-switch">
+                Already have an account? <a href="index.html">Sign In</a>
+            </div>
+
+            <div class="security-info">
+                <div class="security-item">
+                    <span class="security-icon">🔒</span>
+                    <span>Encrypted Connection</span>
+                </div>
+                <div class="security-item">
+                    <span class="security-icon">🛡️</span>
+                    <span>Secure Registration</span>
+                </div>
+            </div>
+
+            <div class="footer-text">
+                ENCRYPTED CONNECTION ESTABLISHED | CSRF PROTECTION ACTIVE
+            </div>
+        </div>
+    </div>
+
+    <script src="js/matrix.js"></script>
+    <script>
+        // API Base URL
+        const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const signupForm = document.getElementById('signup-form');
+            const signupBtn = document.getElementById('signup-btn');
+            const errorMessage = document.getElementById('error-message');
+            const successMessage = document.getElementById('success-message');
+            const csrfTokenInput = document.getElementById('csrf_token');
+
+            // Get CSRF token
+            fetch(`${API_BASE_URL}/api/csrf-token`)
+                .then(response => response.json())
+                .then(data => {
+                    csrfTokenInput.value = data.csrf_token;
+                });
+
+            // Password confirmation validation
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirm_password');
+
+            confirmPasswordInput.addEventListener('input', function() {
+                if (passwordInput.value !== confirmPasswordInput.value) {
+                    confirmPasswordInput.style.borderColor = '#FF004C';
+                } else {
+                    confirmPasswordInput.style.borderColor = '#00FFB3';
+                }
+            });
+
+            // Mobile number validation (only numbers)
+            const mobileInput = document.getElementById('mobile_no');
+            mobileInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+
+            signupForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    username: document.getElementById('username').value.trim(),
+                    full_name: document.getElementById('full_name').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    mobile_no: '+91' + document.getElementById('mobile_no').value.trim(),
+                    password: document.getElementById('password').value,
+                    confirm_password: document.getElementById('confirm_password').value,
+                    csrf_token: csrfTokenInput.value
+                };
+
+                // Validate required fields
+                if (!formData.username || !formData.full_name || !formData.email || !formData.mobile_no || !formData.password) {
+                    showError('Please fill in all required fields');
+                    return;
+                }
+
+                // Validate passwords match
+                if (formData.password !== formData.confirm_password) {
+                    showError('Passwords do not match');
+                    confirmPasswordInput.focus();
+                    return;
+                }
+
+                // Validate password length
+                if (formData.password.length < 8) {
+                    showError('Password must be at least 8 characters long');
+                    passwordInput.focus();
+                    return;
+                }
+
+                // Validate mobile number
+                if (formData.mobile_no.replace('+91', '').length !== 10) {
+                    showError('Please enter a valid 10-digit mobile number');
+                    mobileInput.focus();
+                    return;
+                }
+
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(formData.email)) {
+                    showError('Please enter a valid email address');
+                    document.getElementById('email').focus();
+                    return;
+                }
+
+                signupBtn.disabled = true;
+                signupBtn.innerHTML = '<span class="btn-text">Creating Account...</span>';
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/signup`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfTokenInput.value
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        showSuccess(data.message || 'Account created successfully!');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 2000);
+                    } else {
+                        showError(data.error || 'Registration failed');
+                    }
+                } catch (error) {
+                    showError('Network error. Please try again.');
+                } finally {
+                    signupBtn.disabled = false;
+                    signupBtn.innerHTML = '<span class="btn-text">Create Account</span>';
+                }
+            });
+
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.add('show');
+                successMessage.classList.remove('show');
+                
+                const card = document.getElementById('signup-card');
+                card.classList.add('shake');
+                setTimeout(() => card.classList.remove('shake'), 500);
+            }
+
+            function showSuccess(message) {
+                successMessage.textContent = message;
+                successMessage.classList.add('show');
+                errorMessage.classList.remove('show');
+            }
+
+            // Auto-advance to next field on Enter key
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach((input, index) => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        } else {
+                            signupForm.dispatchEvent(new Event('submit'));
+                        }
+                    }
+                });
+            });
+
+            // Auto-focus on first input
+            document.getElementById('username').focus();
+        });
+    </script>
+</body>
+</html>

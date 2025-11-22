@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roshan Metri | Senior IT Administrator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Your existing CSS remains the same */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap');
+        
+        :root {
+            --primary: #00FFB3;
+            --secondary: #2EC6FF;
+            --accent: #FF6B6B;
+            --dark: #02040A;
+            --darker: #010208;
+            --light: #e0e0e0;
+            --terminal: #00FFB3;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: var(--dark);
+            color: var(--light);
+            font-family: 'Share Tech Mono', monospace;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+        
+        /* ... rest of your existing CSS remains exactly the same ... */
+        
+    </style>
+</head>
+<body>
+    <!-- Matrix Background -->
+    <canvas class="matrix-bg" id="matrix"></canvas>
+    
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">Roshan Metri</div>
+        <div class="nav-links">
+            <a href="home.html" class="active">Home</a>
+            <a href="#skills">Skills</a>
+            <a href="#experience">Experience</a>
+            <a href="videos.html">Videos</a>
+            <a href="notes.html">Notes</a>
+            <a href="support.html">Support</a>
+            <a href="#about">About</a>
+            
+            <a href="#" id="logout-btn" class="logout-btn">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <!-- Header Section -->
+        <header id="home">
+            <div class="profile-header">
+                <div class="profile-image">
+                    <!-- Placeholder for profile image -->
+                    <div style="width:100%;height:100%;background:linear-gradient(45deg, var(--darker), var(--primary));display:flex;align-items:center;justify-content:center;color:white;font-size:4rem;">
+                        <img src="assets/images/1715956747844.jpg" alt="Roshan Metri" />
+                    </div>
+                </div>
+                <div class="profile-info">
+                    <h1 id="user-name">Loading...</h1>
+                    <h2 id="user-role">Senior IT Administrator</h2>
+                    <p id="user-bio">Cybersecurity Specialist | Network Administrator | Cloud Infrastructure Expert</p>
+                    <div class="social-links">
+                        <a href="www.linkedin.com/in/roshanmetriarchitectjohan" target="_blank">
+                            <i class="fab fa-linkedin"></i> LinkedIn
+                        </a>
+                        <a href="https://github.com/Whitelinehacker" target="_blank">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Skills Section -->
+        <section id="skills">
+            <h2>Technical Skills</h2>
+            <div class="skills-grid">
+                <!-- Industry Knowledge -->
+                <div class="skill-category">
+                    <h3>Industry Knowledge</h3>
+                    <div class="skill-items">
+                        <div class="skill-item">Cybersecurity</div>
+                        <div class="skill-item">Network Security</div>
+                        <div class="skill-item">IT Infrastructure</div>
+                        <div class="skill-item">Cloud Computing</div>
+                        <div class="skill-item">System Administration</div>
+                        <div class="skill-item">Web Development</div>
+                        <div class="skill-item">Senior IT Administration</div>
+                    </div>
+                </div>
+                
+                <!-- Tools & Technologies -->
+                <div class="skill-category">
+                    <h3>Tools & Technologies</h3>
+                    <div class="skill-items">
+                        <div class="skill-item">Linux</div>
+                        <div class="skill-item">Kali Linux</div>
+                        <div class="skill-item">Red Hat Linux</div>
+                        <div class="skill-item">Amazon Web Services (AWS)</div>
+                        <div class="skill-item">CCNA</div>
+                        <div class="skill-item">CEHv13</div>
+                        <div class="skill-item">Microsoft Outlook</div>
+                        <div class="skill-item">Network Hardware</div>
+                        <div class="skill-item">Domain Name System (DNS)</div>
+                        <div class="skill-item">Computer Hardware</div>
+                    </div>
+                </div>
+                
+                <!-- Programming Languages -->
+                <div class="skill-category">
+                    <h3>Programming & Scripting</h3>
+                    <div class="skill-items">
+                        <div class="skill-item">Python</div>
+                        <div class="skill-item">Python Scripting</div>
+                        <div class="skill-item">C</div>
+                        <div class="skill-item">C++</div>
+                        <div class="skill-item">Java</div>
+                        <div class="skill-item">PowerShell Scripting</div>
+                    </div>
+                </div>
+                
+                <!-- Other Skills -->
+                <div class="skill-category">
+                    <h3>Networking & Systems</h3>
+                    <div class="skill-items">
+                        <div class="skill-item">Linux System Administration</div>
+                        <div class="skill-item">Computer Networking</div>
+                        <div class="skill-item">Network Services</div>
+                        <div class="skill-item">Network Hardware</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Experience Section -->
+        <section id="experience">
+            <h2>Professional Experience</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <h3>Senior IT Administrator</h3>
+                        <div class="company">Current Role</div>
+                        <div class="date">Present</div>
+                        <p>Managing enterprise IT infrastructure, implementing cybersecurity measures, and overseeing network administration. Specializing in Linux systems, cloud infrastructure, and security protocols.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <h3>Desktop Support Engineer</h3>
+                        <div class="company">Nexus Computer Pvt Ltd</div>
+                        <div class="date">Previous Role</div>
+                        <p>Provided technical support for desktop systems, network troubleshooting, and hardware maintenance. Implemented security protocols and managed network services.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <h3>Information Technology Help Desk</h3>
+                        <div class="company">MicroWorld Technologies Inc</div>
+                        <div class="date">Previous Role</div>
+                        <p>Supported IT operations, resolved technical issues, and maintained network infrastructure. Gained expertise in cybersecurity principles and network hardware.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <h3>Training & Certification</h3>
+                        <div class="company">Jetking Noida Learning Center</div>
+                        <div class="date">Education</div>
+                        <p>Completed comprehensive training in Linux, Networking, Cybersecurity, and various programming languages. Earned certifications in CCNA, CEHv13, and AWS.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Notes Section -->
+        <section id="notes">
+            <h2>Study Notes</h2>
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <div class="card-icon">📒</div>
+                    <h3>Linux Notes</h3>
+                    <p>Comprehensive notes on Linux system administration and commands.</p>
+                    <a href="notes.html" class="card-btn">Browse Notes</a>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-icon">🔒</div>
+                    <h3>Cybersecurity</h3>
+                    <p>Detailed documentation on security protocols and best practices.</p>
+                    <a href="notes.html" class="card-btn">Access Docs</a>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-icon">🌐</div>
+                    <h3>Networking</h3>
+                    <p>Network configuration guides and troubleshooting documentation.</p>
+                    <a href="notes.html" class="card-btn">View Guides</a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- About Section -->
+        <section id="about">
+            <h2>About Me</h2>
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <div class="card-icon">👨‍💻</div>
+                    <h3>Background</h3>
+                    <p>Learn about my professional journey, education, and career path in IT administration.</p>
+                    <a href="#" class="card-btn">My Story</a>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-icon">🏆</div>
+                    <h3>Certifications</h3>
+                    <p>View my professional certifications including CCNA, CEHv13, and AWS.</p>
+                    <a href="#" class="card-btn">See Credentials</a>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-icon">📈</div>
+                    <h3>Projects</h3>
+                    <p>Explore my recent projects in cybersecurity, networking, and system administration.</p>
+                    <a href="#" class="card-btn">View Projects</a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Terminal Section -->
+        <section id="terminal">
+            <h2>System Terminal</h2>
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                    </div>
+                    <div class="terminal-title" id="terminal-title">root@user:~</div>
+                </div>
+                <div class="terminal-content" id="terminal-output">
+                    <!-- Terminal content will be populated by JavaScript -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2023 Roshan Metri | Senior IT Administrator</p>
+            <p>Contact: roshan.metri@example.com</p>
+        </footer>
+    </div>
+
+    <script>
+        // API Base URL
+        const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
+
+        // Authentication check and user data loading
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthentication();
+            loadUserData();
+        });
+
+        // Check if user is authenticated
+        async function checkAuthentication() {
+            const token = localStorage.getItem('auth_token');
+            
+            if (!token) {
+                // Redirect to login if no token
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                // Validate token with backend
+                const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    // Token is invalid, redirect to login
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('user_role');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Token is valid, continue loading the page
+                console.log('✅ User authenticated successfully');
+
+            } catch (error) {
+                console.error('❌ Authentication check failed:', error);
+                // Redirect to login on error
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Load user data from localStorage
+        function loadUserData() {
+            const username = localStorage.getItem('username') || 'User';
+            const fullName = localStorage.getItem('full_name') || 'Roshan Metri';
+            const userRole = localStorage.getItem('user_role') || 'Senior IT Administrator';
+
+            // Update the page with user data
+            document.getElementById('user-name').textContent = fullName;
+            document.getElementById('user-role').textContent = userRole;
+            document.getElementById('terminal-title').textContent = `root@${username}:~`;
+            
+            console.log('✅ User data loaded:', { username, fullName, userRole });
+        }
+
+        // Matrix Background Animation
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const chars = "01010101010101010101010101010101";
+        const charArray = chars.split("");
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+        
+        for(let i = 0; i < columns; i++) {
+            drops[i] = 1;
+        }
+        
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(2, 4, 10, 0.04)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = "#00FFB3";
+            ctx.font = fontSize + "px monospace";
+            
+            for(let i = 0; i < drops.length; i++) {
+                const text = charArray[Math.floor(Math.random() * charArray.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                
+                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                
+                drops[i]++;
+            }
+        }
+        
+        setInterval(drawMatrix, 35);
+        
+        // Terminal Animation
+        const terminalLines = [
+            "> Initializing system...",
+            "> Loading security protocols...",
+            "> Establishing secure connection...",
+            `> Welcome, ${localStorage.getItem('username') || 'User'}`,
+            `> ${localStorage.getItem('user_role') || 'Senior IT Administrator'} | Cybersecurity Specialist`,
+            "> System Status: SECURE",
+            "> Last Login: " + new Date().toLocaleString(),
+            "> Skills: Linux, Cybersecurity, AWS, Python, CCNA, CEHv13",
+            "> Experience: Senior IT Admin, Desktop Support, IT Help Desk",
+            "> Type 'help' for available commands"
+        ];
+        
+        const terminalOutput = document.getElementById('terminal-output');
+        let lineIndex = 0;
+        
+        function typeTerminalLine() {
+            if (lineIndex < terminalLines.length) {
+                const line = document.createElement('div');
+                line.className = 'terminal-line';
+                line.textContent = terminalLines[lineIndex];
+                terminalOutput.appendChild(line);
+                
+                lineIndex++;
+                setTimeout(typeTerminalLine, 500);
+            } else {
+                // Add blinking cursor after all lines are typed
+                const cursor = document.createElement('span');
+                cursor.className = 'cursor';
+                terminalOutput.appendChild(cursor);
+            }
+        }
+        
+        // Start terminal animation after page loads
+        window.addEventListener('load', () => {
+            setTimeout(typeTerminalLine, 1000);
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+        
+        // Logout functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to logout?')) {
+                        const token = localStorage.getItem('auth_token');
+                        
+                        // Call logout API if token exists
+                        if (token) {
+                            try {
+                                await fetch(`${API_BASE_URL}/api/logout`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Authorization': `Bearer ${token}`,
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+                            } catch (error) {
+                                console.error('Logout API call failed:', error);
+                            }
+                        }
+                        
+                        // Clear authentication data
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('token_timestamp');
+                        localStorage.removeItem('username');
+                        localStorage.removeItem('user_role');
+                        localStorage.removeItem('full_name');
+                        sessionStorage.clear();
+                        
+                        // Redirect to login page
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

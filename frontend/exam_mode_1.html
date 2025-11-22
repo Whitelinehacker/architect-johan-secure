@@ -1,0 +1,2718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH v13 Exam Mode 1 - Architect Johan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: #02040A;
+            color: #00FFB3;
+            overflow-x: hidden;
+            min-height: 100vh;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Matrix background */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(2, 4, 10, 0.9);
+            backdrop-filter: blur(15px);
+            border-bottom: 2px solid #00FFB3;
+            padding: 20px 40px;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 0 30px rgba(0, 255, 179, 0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(0, 255, 179, 0.8);
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: #00FFB3;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 2px;
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: #2EC6FF;
+            text-shadow: 0 0 10px rgba(46, 198, 255, 0.8);
+        }
+
+        .nav-links a.active {
+            color: #2EC6FF;
+            background: rgba(46, 198, 255, 0.1);
+            box-shadow: 0 0 15px rgba(46, 198, 255, 0.5);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #00FFB3, #2EC6FF);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .nav-links a:hover::after {
+            width: 80%;
+        }
+
+        /* Main content */
+        .main-content {
+            position: relative;
+            z-index: 10;
+            padding: 150px 40px 100px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .page-header h1 {
+            font-size: 48px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 25px rgba(0, 255, 179, 0.8),
+                         0 0 50px rgba(0, 255, 179, 0.5);
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p {
+            font-size: 18px;
+            color: #2EC6FF;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            opacity: 0.9;
+        }
+
+        /* Exam container */
+        .exam-container {
+            background: rgba(2, 4, 10, 0.9);
+            backdrop-filter: blur(15px);
+            border: 2px solid #00FFB3;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 0 40px rgba(0, 255, 179, 0.3),
+                        inset 0 0 40px rgba(0, 255, 179, 0.05);
+        }
+
+        /* Answer Explanation */
+        .answer-explanation {
+            background: rgba(0, 255, 179, 0.1);
+            border: 1px solid rgba(0, 255, 179, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .answer-explanation.show {
+            display: block;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .explanation-title {
+            font-size: 16px;
+            color: #2EC6FF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .explanation-text {
+            line-height: 1.6;
+            color: #00FFB3;
+        }
+
+        /* Results container */
+        .results-container {
+            background: rgba(2, 4, 10, 0.9);
+            backdrop-filter: blur(15px);
+            border: 2px solid #00FFB3;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 0 40px rgba(0, 255, 179, 0.3),
+                        inset 0 0 40px rgba(0, 255, 179, 0.05);
+            text-align: center;
+            display: none;
+        }
+
+        .results-title {
+            font-size: 36px;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-display {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 30px 0;
+            text-shadow: 0 0 30px rgba(0, 255, 179, 0.8);
+        }
+
+        .score-pass {
+            color: #00FFB3;
+        }
+
+        .score-fail {
+            color: #FF6B6B;
+        }
+
+        .results-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .result-item {
+            background: rgba(0, 255, 179, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 179, 0.3);
+        }
+
+        .result-label {
+            font-size: 14px;
+            color: #2EC6FF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00FFB3;
+        }
+
+        .exam-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 255, 179, 0.3);
+        }
+
+        .exam-info-item {
+            text-align: center;
+        }
+
+        .exam-info-label {
+            font-size: 14px;
+            color: #2EC6FF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .exam-info-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00FFB3;
+        }
+
+        /* Question container */
+        .question-container {
+            margin-bottom: 30px;
+        }
+
+        .question-number {
+            font-size: 16px;
+            color: #2EC6FF;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .question-text {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #00FFB3;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px 20px;
+            background: rgba(0, 255, 179, 0.05);
+            border: 1px solid rgba(0, 255, 179, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option:hover {
+            background: rgba(0, 255, 179, 0.1);
+            border-color: #00FFB3;
+            transform: translateY(-2px);
+        }
+
+        .option.selected {
+            background: rgba(0, 255, 179, 0.15);
+            border-color: #00FFB3;
+            box-shadow: 0 0 15px rgba(0, 255, 179, 0.3);
+        }
+
+        .option.correct {
+            background: rgba(0, 255, 179, 0.2);
+            border-color: #00FFB3;
+        }
+
+        .option.incorrect {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: #FF6B6B;
+        }
+
+        .option input {
+            margin-right: 15px;
+            margin-top: 3px;
+        }
+
+        .option-label {
+            font-weight: bold;
+            margin-right: 10px;
+            color: #2EC6FF;
+        }
+
+        .option-text {
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        /* Navigation controls */
+        .navigation-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+
+        .nav-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            color: #02040A;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 255, 179, 0.5);
+        }
+
+        .nav-btn:disabled {
+            background: rgba(128, 128, 128, 0.3);
+            color: rgba(255, 255, 255, 0.5);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .nav-btn.secondary {
+            background: transparent;
+            border: 2px solid #FF6B6B;
+            color: #FF6B6B;
+        }
+
+        .nav-btn.secondary:hover {
+            background: rgba(255, 107, 107, 0.1);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+        }
+
+        /* Progress bar */
+        .progress-container {
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(0, 255, 179, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00FFB3, #2EC6FF);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #2EC6FF;
+        }
+
+        /* Action buttons */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .action-btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            color: #02040A;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 255, 179, 0.8);
+        }
+
+        .action-btn.secondary {
+            background: transparent;
+            border: 2px solid #2EC6FF;
+            color: #2EC6FF;
+        }
+
+        .action-btn.secondary:hover {
+            background: rgba(46, 198, 255, 0.1);
+            box-shadow: 0 15px 40px rgba(46, 198, 255, 0.5);
+        }
+
+        /* Back buttons */
+        .back-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            color: #02040A;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 3px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .back-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .back-btn:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 255, 179, 0.8);
+        }
+
+        /* Footer */
+        .footer {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 40px;
+            margin-top: 80px;
+            border-top: 1px solid rgba(0, 255, 179, 0.2);
+            color: #2EC6FF;
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+
+        .logout-btn {
+            color: #FF6B6B !important;
+            background: rgba(255, 107, 107, 0.1) !important;
+            border: 1px solid rgba(255, 107, 107, 0.3) !important;
+        }
+
+        .logout-btn:hover {
+            color: #FF5252 !important;
+            background: rgba(255, 107, 107, 0.2) !important;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.8) !important;
+            border-color: #FF6B6B !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .nav-links {
+                gap: 15px;
+            }
+
+            .main-content {
+                padding: 180px 20px 80px;
+            }
+
+            .page-header h1 {
+                font-size: 36px;
+            }
+
+            .exam-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .exam-container, .results-container {
+                padding: 25px;
+            }
+
+            .navigation-controls, .action-buttons {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .back-buttons {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .score-display {
+                font-size: 48px;
+            }
+
+            .results-details {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .page-header h1 {
+                font-size: 28px;
+            }
+
+            .page-header p {
+                font-size: 14px;
+            }
+
+            .exam-container, .results-container {
+                padding: 20px;
+            }
+        }
+
+        .option {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px 20px;
+            background: rgba(0, 255, 179, 0.05);
+            border: 1px solid rgba(0, 255, 179, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .option input[type="radio"] {
+            margin-right: 15px;
+            margin-top: 3px;
+            cursor: pointer;
+        }
+
+        .option-label {
+            font-weight: bold;
+            margin-right: 10px;
+            color: #2EC6FF;
+            cursor: pointer;
+        }
+
+        .option-text {
+            flex: 1;
+            line-height: 1.5;
+            cursor: pointer;
+        }
+        
+        /* Review mode styles */
+        .review-container {
+            background: rgba(2, 4, 10, 0.9);
+            backdrop-filter: blur(15px);
+            border: 2px solid #00FFB3;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 0 40px rgba(0, 255, 179, 0.3),
+                        inset 0 0 40px rgba(0, 255, 179, 0.05);
+            display: none;
+        }
+        
+        .review-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .review-title {
+            font-size: 32px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .review-subtitle {
+            color: #2EC6FF;
+            font-size: 18px;
+        }
+        
+        .review-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix background -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">Architect Johan</div>
+        <div class="nav-links">
+            <a href="home.html">Home</a>
+            <a href="videos.html">Videos</a>
+            <a href="notes.html">Notes</a>
+            <a href="support.html">Support</a>
+             <a href="about.html">About</a>
+            <a href="#" id="logout-btn" class="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1>CEH v13 Exam Mode 1</h1>
+            <p>Beginner Level - 125 Questions</p>
+        </div>
+
+        <!-- Exam Container (visible during exam) -->
+        <div class="exam-container" id="examContainer">
+            <div class="exam-info">
+                <div class="exam-info-item">
+                    <div class="exam-info-label">Time Remaining</div>
+                    <div class="exam-info-value" id="time-remaining">240:00</div>
+                </div>
+                <div class="exam-info-item">
+                    <div class="exam-info-label">Questions</div>
+                    <div class="exam-info-value" id="question-counter">1/125</div>
+                </div>
+                <div class="exam-info-item">
+                    <div class="exam-info-label">Status</div>
+                    <div class="exam-info-value" id="exam-status">In Progress</div>
+                </div>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+                <div class="progress-text" id="progress-text">0% Complete</div>
+            </div>
+
+            <div class="question-container">
+                <div class="question-number">Question <span id="current-question">1</span> of 125</div>
+                <div class="question-text" id="question-text">
+                    Loading question...
+                </div>
+                <div class="options-container" id="options-container">
+                    <!-- Options will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="navigation-controls">
+                <button class="nav-btn" id="prev-btn" disabled>Previous</button>
+                <button class="nav-btn" id="next-btn">Next Question</button>
+                <button class="nav-btn secondary" id="submit-btn">Submit Exam</button>
+            </div>
+        </div>
+
+        <!-- Results Container (visible after exam) -->
+        <div class="results-container" id="resultsContainer">
+            <h2 class="results-title">Exam Results</h2>
+            <div class="score-display" id="scoreDisplay">0%</div>
+            
+            <div class="results-details">
+                <div class="result-item">
+                    <div class="result-label">Correct Answers</div>
+                    <div class="result-value" id="correctAnswers">0</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Total Questions</div>
+                    <div class="result-value" id="totalQuestions">125</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Score</div>
+                    <div class="result-value" id="scorePercentage">0%</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Status</div>
+                    <div class="result-value" id="examStatus">Failed</div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="goToHome()">Go to Home</button>
+                <button class="action-btn secondary" onclick="goToExamMode()">Back to Exam Mode</button>
+                <button class="action-btn secondary" onclick="reviewAnswers()">Review Answers</button>
+            </div>
+        </div>
+
+        <!-- Review Container (visible during answer review) -->
+        <div class="review-container" id="reviewContainer">
+            <div class="review-header">
+                <h2 class="review-title">Answer Review</h2>
+                <p class="review-subtitle">Question <span id="review-question-number">1</span> of 125</p>
+            </div>
+            
+            <div class="question-container">
+                <div class="question-text" id="review-question-text">
+                    Loading question...
+                </div>
+                <div class="options-container" id="review-options-container">
+                    <!-- Options will be populated by JavaScript -->
+                </div>
+                
+                <!-- Answer Explanation -->
+                <div class="answer-explanation show" id="reviewAnswerExplanation">
+                    <div class="explanation-title">Explanation:</div>
+                    <div class="explanation-text" id="reviewExplanationText"></div>
+                </div>
+            </div>
+
+            <div class="review-navigation">
+                <button class="nav-btn" id="review-prev-btn">Previous</button>
+                <button class="nav-btn" id="review-next-btn">Next Question</button>
+                <button class="nav-btn secondary" id="review-back-btn">Back to Results</button>
+            </div>
+        </div>
+
+        <div class="back-buttons" id="backButtons">
+            <a href="exam-mode.html" class="back-btn">Back to Exam Mode</a>
+            <a href="home.html" class="back-btn">Back to Home</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        © 2025 Architect Johan | All Rights Reserved.
+    </footer>
+
+    <script>
+        // Matrix Digital Rain Animation
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
+        const charArray = chars.split('');
+
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -100;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(2, 4, 10, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00FFB3';
+            ctx.font = `${fontSize}px monospace`;
+
+            for (let i = 0; i < drops.length; i++) {
+                const char = charArray[Math.floor(Math.random() * charArray.length)];
+                const x = i * fontSize;
+                const y = drops[i] * fontSize;
+
+                ctx.fillText(char, x, y);
+
+                if (y > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        const matrixInterval = setInterval(drawMatrix, 50);
+        window.addEventListener('resize', resizeCanvas);
+
+        // Exam functionality
+        let currentQuestion = 1;
+        let totalQuestions = 125;
+        let userAnswers = {};
+        let examStarted = true;
+        let timeRemaining = 240 * 60; // 240 minutes in seconds
+        let examCompleted = false;
+        let inReviewMode = false;
+        let reviewQuestion = 1;
+
+        // Exam questions data with explanations
+        const examQuestions = [
+            {
+    "id": 1,
+    "question": "The attacker created and configured multiple domains pointing to the same host to switch quickly between the domains and avoid detection.",
+    "options": [
+      "Data staging",
+      "Use of command-line interface",
+      "DNS tunnelling",
+      "Unspecified proxy activities"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Attacker ek hi host ko point karne wale kai domains banata hai aur unhe tezi se switch karta hai. Yeh technique DNS tunnelling ke liye use hoti hai taaki traffic ko encrypt karke aur different domains se lekar, detection avoid ho sake."
+  },
+  {
+    "id": 2,
+    "question": "Which of the following steganography techniques is used by attackers for hiding the message with a large amount of useless data and mixing the original data with the unused data in any order?",
+    "options": [
+      "Grille ciphers",
+      "Null ciphers",
+      "Jargon codes",
+      "Semagrams"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Null cipher me original message ko bahut saare useless words ya data ke beech chipka diya jata hai. Message ke letters ko kisi specific pattern (jaise har line ka pehla word) se nikaala jaata hai."
+  },
+  {
+    "id": 3,
+    "question": "In one of the following IoT attacks, attackers intercept legitimate messages from a valid communication and continuously send the intercepted message to the target device to perform a denial-of-service attack or crash the target device. Which is this IoT attack?",
+    "options": [
+      "BlueBorne attack",
+      "Replay attack",
+      "Exploit kits",
+      "Network pivoting"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Replay attack me attacker ek valid message ko pakadta hai (record karta hai) aur usi ko baar-baar bhejkar device ko crash ya busy kar deta hai."
+  },
+  {
+    "id": 4,
+    "question": "Bhavan, a security professional in an organization, introduced new tools and services into the organization. Before introducing the tools, he had to evaluate whether the tools are effective and appropriate for the organization. He used a publicly available and free-to-use list of standardized identifiers for software vulnerabilities and exposures to evaluate the tools. Which of the following databases did Bhavan use to evaluate the tools and services?",
+    "options": [
+      "CVE",
+      "ARIN",
+      "Whois",
+      "LACNIC"
+    ],
+    "correctAnswer": 0,
+    "explanation": "CVE (Common Vulnerabilities and Exposures) ek public list hai jo har known software vulnerability ko ek unique ID (jaise CVE-2021-44228) deti hai. Isse tools me known vulnerabilities check ki jaati hain."
+  },
+  {
+    "id": 5,
+    "question": "Identify a tool that can be used for passive OS fingerprinting?",
+    "options": [
+      "tracert",
+      "nmap",
+      "tcpdump",
+      "ping"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Passive OS fingerprinting me attacker network traffic ko silently sniff karta hai, bina target system ko koi packet bheje. tcpdump ek packet sniffer hai jo yeh kaam karta hai — wo packets capture karta hai aur unke headers se OS guess kar sakta hai."
+  },
+  {
+    "id": 6,
+    "question": "The attacker is trying to cheat one of the employees of the target organization by initiating fake calls while posing as a legitimate employee. Also, he sent phishing emails to steal employee's credentials and further compromise his account. Which of the following techniques did the attacker use?",
+    "options": [
+      "Reverse engineering",
+      "Social engineering",
+      "Password reuse",
+      "Insider threat"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Attacker ne fake calls (vishing) aur phishing emails ka use karke employee ko psychologically manipulate kiya, na ki technical hack kiya. Yeh classic Social Engineering hai."
+  },
+  {
+    "id": 7,
+    "question": "An attacker sends an e-mail containing a malicious Microsoft office document to target WWW/FTP servers and embed Trojan horse files as software installation files, mobile phone software, and so on to lure a user to access them. Identify by which method the attacker is trying to bypass the firewall.",
+    "options": [
+      "Bypassing firewall through content",
+      "Bypassing firewall through external systems",
+      "Bypassing WAF using XSS attack",
+      "Bypassing firewall through MITM attack"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Attacker firewall ko bypass kar raha hai by sending malicious content (jaise trojan in email, office document) jo allowed hai, kyunki firewall often content type check nahi karta deeply. Firewall sirf IP/Port dekh sakta hai, andar ka malicious code nahi."
+  },
+  {
+    "id": 8,
+    "question": "Tom uses Google search operators, which allow you to optimize and expand the capabilities of regular search. What will be the result of this request? site:eccouncil.org discount -ilearn",
+    "options": [
+      "The results that match the entire query",
+      "Results about all discounts from the site ec-council.org for the ilearn training format",
+      "Results from the ec-council website except for discounts and the ilearn format",
+      "Results about all discounts from the site eccouncil.org except for the ilearn format"
+    ],
+    "correctAnswer": 3,
+    "explanation": "site:eccouncil.org = sirf eccouncil.org website se results lao. discount = results me 'discount' word hona chahiye. -ilearn = results me 'ilearn' word wale pages ko hata do (exclude kar do)."
+  },
+  {
+    "id": 9,
+    "question": "Walt, an employee of an organization, always connects to the corporate network using his own mobile device. Which of the following best practices prevents BYOD risk when Walt connects to the corporate network?",
+    "options": [
+      "Providing support for many different devices",
+      "Not reporting a lost or stolen device",
+      "Separating personal and private data",
+      "Improperly disposing of a device"
+    ],
+    "correctAnswer": 2,
+    "explanation": "BYOD (Bring Your Own Device) ka sabse bada risk yeh hai ki company ka data employee ke personal device me mix ho jata hai. Is risk ko prevent karne ka best practice hai personal data aur company data ko alag rakhna (jaise containerization ya separate work profile use karna)."
+  },
+  {
+    "id": 10,
+    "question": "Luis, a security professional in an organization, performed a vulnerability assessment on the organization's network to check for vulnerabilities. In this process, he used a type of location data examination scanner that resides on a single machine but can scan several machines on the same network. Which of the following types of location and data examination tools did Luis use?",
+    "options": [
+      "Proxy scanner",
+      "Network-based scanner",
+      "Cluster scanner",
+      "Agent-based scanner"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Network-based scanner ek central machine se pure network ko scan karta hai. Ye dusre systems ke open ports, services, aur vulnerabilities ko door se hi check kar leta hai, bina un systems pe kuch install kiye."
+  },
+  {
+    "id": 11,
+    "question": "A professional hacker targeted an organization that is managing critical Industrial Infrastructure. Jim used Nmap to scan open ports and running services on systems connected to the organization's OT network. He used an Nmap command to identify Ethernet/IP devices connected to the Internet and further gathered information such as the vendor name, product code and name, device name, and IP address. Which of the following Nmap commands helped Jim retrieve the required information?",
+    "options": [
+      "nmap -Pn -sT -p 44818 --script=modbus-discover, enip-info --script-args=port=44818 <Target IP>",
+      "nmap -Pn -sU -p 161 <Target IP>",
+      "nmap -Pn -sU -p 502 --script modbus-discover <Target IP>",
+      "nmap -Pn -sU -p 44818 --script enip-info <Target IP>"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Ethernet/IP (ENIP) devices typically port 44818 (UDP) use karte hain. Correct command me -sU (UDP scan), -p 44818 (sahi port), aur --script enip-info (ENIP information script) hai."
+  },
+  {
+    "id": 12,
+    "question": "In which of the following jailbreaking techniques, a user turns their device off and back on, following which the device starts up completely and the kernel is patched without the help of a computer. Which is this jailbreaking technique?",
+    "options": [
+      "Semi-untethered jailbreaking",
+      "Semi-tethered jailbreaking",
+      "Tethered jailbreaking",
+      "Untethered jailbreaking"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Untethered jailbreaking me device ko restart karne par bhi jailbreak active rehta hai. Device khud hi patched kernel ke saath boot ho jata hai, kisi computer ki help ke bina. Ye permanent jailbreak hoti hai."
+  },
+  {
+    "id": 13,
+    "question": "Richard has discovered the username for an application in his target's environment. As he has a limited amount of time, he decides to attempt to use a list of common passwords he found on the Internet. He compiles them into a list and then feeds that list as an argument into his password-cracking application. What type of attack is Richard performing?",
+    "options": [
+      "Dictionary",
+      "Person placement",
+      "Password spraying",
+      "Brute force"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Dictionary attack me attacker ek pre-made list of common passwords use karta hai (jaise 'password123', 'admin', 'letmein'). Wo har password ko try karta hai, brute force ki tarah har combination try nahi karta."
+  },
+  {
+    "id": 14,
+    "question": "Which of the following tools is packet sniffer, network detector and IDS for 802.11(a, b, g, n) wireless LANs?",
+    "options": [
+      "Nessus",
+      "Kismet",
+      "Nmap",
+      "Jack the Rebel"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Kismet ek powerful wireless network detection tool, packet sniffer, aur intrusion detection system hai. Ye hidden WiFi networks ko bhi detect kar leta hai."
+  },
+  {
+    "id": 15,
+    "question": "Which document outlines the specifics of the testing, details any violations, and serves to protect both the organization's interests and the third-party penetration tester?",
+    "options": [
+      "Rules of Engagement",
+      "Service Level Agreement",
+      "Project Scope",
+      "Non-Disclosure Agreement"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Rules of Engagement (RoE) document me sab kuch clearly likha hota hai: kaunse systems test karne hain, kab test karna hai, kaunse methods use karne hain, aur limits kya hain. Ye client aur tester dono ko legally protect karta hai."
+  },
+  {
+    "id": 16,
+    "question": "Which of the following vulnerabilities will you use if you know that the target network uses WPA3 encryption?",
+    "options": [
+      "Cross-site request forgery",
+      "AP misconfiguration",
+      "Dragonblood",
+      "Wifi Leak"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Dragonblood ek set of vulnerabilities hai jo specifically WPA3 encryption protocol me payi gayi thi. Agar target WPA3 use kar raha hai, toh Dragonblood attacks relevant hote hain."
+  },
+  {
+    "id": 17,
+    "question": "Which of the following operating systems is used in low-power wireless devices such as street lighting and sound monitoring systems?",
+    "options": [
+      "Edge",
+      "Contiki",
+      "CoAP",
+      "LWM2M"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Contiki ek open-source operating system hai jo specially tiny, low-power, wireless IoT devices (jaise sensors, street lights) ke liye design kiya gaya hai."
+  },
+  {
+    "id": 18,
+    "question": "In which of the following attacks does an attacker obtain the user session ID and then reuse it to gain unauthorized access to a target user account?",
+    "options": [
+      "Session Token Tampering",
+      "Session Replay",
+      "Session hijacking",
+      "Session Token Prediction"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Session Hijacking me attacker victim ka session ID (jaise cookie) chura leta hai aur usi ID ko use karke victim ki jagah website me login ho jata hai, bina password jaane."
+  },
+  {
+    "id": 19,
+    "question": "After performing a tool-based vulnerability assessment and identifying issues, you begin analyzing them and determine that they are not actual vulnerabilities. How would you characterize these issues?",
+    "options": [
+      "True positives",
+      "True negatives",
+      "False positives",
+      "False negatives"
+    ],
+    "correctAnswer": 2,
+    "explanation": "False Positive ka matlab hai — tool ne kuch vulnerability dikhayi, lekin asal me koi vulnerability hai hi nahi. Tool ka galat alarm hai."
+  },
+  {
+    "id": 20,
+    "question": "An attacker tries to infect as many devices connected to the Internet with malware as possible to get the opportunity to use their computing power and functionality for automated attacks hidden from the owners of these devices. Which of the proposed approaches fits description of the attacker's actions?",
+    "options": [
+      "Creating a botnet",
+      "Using Banking trojans",
+      "Mass distribution of Ransomware",
+      "APT"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Botnet banane ka matlab hai bahut saare compromised devices (bots) ko control karna. In bots ka use attacker DDoS attack, spam bhejne, ya cryptocurrency mining jaise kaam karne ke liye kar sakta hai."
+  },
+  {
+    "id": 21,
+    "question": "Alex is your senior working in Altechred Ltd., performing sophisticated security testing on his company's network infrastructure to identify security loopholes in the process. He aimed to circumvent the network protection rules and firewalls used in the company. He employed a technique that can create forged TCP sessions by carrying out multiple SYN, ACK, and RST bit set attacks. Further, this process allowed Alex to access critical network services via authorized resources. What is the best technique used by Alex for finding loopholes in the above scenario?",
+    "options": [
+      "TCP Reset attack",
+      "TCP/IP hijacking attack",
+      "Stealth reconnaissance attack",
+      "Man-in-the-middle attack"
+    ],
+    "correctAnswer": 1,
+    "explanation": "TCP/IP Hijacking me attacker victim aur server ke beech ke TCP session me ghus jaata hai. Wo sequence numbers predict karke fake packets (SYN, ACK, RST) bhejkar session ka control le leta hai, jaise scenario me bataya gaya."
+  },
+  {
+    "id": 22,
+    "question": "When considering how an attacker may exploit a web server, what is web server footprinting?",
+    "options": [
+      "When an attacker creates a complete profile of the site's external links and file structures",
+      "When an attacker gathers system-level data, including account details and server names",
+      "When an attacker implements a vulnerability scanner to identify weaknesses",
+      "When an attacker uses a brute-force attack to crack a web-server password"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Web Server Footprinting attack ka first step hai. Isme attacker web server ke baare me maximum information collect karta hai — jaise server software version, OS, open ports, error messages, aur user accounts — bina koi attack kiye."
+  },
+  {
+    "id": 23,
+    "question": "Which of the following features in FOCA allows an attacker to find more servers in the same segment of a determined address?",
+    "options": [
+      "Web search",
+      "DNS search",
+      "IP resolution",
+      "PTR scanning"
+    ],
+    "correctAnswer": 3,
+    "explanation": "PTR Scanning (Pointer Record Scanning) FOCA tool ka feature hai jo kisi IP address ke segment me aur bhi servers dhoondhne ke liye use hota hai. Ye DNS reverse lookup (PTR records) use karta hai."
+  },
+  {
+    "id": 24,
+    "question": "Which of the following practices makes an organizational network susceptible to SNMP enumeration attacks?",
+    "options": [
+      "Always use the 'NoAuthNoPriv' mode.",
+      "Configure access-control lists (ACLs) for all SNMP connections.",
+      "Regularly audit the network traffic.",
+      "Modify the registry to allow only restricted or permitted access to the SNMP community name."
+    ],
+    "correctAnswer": 0,
+    "explanation": "NoAuthNoPriv mode ka matlab hai — 'No Authentication, No Privacy'. Is mode me SNMP traffic plain text me jaata hai aur koi password nahi lagta. Attacker easily network se information le sakta hai."
+  },
+  {
+    "id": 25,
+    "question": "Identify the technique based on the description: In this technique, an attacker duplicates an entire website and its content onto a local drive to analyze the site's directory structure, file organization, web pages, images, and more. The gathered information helps the attacker map the website's directories and obtain valuable insights.",
+    "options": [
+      "Session hijacking",
+      "Website defacement",
+      "Website mirroring",
+      "Web cache poisoning"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Website Mirroring me attacker poori website ko apne computer me download kar leta hai (jaise wget ya HTTrack tool use karke). Fir wo aram se local copy me hidden directories, comments, aur file structures analyze kar sakta hai."
+  },
+  {
+    "id": 26,
+    "question": "In which of the following is the original data signal multiplied with a pseudo random noise spreading code?",
+    "options": [
+      "Direct-sequence Spread Spectrum (DSSS)",
+      "Frequency-hopping Spread Spectrum (FHSS)",
+      "Multiple input, multiple output-orthogonal frequency-division multiplexing (MIMO-OFDM)",
+      "Orthogonal Frequency-division Multiplexing (OFDM)"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Direct-sequence Spread Spectrum (DSSS) me original data signal ko ek 'pseudo random noise code' (chipping code) se multiply kiya jata hai. Isse signal ka frequency spectrum spread ho jata hai, jisse interference kam hoti hai aur security badhti hai."
+  },
+  {
+    "id": 27,
+    "question": "Which of the following Nmap parameters helps evade IDS or firewalls?",
+    "options": [
+      "-T",
+      "-sV",
+      "-r",
+      "-D"
+    ],
+    "correctAnswer": 3,
+    "explanation": "-D (Decoy) parameter attacker ko multiple fake IP addresses ke saath scan karne deta hai. IDS/Firewall ko lagta hai ki kai log scan kar rahe hain, jisse real attacker ka IP hide ho jata hai."
+  },
+  {
+    "id": 28,
+    "question": "Which of the following tiers in the three-tier application architecture is responsible for moving and processing data between them?",
+    "options": [
+      "Data tier",
+      "Presentation tier",
+      "Application Layer",
+      "Logic tier"
+    ],
+    "correctAnswer": 3,
+    "explanation": "3-Tier architecture me: Presentation Tier: User interface (Web browser). Logic Tier: Business logic, data processing (Application server). Data Tier: Database. Logic Tier hi woh layer hai jo presentation tier se data leti hai, use process karti hai, aur data tier se communicate karti hai."
+  },
+  {
+    "id": 29,
+    "question": "Which is the first step followed by Vulnerability Scanners for scanning a network?",
+    "options": [
+      "TCP/UDP Port scanning",
+      "OS Detection",
+      "Checking if the remote host is alive",
+      "Firewall identification"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Vulnerability scanner ka pehla step hamesha yehi hota hai ki target host alive hai ya nahi. Agar host hi offline hai, toh port scan aur vulnerability check bekaar hai. Ye generally ICMP ping se check kiya jata hai."
+  },
+  {
+    "id": 30,
+    "question": "Black-hat hacker Ivan wants to determine the status of ports on a remote host. He wants to do this quickly but imperceptibly for IDS systems. For this, he uses a half-open scan that doesn't complete the TCP three-way handshake. What kind of scanning does Ivan use?",
+    "options": [
+      "PSH Scan",
+      "FIN scan",
+      "TCP SYN (Stealth) Scan",
+      "XMAS scans"
+    ],
+    "correctAnswer": 2,
+    "explanation": "TCP SYN Scan (Half-open Scan) me attacker sirf SYN packet bhejta hai. Agar port open hai, toh server SYN-ACK bhejega. Attacker ACK nahi bhejega, connection complete nahi karega. Isliye ye fast hai aur logs me kam dikhta hai."
+  },
+  {
+    "id": 31,
+    "question": "Which of the following Nmap options will you use if you want to scan fewer ports than the default?",
+    "options": [
+      "-T",
+      "-F",
+      "-p",
+      "-sP"
+    ],
+    "correctAnswer": 1,
+    "explanation": "-F (Fast) option Nmap ko kehta hai ki wo sirf most common 100 ports hi scan kare, default 1000 ports ki jagah. Isse scan bahut fast ho jata hai."
+  },
+  {
+    "id": 32,
+    "question": "The attacker set up a fraudulent account on a dating platform and messaged John, proposing an introduction. Captivated by the deceptive profile pictures, John engaged in conversation with the imposter. After several hours of interaction, the attacker subtly inquired about his workplace, ultimately extracting critical details about the target company. Which social engineering tactic did the attacker employ in this case?",
+    "options": [
+      "Honey trap",
+      "Baiting",
+      "Piggybacking",
+      "Diversion theft"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Honey Trap social engineering me attacker ek attractive person ka fake profile banata hai (romantic or sexual lure) taaki victim ko emotionally involved kare aur usse confidential information le."
+  },
+  {
+    "id": 33,
+    "question": "Due to network slowdowns, the IT department has decided to monitor all employees' internet traffic to identify the possible cause. However, they cannot implement this measure immediately. Which of the following presents a legal concern when taking this action?",
+    "options": [
+      "The absence of an official responsible for traffic on the network",
+      "Lack of comfortable working environment",
+      "Not informing employees that their internet traffic will be monitored could be considered an invasion of privacy",
+      "Some employees would stop normal work activities"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Employees ko bina bataye unki internet activity monitor karna privacy laws ke against ho sakta hai. Companies ko generally policy me clearly batana padta hai ki monitoring ki jaati hai."
+  },
+  {
+    "id": 34,
+    "question": "Which of the following DoS attack detection techniques analyzes network traffic in terms of spectral components? It divides incoming signals into various frequencies and examines different frequency components separately.",
+    "options": [
+      "Signature-based analysis",
+      "Wavelet-based signal analysis",
+      "Activity profiling",
+      "Change-point detection"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Wavelet-based signal analysis network traffic ko different frequencies me break karta hai (spectral components) aur har frequency band ko alag se analyze karta hai. Isse DDoS attack patterns easily detect ho jaate hain."
+  },
+  {
+    "id": 35,
+    "question": "Which of the following is the firewall evasion scanning technique that uses a zombie system with low network activity?",
+    "options": [
+      "Spoof source address scanning",
+      "Decoy scanning",
+      "Packet fragmentation scanning",
+      "Idle scanning"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Idle Scanning me attacker ek 'zombie' (idle machine) ka use karta hai. Attacker zombie ke IP ka fayda uthakar scan karta hai, jisse target ko lagta hai ki zombie hi scan kar raha hai. Real attacker ka IP chhupa rehta hai."
+  },
+  {
+    "id": 36,
+    "question": "In a vulnerability scanning report, which attribute of the Findings element contains the host's name and address?",
+    "options": [
+      "Node",
+      "OS",
+      "Services",
+      "Date"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Vulnerability scan report me Node section me host ka name (hostname) aur uska IP address mention hota hai."
+  },
+  {
+    "id": 37,
+    "question": "Which of the following tools in OSRFramework is used by attackers to check for a user profile on up to 290 different platforms?",
+    "options": [
+      "searchfy.py",
+      "phonefy.py",
+      "entify.py",
+      "usufy.py"
+    ],
+    "correctAnswer": 3,
+    "explanation": "usufy.py OSRFramework ka tool hai jo kisi username ko 290+ social media platforms, forums, aur websites pe search karta hai, taaki pata chal sake ki yeh user kahan-kahan active hai."
+  },
+  {
+    "id": 38,
+    "question": "Which of the following Nmap commands is used by an attacker to perform an IP protocol ping scan on a target device?",
+    "options": [
+      "nmap –sn –PA <target IP address>",
+      "nmap –sn –PS <target IP address>",
+      "nmap –sn –PP <target IP address>",
+      "nmap –sn –PO <target IP address>"
+    ],
+    "correctAnswer": 3,
+    "explanation": "-PO option Nmap ko IP Protocol Ping scan karne ke liye kehta hai. Ye ek aisa ping hai jo TCP, UDP, ya ICMP use nahi karta, balki IP protocol header directly use karta hai."
+  },
+  {
+    "id": 39,
+    "question": "Strings Inc. was recently compromised via injection attacks on its web modules. The company appointed Tom, a security professional, to build a list of common signatures against such attacks. Tom assigned a parser to identify only a list of injection code of the data type, script code, and static attack that have been approved for use based on a whitelist. What is the defensive technique employed by Tom in the above scenario?",
+    "options": [
+      "Blacklist validation",
+      "Whitelist validation",
+      "Check-in escaping",
+      "Coding best practices"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Whitelist Validation me sirf pre-approved, safe inputs ko allow kiya jata hai. Agar input whitelist me nahi hai, toh use automatically block kar diya jata hai. Yeh blacklist se zyada secure hai."
+  },
+  {
+    "id": 40,
+    "question": "Which of the following is a category of hackers who are also known as crackers, use their extraordinary computing skills for illegal or malicious purposes, and are often involved in criminal activities?",
+    "options": [
+      "Script kiddies",
+      "Suicide hackers",
+      "Black hats",
+      "White hats"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Black Hat Hackers woh hote hain jo illegal activities ke liye hacking karte hain — data chori karna, system crash karna, ransomware lagana, etc. Inhe 'crackers' bhi kehte hain."
+  },
+  {
+    "id": 41,
+    "question": "Which of the following web application attack inject the special character elements 'Carriage Return' and 'Line Feed' into the user's input to trick the web server, web application, or user into believing that the current object is terminated and a new object has been initiated?",
+    "options": [
+      "CRLF Injection",
+      "HTML Injection",
+      "Server-Side JS Injection",
+      "Log Injection"
+    ],
+    "correctAnswer": 0,
+    "explanation": "CRLF Injection me attacker \\r\\n (Carriage Return + Line Feed) characters ko input me daalta hai. Ye characters log files ya HTTP headers me new line banate hain, jisse attacker fake log entries add kar sakta hai ya HTTP response split kar sakta hai."
+  },
+  {
+    "id": 42,
+    "question": "Isaac, a black-hat hacker, is unable to find vulnerabilities in the target company's network due to its strong security measures, including IDS and a firewall with strict rules. He is now looking for an attack method that is not dependent on the company's infrastructure security. Which attack method would be a suitable option for Isaac?",
+    "options": [
+      "Buffer Overflow",
+      "Impersonation",
+      "Denial-of-Service",
+      "Social Engineering"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Social Engineering technical systems ko nahi, balki insaano ko target karta hai. Chahe firewall kitna bhi strong ho, agar employee gullible hai, toh attacker usse password ya access le sakta hai."
+  },
+  {
+    "id": 43,
+    "question": "Which of the following is a process that can be used to convert object data into a linear format for transportation to a different system or different network?",
+    "options": [
+      "Serialization",
+      "Deserialization",
+      "Directory traversal",
+      "Insecure deserialization"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Serialization ek process hai jisme ek object (jaise Java ya Python object) ko byte stream ya linear format me convert kiya jata hai, taaki use network pe bheja ja sake ya file me save kiya ja sake."
+  },
+  {
+    "id": 44,
+    "question": "Consider the scenario: An attacker observed and intercepted an active communication between a victim and a host machine to predict the victim's Initial Sequence Number (ISN). The attacker then sent spoofed packets to the host machine using the victim's IP address and the predicted ISN. As a result, the host machine responded with a packet containing an incremented ISN. This caused the victim's connection to be disrupted, allowing the attacker to establish a connection with the host machine impersonating the victim. Which type of attack did the attacker execute?",
+    "options": [
+      "Bluejacking",
+      "TCP/IP hijacking",
+      "Blind hijacking",
+      "UDP hijacking"
+    ],
+    "correctAnswer": 1,
+    "explanation": "TCP/IP Hijacking me attacker TCP session ke sequence numbers ko predict karta hai aur victim ki IP use karke server se connect ho jaata hai, victim ka connection terminate karke."
+  },
+  {
+    "id": 45,
+    "question": "Which of the following technologies is an advanced version of conventional cloud technology and is often used in solutions that require the processing of small and urgent operations within a timespan of milliseconds, where the gateway intelligence is performed within devices such as programmable automation controllers?",
+    "options": [
+      "Fog computing",
+      "Docker networking",
+      "Edge computing",
+      "Serverless computing"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Edge Computing me data processing cloud tak jaane ki jagah, usi device ya local gateway pe ho jaati hai jahan data generate ho raha hai. Isse latency milliseconds me rehti hai, jo Industrial IoT ke liye perfect hai."
+  },
+  {
+    "id": 46,
+    "question": "Which of the following DNS records allows attackers to map the IP address to a hostname?",
+    "options": [
+      "CNAME",
+      "NS",
+      "PTR",
+      "MX"
+    ],
+    "correctAnswer": 2,
+    "explanation": "PTR (Pointer) record reverse DNS lookup ke liye use hota hai. Ye IP address ko hostname se map karta hai. Attacker PTR records use karke IP range ke saare hostnames dhoondh sakta hai."
+  },
+  {
+    "id": 47,
+    "question": "Max, a professional hacker, targets an organization and spreads Emotet malware through malicious scripts. After infecting the victim's device, Max further used Emotet to spread the infection across local networks and beyond to compromise as many machines as possible. In this process, he used a tool, which is a self-extracting RAR file, to retrieve information related to network resources such as available share drives. What is the tool employed by Max in the above scenario?",
+    "options": [
+      "NetPass.exe",
+      "WebBrowserPassView",
+      "Credential enumerator",
+      "Outlook scraper"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Emotet malware often Credential Enumerator tools use karta hai. Ye tools network pe shared drives, saved passwords, aur login credentials dhoondhti hain taaki infection ko aur machines tak failaya ja sake."
+  },
+  {
+    "id": 48,
+    "question": "Jawad, a security analyst, is looking for a tool to examine relationships between data. One of the key requirements is to visualize the data using graphs and link analysis. Which tool would best meet Jawad's need?",
+    "options": [
+      "Analyst's Notebook",
+      "Palantir",
+      "Maltego",
+      "Metasploit"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Maltego specially data relationships ko graph form me visualize karne ke liye famous hai. Ye domains, emails, IPs, social media accounts ke beech ke links dikhata hai."
+  },
+  {
+    "id": 49,
+    "question": "Hackers often raise the trust level of a phishing message by modeling the email to look similar to the internal email used by the target company. This includes using logos, formatting, and names of the target company. This phishing message will often use the name of the company CEO, President, or Managers. The time a hacker spends performing research to locate this information about a company is known as?",
+    "options": [
+      "Reconnaissance",
+      "Exploitation",
+      "Enumeration",
+      "Investigation"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Reconnaissance (or Footprinting) hacking ka first phase hai. Isme attacker target ke baare me maximum information collect karta hai — company structure, employee names, email formats, etc. — attack karne se pehle."
+  },
+  {
+    "id": 50,
+    "question": "An attacker identified that a user and an access point are both compatible with WPA2 and WPA3 encryption. The attacker simulated a rogue access point with only WPA2 compatibility in the vicinity and forced the victim to go through the WPA2 four-way handshake to get connected. After the connection was established, the attacker used decryption tools to crack WPA2-encrypted messages. What is the attack performed in the above scenario?",
+    "options": [
+      "Timing-based attack",
+      "Downgrade security attack",
+      "Side-channel attack",
+      "Deauthentication"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Downgrade Attack me attacker victim ko force karta hai ki wo strong security (WPA3) ko chhod kar weak security (WPA2) use kare, jisko crack karna aasaan hai."
+  },
+  {
+    "id": 51,
+    "question": "In which of the following methods does an attacker leverage headers such as Host in the HTTP request message to crack passwords?",
+    "options": [
+      "'Remember Me' exploit",
+      "Attack password reset mechanism",
+      "Password guessing",
+      "brute-forcing"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Attacker Host header jaise HTTP headers ko manipulate karke password reset mechanism ko exploit kar sakta hai. Jaise, password reset link ko attacker ke control wale server pe bhejna."
+  },
+  {
+    "id": 52,
+    "question": "The absolute majority of routers and switches use packet filtering firewalls. That kind of firewalls makes decisions about allowing traffic to pass into the network based on the information contained in the packet header. At what level of the OSI model do these firewalls work?",
+    "options": [
+      "Session layer",
+      "Application layer",
+      "Physical layer",
+      "Network layer"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Packet Filtering Firewalls packet ke header (source/destination IP, port number, protocol) ko check karte hain. Ye information Network Layer (Layer 3) aur Transport Layer (Layer 4) par milti hai, lekin primary kaam Network Layer pe hota hai."
+  },
+  {
+    "id": 53,
+    "question": "Based on the following data, you need to calculate the approximate cost of recovery of the system operation per year: The cost of a new hard drive is $300; The chance of a hard drive failure is 1/3; The recovery specialist earns $10/hour; Restore the OS and software to the new hard disk - 10 hours; Restore the database from the last backup to the new hard disk - 4 hours; Assume the EF = 1 (100%)",
+    "options": [
+      "$890",
+      "$146",
+      "$450",
+      "$175"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Single Loss Expectancy (SLE) = Asset Value × Exposure Factor (EF). EF=1 (100%), so SLE = $300. Annualized Rate of Occurrence (ARO) = 1/3 (Chance of failure per year). Annualized Loss Expectancy (ALE) = SLE × ARO = $300 × (1/3) = $100. Labor Cost = (10 hours + 4 hours) × $10/hour = $140. Total Annual Cost = ALE + Labor Cost = $100 + $140 = $240. Closest answer is $175 (may be a simplified calculation)."
+  },
+  {
+    "id": 54,
+    "question": "What is the feature in FOCA that checks each domain to ascertain the host names configured in NS, MX, and SPF servers to discover the new host and domain names?",
+    "options": [
+      "Web search",
+      "DNS search",
+      "Common names",
+      "Bing IP"
+    ],
+    "correctAnswer": 1,
+    "explanation": "FOCA tool me DNS Search feature domain ke NS, MX, SPF records ko analyze karta hai. In records me often naye hosts aur subdomains ke names hote hain, jisse attacker ko naye targets milte hain."
+  },
+  {
+    "id": 55,
+    "question": "Have you invested a lot of time and money in creating photo materials for your business and want to prevent others from using them? You don't need a professional hacker to solve this problem. There's a fairly simple method using search engines to search for photographs, profile pictures, and memes. What method are we talking about?",
+    "options": [
+      "Reverse image search",
+      "Google hacking",
+      "Google Advanced Search",
+      "Metasearch engine"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Reverse Image Search me aap kisi image ko upload karte hain, aur search engine batata hai ki woh image internet pe kahan-kahan use hui hai. Isse aap apni copyrighted images ki unauthorized use track kar sakte hain."
+  },
+  {
+    "id": 56,
+    "question": "The attacker enters its malicious data into intercepted messages in a TCP session since source routing is disabled. He tries to guess the responses of the client and server. What hijacking technique is described in this example?",
+    "options": [
+      "Registration",
+      "Blind",
+      "TCP/IP",
+      "RST"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Blind Hijacking me attacker session ke packets ko dekh toh sakta hai (intercept) lekin source routing disabled hone ki wajah wo packets modify nahi kar sakta. Use server aur client ke responses guess karne padte hain."
+  },
+  {
+    "id": 57,
+    "question": "June, a receptionist in an organization, has received a phishing email embedded with a malicious link. The email address resembled her manager's email address. This tricked June into clicking on the malicious link; as a result, malicious software automatically got installed on her system and gave remote access to the attacker. Identify the type of insider threat discussed in the above scenario.",
+    "options": [
+      "Accidental Insider",
+      "Malicious Insider",
+      "Professional Insider",
+      "Compromised Insider"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Accidental Insider threat me employee jaankar, galti se ya bewakoofi me koi aisa kaam kar deta hai jo security ko harm karta hai. June ne bewakoofi me phishing link click kar diya, na ki intentionally."
+  },
+  {
+    "id": 58,
+    "question": "Identify the type of cluster computing in which work is distributed among nodes to avoid overstressing a single node and periodic health checks are performed on each node to identify node failures and reroute the incoming traffic to another node.",
+    "options": [
+      "Fail-over",
+      "High-performance computing",
+      "Highly available",
+      "Load balancing"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Load Balancing specifically work (traffic/requests) ko multiple servers/nodes me distribute karta hai taaki koi ek server overload na ho. Ye health checks bhi karta hai aur failed server ka traffic healthy servers pe bhej deta hai."
+  },
+  {
+    "id": 59,
+    "question": "The attacker knows about a vulnerability in a bare-metal cloud server that can enable him to implant malicious backdoors in firmware. Also, the backdoor can persist even if the server is reallocated to new clients or businesses that use it as an IaaS. What type of cloud attack can be performed by an attacker exploiting the vulnerability discussed in the above scenario?",
+    "options": [
+      "Cloudborne attack",
+      "Metadata spoofing attack",
+      "Man-in-the-cloud (MITC) attack",
+      "Cloud cryptojacking"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Cloudborne attack ek aisa attack hai jisme attacker cloud server (specially bare-metal) ke firmware me backdoor implant kar deta hai. Ye backdoor server ke reimage ya reallocate hone par bhi rehta hai, kyunki firmware usually wipe nahi hoti."
+  },
+  {
+    "id": 60,
+    "question": "Barry is a penetration tester tasked with performing a penetration test. After gaining initial access to a target system, he finds a list of hashed passwords. Which of the following tools would not be useful for cracking the hashed passwords?",
+    "options": [
+      "Ophcrack",
+      "THC-Hydra",
+      "John the Ripper",
+      "Hashcat"
+    ],
+    "correctAnswer": 1,
+    "explanation": "THC-Hydra ek online password cracking tool hai. Ye live services (jaise FTP, SSH) pe brute-force attack karta hai. Lekin ye stored hashed passwords ko crack nahi karta. John the Ripper aur Hashcat offline hash cracking tools hain."
+  },
+  {
+    "id": 61,
+    "question": "Bevan, an attacker, targeted an organization's web infrastructure and sent partial HTTP requests to the target web server. When the partial requests were received, the web server opened multiple connections and waited for the requests to complete; however, these requests remained incomplete, causing the target server's maximum concurrent connection pool to be exhausted and additional connection attempts to be denied. Which of the following attack techniques was employed by Bevan?",
+    "options": [
+      "Smurf attack",
+      "Slowloris Attack",
+      "Ping-of-Death (PoD) Attack",
+      "Multi-vector attack"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Is attack mein attacker web server ko aadhe-adhure HTTP requests bhejta hai. Server in requests ko complete hone ka wait karta hai aur connections khula rakhta hai. Aakhir mein server ke saare connections busy ho jaate hain aur naye users ko service nahi mil pati."
+  },
+  {
+    "id": 62,
+    "question": "When sending an email using the SMTP protocol, messages are not encrypted, making them vulnerable to interception by unauthorized individuals. To address this issue, SMTP can upgrade the connection between two mail servers to use TLS, ensuring that transmitted emails are encrypted. Which SMTP command is used to initiate email transmission over TLS?",
+    "options": [
+      "STARTTLS",
+      "SHAPTLS",
+      "GRADEUPTLS",
+      "OPPURTUNITYTLS"
+    ],
+    "correctAnswer": 0,
+    "explanation": "STARTTLS ek command hai jo SMTP server ko batata hai ki ab connection ko encrypt karna hai. Iske baad saari email communication secure ho jaati hai."
+  },
+  {
+    "id": 63,
+    "question": "Harry, a cybersecurity specialist, analyzed event logs from firewalls, Intrusion Detection Systems (IDS), and proxy servers across the company's network. While attempting to correlate the recorded events, he noticed that their sequences were inconsistent. What could be the cause of this issue?",
+    "options": [
+      "The security breach was a false positive.",
+      "The attacker altered events from the logs.",
+      "A proper chain of custody was not observed while collecting the logs.",
+      "The network devices are not all synchronized."
+    ],
+    "correctAnswer": 3,
+    "explanation": "Agar firewall, IDS, aur proxy servers ka system time alag-alag hai, toh unke logs mein events ka sahi sequence pata nahi chalega. Harry ko pata nahi chalega ki attack pehle kis device pe hua."
+  },
+  {
+    "id": 64,
+    "question": "Jack intends to complicate the packet filter's ability to identify the packet's purpose during scanning. Which scanning technique will he utilize?",
+    "options": [
+      "SYN/FIN scanning using IP fragments.",
+      "IPID scanning.",
+      "ACK scanning.",
+      "ICMP scanning."
+    ],
+    "correctAnswer": 0,
+    "explanation": "Is technique mein attacker scanning packet ko chote-chote fragments mein tod deta hai. Simple packet filter firewall in fragments ko reassemble nahi kar pata aur yeh scan detect nahi kar pata."
+  },
+  {
+    "id": 65,
+    "question": "In which of the following attacks does an attacker install a fake communication tower between two authentic endpoints with the intention of misleading a user and interrupting the data transmission between the user and real tower to hijack an active session?",
+    "options": [
+      "Key reinstallation attack",
+      "Rogue AP attack",
+      "aLTEr attack",
+      "Wardriving"
+    ],
+    "correctAnswer": 2,
+    "explanation": "aLTEr attack 4G/LTE networks par hoti hai. Attacker ek nakli mobile tower lagata hai jo aapke phone ko real tower se strong signal dikhata hai. Aapka phone usse connect ho jata hai aur attacker aapki calls, messages intercept kar leta hai."
+  },
+  {
+    "id": 66,
+    "question": "Which of the following is not included in the list of recommendations of PCI Data Security Standards?",
+    "options": [
+      "Protect stored cardholder data.",
+      "Encrypt transmission of cardholder data across open, public networks.",
+      "Do not use vendor-supplied defaults for system passwords and other security parameters.",
+      "Rotate employees handling credit card transactions on a yearly basis to different departments."
+    ],
+    "correctAnswer": 3,
+    "explanation": "PCI DSS card data ko secure karne ke technical rules batata hai, jaise encryption, strong passwords. Lekin yeh nahi kehta ki employees ko har saal department change karna hoga."
+  },
+  {
+    "id": 67,
+    "question": "Which service operates directly on TCP port 445?",
+    "options": [
+      "Server Message Block (SMB)",
+      "Remote Procedure Call (RPC)",
+      "Telnet",
+      "Network File System (NFS)"
+    ],
+    "correctAnswer": 0,
+    "explanation": "TCP port 445 Windows file and printer sharing ke liye use hota hai. Is protocol ko SMB (Server Message Block) kehte hain."
+  },
+  {
+    "id": 68,
+    "question": "It is can potentially adversely impact a system through unauthorized access, destruction, disclosure, denial of service or modification of data. Identify which term corresponds to the following description:",
+    "options": [
+      "Vulnerability",
+      "Attack",
+      "Risk",
+      "Threat"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Threat koi bhi aisi cheez hai jo system ko nuksaan pahuncha sakti hai. Jaise hacker, virus, ya natural disaster."
+  },
+  {
+    "id": 69,
+    "question": "Zain, a skilled hacker, targeted an organization's network to intercept all traffic. He connected a rogue switch to an unused LAN port with a lower priority than any other switch, making it the root bridge and enabling him to capture network traffic. What type of attack did Zain carry out?",
+    "options": [
+      "STP attack",
+      "ARP spoofing attack",
+      "DNS poisoning attack",
+      "VLAN hopping attack"
+    ],
+    "correctAnswer": 0,
+    "explanation": "STP (Spanning Tree Protocol) attack mein attacker apna nakli switch network mein lagata hai aur use 'root bridge' bana deta hai. Root bridge banne ke baad saara network traffic uss nakli switch se guzarta hai, jise attacker capture kar leta hai."
+  },
+  {
+    "id": 70,
+    "question": "Noah, an encryption specialist at an organization, was instructed to implement a secure communication technique for the corporate network. For this purpose, Noah employed an encryption technology that uses a cipher mode of operation, which requires an initialization vector (IV) and a secret key for encryption. In this mode of operation, the first block of plaintext is XORed with the IV and the resultant is sent as input to the block cipher encryption algorithm, along with the secret key. Then, the cipher block is used to perform XOR with the next plaintext block, and this process continues for the encryption of all the plaintext blocks. Which of the following cipher modes of operation is demonstrated in the above scenario?",
+    "options": [
+      "Cipher Feedback (CFB) mode",
+      "Cipher Block Chaining (CBC) mode",
+      "Counter (CTR) mode",
+      "Electronic Code Book (ECB) mode"
+    ],
+    "correctAnswer": 1,
+    "explanation": "CBC mode mein har plaintext block ko encrypt karne se pehle previous ciphertext block se XOR kiya jata hai. Pehle block ke liye IV use hota hai. Isse blocks aapas mein 'chain' ho jaate hain."
+  },
+  {
+    "id": 71,
+    "question": "Your company has decided to subscribe to a cloud-hosted solution. Once implemented, your employees will only need to manage user accounts, while the provider handles all aspects of hardware, operating system, and software administration, including patching and monitoring. What type of solution does this describe?",
+    "options": [
+      "IaaS",
+      "SaaS",
+      "CaaS",
+      "PaaS"
+    ],
+    "correctAnswer": 1,
+    "explanation": "SaaS (Software as a Service) mein aapko sirf software use karna hota hai. Us software ke peeche ka server, OS, network, security - sab kuch cloud provider sambhalta hai."
+  },
+  {
+    "id": 72,
+    "question": "Identify the standard based on the following description: This regulation outlines a set of guidelines that must be followed by anyone handling electronic medical data. It covers medical practices and mandates essential measures for securely storing, accessing, and sharing electronic medical information to protect patient data.",
+    "options": [
+      "ISO/IEC 27002",
+      "HIPAA",
+      "FISMA",
+      "COBIT"
+    ],
+    "correctAnswer": 1,
+    "explanation": "HIPAA America ka law hai jo hospitals, doctors, insurance companies ko patient ki digital health information (PHI) ko secure karne ka rule batata hai."
+  },
+  {
+    "id": 73,
+    "question": "Which of the following types of keys does the Heartbleed bug expose to the Internet, making exploiting any compromised system very easy?",
+    "options": [
+      "Root",
+      "Private",
+      "Public",
+      "Shared"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Heartbleed bug OpenSSL software mein tha. Iski wajah se attacker server ki memory se uski private key chura sakta tha. Private key chori hone par attacker uss server ki tarah ban sakta tha aur sab kuch decrypt kar sakta tha."
+  },
+  {
+    "id": 74,
+    "question": "Luis, a cloud security engineer, implements a technique for securing the cloud resources used by his organization. This technique secures by default that a user attempting to access the network is not an unauthentic entity and verifies every incoming connection before allowing access to the network. Using this technique, he also imposed conditions such that employees can access only the resources required for their roles. What is the technique employed by Luis to secure cloud resources?",
+    "options": [
+      "Serverless computing",
+      "Container technology",
+      "Demilitarized zone",
+      "Zero trust network"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Zero Trust model ka rule hai - 'Kisi par bharosa mat karo, har kisi ko verify karo'. Isme har user aur device ko har resource access karne se pehle verify kiya jata hai, chahe woh company network ke andar hi kyun na ho."
+  },
+  {
+    "id": 75,
+    "question": "Dean, a professional hacker, targets an organization and performs vulnerability scanning on the target web server to identify any misconfigurations, version vulnerabilities, and misconfigurations. In this process, Dean uses an automated tool that scans the web and performs vulnerability scanning to find hosts, services, and other vulnerabilities in the target server. Which of the following tools is used by Dean to perform vulnerability scanning?",
+    "options": [
+      "Angry IP Scanner",
+      "NetScan Tools",
+      "Wireshark",
+      "Nessus/NeXpose/Qualys"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Nessus, NeXpose, aur Qualys professional vulnerability scanners hain. Ye tools automatically servers, applications, aur networks ko scan karke known vulnerabilities, misconfigurations, aur outdated software ka pata lagati hain."
+  },
+  {
+    "id": 76,
+    "question": "Chen, the evil hacker, decided to use Nmap scan open ports and running services on systems connected to the target organization's OT network. For his purposes, he enters the Nmap command into the terminal which identifies Ethernet/IP devices connected to the Internet and further gathered information such as the vendor name, product code and name, device name, and IP address. Which of the following commands did Chen use in this scenario?",
+    "options": [
+      "nmap -Pn -sT --scan-delay 1s --max-parallelism 1 -p < Port List > < Target IP >",
+      "nmap -Pn -sT -p 102 --script s7-info < Target IP >",
+      "nmap -Pn -sU -p 44818 --script enip-info < Target IP >",
+      "nmap -Pn -sT -p 46824 < Target IP >"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Ethernet/IP (ENIP) industrial devices UDP port 44818 use karte hain. -sU UDP scan ke liye hai aur --script enip-info Nmap script hai jo in devices ki details (vendor, product name) nikal kar deti hai."
+  },
+  {
+    "id": 77,
+    "question": "A DDoS attack is performed at layer 7 to take down web infrastructure. Partial HTTP requests are sent to the web infrastructure or applications. Upon receiving a partial request, the target server opens multiple connections and keeps waiting for the requests to complete. Which attack is being described here?",
+    "options": [
+      "Slowloris attack",
+      "Deauthentication",
+      "Session sniffing",
+      "Phishing"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Slowloris attack Layer 7 (Application Layer) par hoti hai. Attacker server ko aise HTTP requests bhejta hai jo kabhi complete nahi hoti. Server in incomplete requests ke liye connections khula rakhta hai aur aakhir mein saare connections exhaust ho jaate hain, genuine users block ho jaate hain."
+  },
+  {
+    "id": 78,
+    "question": "Which of the following practices helps developers defend against SQL injection attacks?",
+    "options": [
+      "Always construct dynamic SQL with concatenated input values",
+      "Test the content of string variables and accept only expected values",
+      "Allow entries that contain binary data, escape sequences, and comment characters",
+      "Build Transact-SQL statements directly from user input"
+    ],
+    "correctAnswer": 1,
+    "explanation": "SQL injection se bachne ka sabse accha tarika hai Input Validation karna. Matlab, user ke input ko check karo ki woh expected format mein hai ya nahi. Jaise, username mein sirf letters aur numbers hone chahiye, special characters nahi."
+  },
+  {
+    "id": 79,
+    "question": "Carry, the malicious hacker, intends to intercept all data transmitted over a network and conduct an in-depth analysis of each segment of the target network. Which tool would assist him in carrying out this attack?",
+    "options": [
+      "ARPspoof",
+      "ike-scan",
+      "Spoof-Me-Now",
+      "OmniPeek"
+    ],
+    "correctAnswer": 3,
+    "explanation": "OmniPeek ek professional network protocol analyzer hai, jaise Wireshark. Ye tool network ke saare packets ko capture karke unka deep analysis kar sakta hai."
+  },
+  {
+    "id": 80,
+    "question": "Identify the encryption algorithm by the description: Symmetric-key block cipher having a classical 12- or 16-round Feistel network with a block size of 64 bits for encryption, which includes large 8 × 32-bit S-boxes based on bent functions, modular addition and subtraction, key-dependent rotation, and XOR operations. This cipher also uses a 'masking' key and a 'rotation' key for performing its functions.",
+    "options": [
+      "AES",
+      "DES",
+      "CAST-128",
+      "GOST"
+    ],
+    "correctAnswer": 2,
+    "explanation": "CAST-128 encryption algorithm 64-bit blocks use karta hai aur isme 'masking' aur 'rotation' keys ka istemal hota hai. Ye description specifically CAST-128 ke liye hai."
+  },
+  {
+    "id": 81,
+    "question": "An attacker decided to crack the passwords used by industrial control systems. In this process, he employed a loop strategy to recover these passwords. He used one character at a time to check whether the first character entered is correct. If so, he continued the loop to try successive characters. If not, he terminated the loop. Furthermore, the attacker checked how much time the device took to finish one complete password authentication process, through which he deduced how many characters entered are correct. What is the exact technique employed by the attacker to crack the passwords of the industrial control systems?",
+    "options": [
+      "Side-channel attack",
+      "Buffer overflow attack",
+      "Command injection attack",
+      "Null-based attack"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Yeh ek Timing Attack hai, jo Side-channel attack ka hi ek type hai. Attacker direct password nahi crack kar raha, balki device ke response time ko measure kar raha hai. Agar ek character sahi hai, toh device thoda zyada time legi agla character check karne mein."
+  },
+  {
+    "id": 82,
+    "question": "You are tasked with evaluating the system utilized by your employee. During the assessment, you identified that compromise was feasible via user directories, registries, and various system parameters. Additionally, you uncovered vulnerabilities such as misconfigured native configuration tables, improper registry or file permissions, and software configuration flaws. Which type of vulnerability assessment did you perform?",
+    "options": [
+      "Database assessment",
+      "Credentialed assessment",
+      "Host-based assessment",
+      "Distributed assessment"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Host-based assessment mein aap ek specific computer (host) ki security check karte hain. Aap uske file permissions, registry settings, user accounts, installed software, aur configurations ko examine karte hain."
+  },
+  {
+    "id": 83,
+    "question": "Sam, an encryption specialist, implemented a technique that enhances the security of keys used for encryption and authentication. Using this technique, keys or data keys or key-encryption keys generated are resistant to brute-force attacks. What is the technique commonly used to improve the security of encryption keys?",
+    "options": [
+      "Public key infrastructure",
+      "Key derivation functions",
+      "Key encapsulation",
+      "Key stretching"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Key stretching weak keys (jaise simple passwords) ko strong banane ka kaam karta hai. Ye technique password ko bahut baar hash karti hai, jisse brute-force attack karna bahut time-consuming ho jata hai."
+  },
+  {
+    "id": 84,
+    "question": "Identify which of the following will provide you with the most information about the system's security posture?",
+    "options": [
+      "Wardriving, warchalking, social engineering",
+      "Port scanning, banner grabbing, service identification",
+      "Phishing, spamming, sending trojans",
+      "Social engineering, company site browsing, tailgating"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Port scanning, banner grabbing, aur service identification direct technical methods hain jo aapko bataenge: system pe kaunse services chal rahi hain, kaunsi software versions hain, aur kaunse ports open hain. Yeh system ke security posture ki clear picture deta hai."
+  },
+  {
+    "id": 85,
+    "question": "Rita, a cybersecurity science student, needs to fill in information into a secured PDF job application received from a prospective employer. However, she is unable to enter any data because the fields are locked. Instead of requesting a new document, she decides to write a script that attempts to unlock the PDF by trying passwords from a list of commonly used passwords until the correct one is found or the list is exhausted. What type of attack is Rita attempting?",
+    "options": [
+      "Dictionary-attack",
+      "Man-in-the-middle attack",
+      "Session hijacking",
+      "Brute-force attack"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Dictionary attack mein attacker ek list of common passwords use karta hai. Wo har password ko try karta hai jab tak sahi password na mil jaye. Rita bhi yahi kar rahi hai."
+  },
+  {
+    "id": 86,
+    "question": "Identify the attack in the following scenario: The victim connected their iPhone to a public computer that had been infected by the attacker. After the victim enabled iTunes Wi-Fi sync, the attacker could access and monitor the iPhone even after the device was physically disconnected from the computer.",
+    "options": [
+      "Exploiting SS7 vulnerability",
+      "Man-in-the-disk attack",
+      "iOS trustjacking",
+      "iOS Jailbreaking"
+    ],
+    "correctAnswer": 2,
+    "explanation": "iOS Trustjacking mein jab aap kisi computer ko 'Trust' kar dete hain aur 'Wi-Fi Sync' enable kar dete hain, toh woh computer aapke iPhone se Wi-Fi ke through permanently sync kar sakta hai, bina aapki jaankari ke."
+  },
+  {
+    "id": 87,
+    "question": "Jack, a black hat hacker, wants to find out if there are honeypots in the system that he will attack. For this purpose, he will use a time-based TCP fingerprinting method to validate the response to a computer and the response of a honeypot to a manual SYN request. Identify which of the following techniques will Jack use?",
+    "options": [
+      "Detecting the presence of Sebek-based honeypots.",
+      "Detecting the presence of UML Honeypot.",
+      "Detecting the presence of Honeyd honeypots.",
+      "Detecting the presence of Snort_inline honeypots."
+    ],
+    "correctAnswer": 2,
+    "explanation": "Honeyd ek aisa honeypot hai jo virtual hosts banata hai. Lekin in virtual hosts ke TCP/IP stack responses (jaise sequence numbers) real computers se alag hote hain. In responses ko analyze karke Honeyd honeypot detect kiya ja sakta hai."
+  },
+  {
+    "id": 88,
+    "question": "The attacker is performing the footprinting process. He checks publicly available information about the target organization by using the Google search engine. Which of the following advanced operators will he use to restrict the search to the organization's web domain?",
+    "options": [
+      "[location:]",
+      "[allinurl:]",
+      "[link:]",
+      "[site:]"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Google ka site: operator aapko kisi specific website ya domain ka result dikhata hai. Isse attacker sirf target company ki website se related information dhoondh sakta hai."
+  },
+  {
+    "id": 89,
+    "question": "An attacker compromises a company's cloud storage service by stealing its synchronization token instead of traditional login credentials. This allows the attacker to access and sync files without triggering multi-factor authentication (MFA) or login alerts. The company remains unaware of the breach since the attacker continues to receive updated files automatically. What type of attack has occurred?",
+    "options": [
+      "Man-in-the-Cloud Attack",
+      "Cloud Hopper Attack",
+      "Session Hijacking",
+      "Man-in-the-Browser Attack"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Man-in-the-Cloud (MITC) attack mein attacker cloud storage (jaise Dropbox, Google Drive) ka sync token chura leta hai. Token milne ke baad attacker bina password ya MFA ke user ki files access aur sync kar sakta hai."
+  },
+  {
+    "id": 90,
+    "question": "Jean is asked to explain to IT management as to why he is suggesting replacing the existing company firewall. Jean states that many external attackers are using forged internet addresses against the firewall and is concerned that this technique is highly effective against the existing firewall. What type of firewall Jean would have deployed?",
+    "options": [
+      "Host-based firewall is deployed because the attackers are outside the network.",
+      "Packet filtering firewall is deployed because it is unable to prevent these types of attacks.",
+      "Host-based firewall is deployed because the attackers are inside the network.",
+      "Circuit-level proxy firewall is deployed because it prevents these types of attacks."
+    ],
+    "correctAnswer": 1,
+    "explanation": "Packet filtering firewall sirf packet ke source/destination IP address aur port number ko check karta hai. Attacker aasani se apna source IP fake (spoof) kar sakta hai aur is firewall ko bypass kar sakta hai."
+  },
+  {
+    "id": 91,
+    "question": "Which type of assessment tools are used to find and identify previously unknown vulnerabilities in a system?",
+    "options": [
+      "Application-layer vulnerability assessment tools",
+      "Depth assessment tools",
+      "Scope assessment tools",
+      "Active scanning tools"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Depth assessment tools (jaise fuzzers, manual code review tools) complex, chained, ya zero-day vulnerabilities dhoondhne ke liye use hote hain. Ye simple automated scanners se aage jaakar kaam karte hain."
+  },
+  {
+    "id": 92,
+    "question": "David is a shopaholic, and he constantly surfs on the Internet in search of discounted products. The hacker decided to take advantage of this weakness of David and sent a fake email containing a deceptive page link to his social media page with information about a sale. David anticipating the benefit didn't notice the malicious link, clicked on them and logged in to that page using his valid credentials. Which of the following tools did the hacker probably use?",
+    "options": [
+      "XOIC",
+      "sixnet-tools",
+      "Evilginx",
+      "PyLoris"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Evilginx ek advanced phishing tool hai. Ye real website (jaise Facebook, Amazon) ki exact copy banata hai aur beech mein baith kar user ke credentials capture kar leta hai. User ko lagta hai woh asli site pe login ho raha hai."
+  },
+  {
+    "id": 93,
+    "question": "Smith is conducting black-box testing and attempts to transmit IRC traffic over port 80/TCP from a compromised web-enabled host. However, the traffic is blocked, while outbound HTTP traffic flows without restriction. Which type of firewall is responsible for inspecting outbound traffic?",
+    "options": [
+      "Stateful",
+      "Application",
+      "Circuit",
+      "Packet Filtering"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Application-layer firewall (Next-Generation Firewall) packet ke andar ka data (content) bhi check karta hai. Wo dekh sakta hai ki port 80 pe HTTP traffic chal raha hai ya fir IRC traffic. Agar IRC hai, toh block kar dega."
+  },
+  {
+    "id": 94,
+    "question": "If an attacker intercepts encrypted network traffic and successfully decrypts it, which cryptanalytic method can they employ to attempt discovering the encryption key?",
+    "options": [
+      "Chosen ciphertext attack",
+      "AES",
+      "Meet in the middle attack",
+      "Known plaintext attack"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Known plaintext attack mein attacker ke paas original plaintext aur uska encrypted version (ciphertext) dono hote hain. Wo in dono ko compare karke encryption key nikalne ki koshish karta hai."
+  },
+  {
+    "id": 95,
+    "question": "Using which one of the following tools can an attacker perform BlueBorne or airborne attacks such as replay, fuzzing, and jamming?",
+    "options": [
+      "RIoT vulnerability scanning",
+      "Zigbee framework",
+      "Foren6",
+      "HackRF One"
+    ],
+    "correctAnswer": 3,
+    "explanation": "HackRF One ek software-defined radio (SDR) device hai. Isse attacker kisi bhi wireless signal (Bluetooth, WiFi, GPS) ko capture, analyze, modify, aur transmit kar sakta hai. Isliye yeh BlueBorne jaise wireless attacks ke liye perfect hai."
+  },
+  {
+    "id": 96,
+    "question": "Jimmy, a penetration tester, is conducting a wireless security assessment for a corporate office. He sets up a rogue access point with the same SSID as the legitimate office Wi-Fi. Unsuspecting employees connect to it, thinking it's the real network, allowing Jimmy to intercept their credentials and network traffic. What type of attack is Jimmy performing?",
+    "options": [
+      "DNS Spoofing",
+      "Evil Twin",
+      "Rogue DHCP Attack",
+      "Man-in-the-Middle (MITM)"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Evil Twin attack mein attacker ek nakli WiFi access point banata hai jo company ke real WiFi jaise dikhta hai (same name/SSID). Employees galti se usse connect ho jaate hain aur apna saara data attacker ko de dete hain."
+  },
+  {
+    "id": 97,
+    "question": "Which of the following is an example of a scareware social engineering attack?",
+    "options": [
+      "A pop-up appears to a user stating, 'Your computer may have been infected with spyware. Click here to install an anti-spyware tool to resolve this issue.'",
+      "A banner appears to a user stating, 'Your order has been delayed. Click here to find out your new delivery date.'",
+      "A banner appears to a user stating, 'Your password has expired. Click here to update your password.'",
+      "A pop-up appears to a user stating, 'You have won money! Click here to claim your prize!'"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Scareware user ko dara kar (scare karke) kuch karne par majboor karta hai. Yahan user ko virus ka dar dikhaya ja raha hai taaki wo fake antivirus install kar le, jo actually malware hai."
+  },
+  {
+    "id": 98,
+    "question": "George, a cloud architect, uses a master component in the Kubernetes cluster architecture that scans newly provisioned pods and allocates a node to them. This component can also assign nodes based on factors such as the overall resource requirements, data locality, software/hardware/policy restrictions, and internal workload interferences. Which of the following master components is explained in the above scenario?",
+    "options": [
+      "Kube-apiserver",
+      "Etcd cluster",
+      "Kube-scheduler",
+      "Kube-controller-manager"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Kube-scheduler ka kaam hi yeh hai — decide karna ki naye pod (containers) ko cluster ke kis node (server) pe place karna hai based on resource needs, policies, data location, etc."
+  },
+  {
+    "id": 99,
+    "question": "Which of the following will allow you to prevent unauthorized network access to local area networks and other information assets by wireless devices?",
+    "options": [
+      "HIDS",
+      "NIDS",
+      "WIPS",
+      "AISS"
+    ],
+    "correctAnswer": 2,
+    "explanation": "WIPS (Wireless Intrusion Prevention System) specially wireless networks ko protect karta hai. Ye unauthorized access points (rogue APs) detect karta hai, evil twin attacks block karta hai, aur unauthorized clients ko network me aane se rokta hai."
+  },
+  {
+    "id": 100,
+    "question": "Imagine the following scenario: An attacker created a website with tempting content and banner like: 'Do you want to make $30 000 in a month?'. Victim clicks to the interesting and attractive content URL. Attacker creates a transparent 'iframe' in front of the banner which victim attempts to click. Victim thinks that he/she clicks to the 'Do you want to make $30 000 in a month?' banner but actually he/she clicks to the content or UPL that exists in the transparent 'iframe' which is set up by the attacker. What is the name of the attack which is described in the scenario?",
+    "options": [
+      "Clickjacking Attack",
+      "HTML Injection",
+      "HTTP Parameter Pollution",
+      "Session fixation"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Clickjacking mein attacker ek transparent layer (iframe) page ke upar banata hai. User ko lagta hai wo ek button (jaise 'Click to Win') click kar raha hai, lekin asal me wo kisi hidden form ya link ko click kar deta hai."
+  },
+  {
+    "id": 101,
+    "question": "Kim needs to send a super-secret message, and for this, he wants to use the technique of hiding a secret message within an ordinary message. The technique provides 'security through obscurity.' Which of the following techniques will Kim use?",
+    "options": [
+      "Steganography",
+      "Deniable encryption",
+      "Encryption",
+      "Digital watermarking"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Steganography me secret message ko kisi ordinary-looking file (image, audio, video) ke andar chhipaya jata hai. Dikhne me kuch alag nahi lagta, isliye 'security through obscurity' kehlata hai."
+  },
+  {
+    "id": 102,
+    "question": "Sam, an employee in an organization, received an executable file as an email attachment. Out of suspicion, he reached out to the organization's IT team. The team used a tool to dismantle the executable file into a binary program to find harmful or malicious processes. Which of the following tools did the IT team employ to analyze the application?",
+    "options": [
+      "CCleaner",
+      "IDA Pro",
+      "Spam Mimic",
+      "Splunk"
+    ],
+    "correctAnswer": 1,
+    "explanation": "IDA Pro ek powerful disassembler aur debugger hai. Ye executable (.exe) files ko tod kar unka assembly code dikhata hai, jisse analysts malware ke andar ka code dekh sakte hain aur harmful functions identify kar sakte hain."
+  },
+  {
+    "id": 103,
+    "question": "What is the 'wget 192.168.0.10 -q -S' command used for?",
+    "options": [
+      "Performing content enumeration on the web server to discover hidden folders.",
+      "Download all the contents of the web page locally.",
+      "Using wget to perform banner grabbing on the webserver.",
+      "Flooding the web server with requests to perform a DoS attack"
+    ],
+    "correctAnswer": 2,
+    "explanation": "wget -q -S command web server se response headers ko show karta hai bina actual content download kiye. Response headers me server type, version jaise information hoti hai - isliye yeh banner grabbing ke liye use hota hai."
+  },
+  {
+    "id": 104,
+    "question": "What results will the following command yield: nmap -sS -O -p 123-153 192.168.100.3?",
+    "options": [
+      "A stealth scan, determine operating system, and scanning ports 123 to 153",
+      "A stealth scan, opening port 123 and 153",
+      "A stealth scan, checking all open ports excluding ports 123 to 153",
+      "A stealth scan, checking open ports 123 to 153"
+    ],
+    "correctAnswer": 0,
+    "explanation": "-sS = TCP SYN (Stealth) scan. -O = OS detection. -p 123-153 = ports 123 se 153 tak scan karo."
+  },
+  {
+    "id": 105,
+    "question": "Jimmy, a professional hacker, performed a vulnerability scan on a target organization by sniffing the traffic on the network to identify the active systems, network services, applications, and vulnerabilities. He also obtained the list of the users who are currently accessing the network. What is the type of vulnerability assessment that Jimmy performed on the target organization?",
+    "options": [
+      "Passive assessment",
+      "External assessment",
+      "Credentialed assessment",
+      "Internal assessment"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Passive assessment me attacker network traffic ko silently sniff karta hai bina koi packets bheje. Wo active systems, services, aur users ko identify kar sakta hai bina target ko alert kiye."
+  },
+  {
+    "id": 106,
+    "question": "Which of the following Wi-Fi security protocols provides the highest level of security for enterprise networks, including 192-bit encryption and individualized data encryption for each user?",
+    "options": [
+      "WEP",
+      "WPA3 Enterprise",
+      "WPA2",
+      "WPA"
+    ],
+    "correctAnswer": 1,
+    "explanation": "WPA3 Enterprise latest aur most secure WiFi security protocol hai. Isme 192-bit encryption hoti hai aur har user ka data individually encrypt hota hai."
+  },
+  {
+    "id": 107,
+    "question": "Jonah, a pen tester, examined a network from a hacker's perspective to identify exploits and vulnerabilities accessible to the outside world by using devices such as firewalls, routers, and servers. In this process, he also examined the threat of network security attacks and determined the level of security of the corporate network. What is the type of vulnerability assessment that Jonah performed on the organization?",
+    "options": [
+      "Application assessment",
+      "Host-based assessment",
+      "Passive assessment",
+      "External assessment"
+    ],
+    "correctAnswer": 3,
+    "explanation": "External assessment me tester company ke network ko internet se attack karta hai - jaise koi real hacker karega. Wo firewalls, routers, aur externally facing servers ki security check karta hai."
+  },
+  {
+    "id": 108,
+    "question": "A cybersecurity analyst is investigating a breach where an attacker intercepted and modified financial transaction data before it reached its destination. The attacker successfully altered the transaction amount and recipient details without raising immediate suspicion. What type of attack has occurred?",
+    "options": [
+      "Man-in-the-Middle (MITM)",
+      "Replay Attack",
+      "Session Hijacking",
+      "Alter Attack"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Man-in-the-Middle attack me attacker communication channel ke beech me ghus jaata hai. Wo sender aur receiver ke beech ke messages ko intercept kar sakta hai, modify kar sakta hai, aur phir forward kar sakta hai."
+  },
+  {
+    "id": 109,
+    "question": "Rita, a cybersecurity researcher, is analyzing a jailbroken smartphone. She discovers that after a reboot, the device can start normally, but the jailbreak features are disabled until the user manually reactivates them using a tool on the device. She explains that this type of jailbreak provides more flexibility than a tethered jailbreak but still requires user intervention after a reboot. Which type of jailbreak is being used on this device?",
+    "options": [
+      "Semi-Untethered Jailbreak",
+      "Semi-Tethered Jailbreak",
+      "Untethered Jailbreak",
+      "Tethered Jailbreak"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Semi-Untethered jailbreak me device reboot hone par normal start ho jata hai, lekin jailbreak features enable nahi hote. User ko phir se ek app (jaise Unc0ver) run karna padta hai jailbreak reactivate karne ke liye."
+  },
+  {
+    "id": 110,
+    "question": "Which of the following applications allows attackers to identify the target devices and block the access of Wi-Fi to the victim devices in a network?",
+    "options": [
+      "KingoRoot",
+      "DroidSheep",
+      "NetCut",
+      "Network Spoofer"
+    ],
+    "correctAnswer": 2,
+    "explanation": "NetCut ek tool hai jo network me specific devices ko identify karta hai aur unhe internet access block (disconnect) kar sakta hai."
+  },
+  {
+    "id": 111,
+    "question": "Which of the following help to prevent replay attacks and uses in garage door openers or keyless car entry system?",
+    "options": [
+      "Unlocking code",
+      "Rotating code",
+      "Locking code",
+      "Rolling code"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Rolling code system me har baar button press karne par naya code generate hota hai. Agar attacker signal record bhi karle, toh woh purana code kaam nahi karega."
+  },
+  {
+    "id": 112,
+    "question": "An ethical hacker has already received all the necessary information and is now considering further actions. For example, infect a system with malware and use phishing to gain credentials to a system or web application. What phase of ethical hacking methodology is the hacker currently in?",
+    "options": [
+      "Maintaining access",
+      "Scanning",
+      "Gaining access",
+      "Reconnaissance"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Gaining access phase me hacker information gather karne ke baad actually system me ghusne ki koshish karta hai - jaise malware install karke, phishing se credentials steal karke, ya vulnerabilities exploit karke."
+  },
+  {
+    "id": 113,
+    "question": "Which of the following is NOT a type of SQL injection attack?",
+    "options": [
+      "In-band SQLi",
+      "Blind SQLi",
+      "Out-of-band SQLi",
+      "Cross-Site Scripting (XSS)"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Cross-Site Scripting (XSS) ek alag type ka web vulnerability hai jo client-side (browser) pe attack karta hai. SQL injection database pe attack karta hai."
+  },
+  {
+    "id": 114,
+    "question": "Which type of attack attempts to overflow the CAM table?",
+    "options": [
+      "DOS attack",
+      "DDoS attack",
+      "DNS flooding",
+      "MAC flooding"
+    ],
+    "correctAnswer": 3,
+    "explanation": "MAC flooding me attacker switch ko fake MAC addresses ke saath bahut saare packets bhejta hai. Switch ka CAM table full ho jata hai, aur wo traffic ko sab ports pe forward karna shuru kar deta hai - jaise hub karta tha."
+  },
+  {
+    "id": 115,
+    "question": "Wald, a certified hacker, targeted multiple user accounts of an organization's work group to crack their passwords. In this process, he used a single commonly used password on multiple accounts simultaneously and waited for responses before initiating another password on the same accounts. This technique allowed Wald to attempt more passwords without being affected by automatic lockout mechanisms. Identify the type of password cracking attack performed by Wald in the above scenario.",
+    "options": [
+      "Password guessing",
+      "Pass-the-ticket attack",
+      "Password spraying attack",
+      "GPU-based attack"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Password spraying me attacker ek common password (jaise 'Winter2024') ko bahut sare users par ek baar try karta hai. Phir doosra common password try karta hai. Isse kisi ek user ka account lock nahi hota."
+  },
+  {
+    "id": 116,
+    "question": "Which of the following is a correct example of using msfvenom to generate a reverse TCP shellcode for Windows?",
+    "options": [
+      "msfvenom -p windows/meterpreter/reverse_tcp RHOST=10.10.10.12 LPORT=8888 -f exe > shell.exe",
+      "msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.10.10.12 LPORT=8888 -f exe > shell.exe",
+      "msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.10.10.12 LPORT=8888 -f c",
+      "msfvenom -p windows/meterpreter/reverse_tcp RHOST=10.10.10.12 LPORT=8888 -f c"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Reverse shell me LHOST (Listener Host) wo IP hota hai jahan attacker ka machine hai jisko shell connect karega. RHOST galat hai."
+  },
+  {
+    "id": 117,
+    "question": "To ensure the immutability of financial reports and confirm that they have not been altered, how can the company guarantee that the accountant receives the reports exactly as they were sent by the financial director?",
+    "options": [
+      "Use a hash algorithm in the document once CFO approved the financial statements",
+      "Financial reports can send the financial statements twice, one by email and the other delivered in USB and the accountant can compare both",
+      "Reports can send to the accountant using an exclusive USB for that document",
+      "Use a protected excel file"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Hash algorithm document ka digital fingerprint banata hai. Agar document me ek character bhi change hua, toh hash completely change ho jayega. Isse pata chal jayega ki document modify hua hai ya nahi."
+  },
+  {
+    "id": 118,
+    "question": "Daniel is a security professional working in an organization, and he is implementing a vulnerability management program in the organization to evaluate and control the risks and vulnerabilities in its IT infrastructure. He is currently executing the process of applying fixes on vulnerable systems to reduce the impact and severity of vulnerabilities. Which phase of the vulnerability-management life cycle is Daniel currently in?",
+    "options": [
+      "Remediation",
+      "Risk assessment",
+      "Verification",
+      "Vulnerability scan"
+    ],
+    "correctAnswer": 0,
+    "explanation": "Remediation phase me vulnerabilities ko actually fix kiya jata hai - jaise patches apply karna, configurations change karna, ya systems update karna."
+  },
+  {
+    "id": 119,
+    "question": "Which of the following static malware analysis techniques provides information about the basic functionality of any program and is also used to determine the harmful actions that a program can perform?",
+    "options": [
+      "Identifying packing/obfuscation methods",
+      "Strings search",
+      "Finding information on portable executables (PE)",
+      "Malware disassembly"
+    ],
+    "correctAnswer": 1,
+    "explanation": "Strings search technique me malware file me se readable text strings extract kiye jaate hain. In strings me often file paths, URLs, commands, aur error messages hote hain jo malware ke kaam ka pata dete hain."
+  },
+  {
+    "id": 120,
+    "question": "Which of the following cipher is based on factoring the product of two large prime numbers?",
+    "options": [
+      "SHA-1",
+      "MD5",
+      "RSA",
+      "RC5"
+    ],
+    "correctAnswer": 2,
+    "explanation": "RSA encryption algorithm do bade prime numbers ko multiply karne par depend karta hai. In primes ko factor karna bahut mushkil kaam hai, isliye RSA secure hai."
+  },
+  {
+    "id": 121,
+    "question": "BitLocker encryption has been implemented for all the Windows-based computers in an organization. You are concerned that someone might steal the cryptographic key. Therefore, a mechanism was implemented to prevent key theft from Active Directory. What is this mechanism called in cryptography?",
+    "options": [
+      "Key recovery",
+      "Key stretch",
+      "Certificate revocation",
+      "Key escrow"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Key escrow me encryption key ko ek trusted third party (jaise Active Directory) ke pass safely store kiya jata hai. Agar original key kho jaaye ya chori ho jaaye, toh recovery ke liye escrowed key use kar sakte hain."
+  },
+  {
+    "id": 122,
+    "question": "Which of the following protocols can be used to secure an LDAP service against anonymous queries?",
+    "options": [
+      "SSL",
+      "IPSec",
+      "DNSSEC",
+      "Kerberos"
+    ],
+    "correctAnswer": 3,
+    "explanation": "Kerberos ek authentication protocol hai jo users ko securely identify karta hai. LDAP service ko Kerberos se configure karke anonymous queries block kiye ja sakte hain - sirf authenticated users hi query kar sakte hain."
+  },
+  {
+    "id": 123,
+    "question": "Ronit, a network administrator, received a warning from IDS about a possibly malicious sequence of packets sent to a Web server in the network's external DMZ. The packet traffic was captured by the IDS and saved to a PCAP file. Now Ronit needs to determine if these packets are genuinely malicious or simply a false positive. Which of the following type of network tools will he use?",
+    "options": [
+      "Intrusion Prevention System (IPS)",
+      "Vulnerability scanner",
+      "Protocol analyzer",
+      "Host-based intrusion prevention system"
+    ],
+    "correctAnswer": 2,
+    "explanation": "Protocol analyzer (jaise Wireshark) packet capture (PCAP) files ko deeply analyze kar sakta hai. Ronit har packet ko manually dekh sakta hai aur decide kar sakta hai ki yeh actually attack tha ya nahi."
+  },
+  {
+    "id": 124,
+    "question": "Khadija, the leader of the Blue Team, wants to use network traffic analysis to implement the ability to detect an intrusion in her network of several hosts quickly. Which tool is best suited to perform this task?",
+    "options": [
+      "NIDS",
+      "Firewalls",
+      "Honeypot",
+      "HIDS"
+    ],
+    "correctAnswer": 0,
+    "explanation": "NIDS (Network Intrusion Detection System) pure network ke traffic ko monitor karta hai. Ye multiple hosts pe hone wale attacks ko ek central location se detect kar sakta hai."
+  },
+  {
+    "id": 125,
+    "question": "Which of the following is a mode of operation that includes EAP or RADIUS for centralized client authentication using multiple authentication methods, such as token cards, Kerberos, and certificates?",
+    "options": [
+      "WPA2-Personal",
+      "WPA2-Enterprise",
+      "WPA3-Personal",
+      "WPA3-Enterprise"
+    ],
+    "correctAnswer": 1,
+    "explanation": "WPA2-Enterprise me centralized authentication server (RADIUS) use hota hai. Har user individually authenticate hota hai methods jaise passwords, smart cards, ya certificates se. EAP various authentication methods ko support karta hai."
+  }
+            // Add more questions as needed...
+        ];
+
+        // Initialize exam
+        function initializeExam() {
+            // Set up event listeners
+            document.getElementById('prev-btn').addEventListener('click', showPreviousQuestion);
+            document.getElementById('next-btn').addEventListener('click', showNextQuestion);
+            document.getElementById('submit-btn').addEventListener('click', submitExam);
+            
+            // Review mode event listeners
+            document.getElementById('review-prev-btn').addEventListener('click', showPreviousReviewQuestion);
+            document.getElementById('review-next-btn').addEventListener('click', showNextReviewQuestion);
+            document.getElementById('review-back-btn').addEventListener('click', backToResults);
+            
+            // Start timer
+            startTimer();
+            
+            // Load first question
+            loadQuestion(currentQuestion);
+        }
+
+        // Load question
+        function loadQuestion(questionNumber) {
+            if (questionNumber < 1 || questionNumber > totalQuestions) return;
+            
+            currentQuestion = questionNumber;
+            
+            // Update UI
+            document.getElementById('current-question').textContent = questionNumber;
+            document.getElementById('question-counter').textContent = `${questionNumber}/${totalQuestions}`;
+            
+            // Update progress
+            const progress = ((questionNumber - 1) / totalQuestions) * 100;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+            document.getElementById('progress-text').textContent = `${Math.round(progress)}% Complete`;
+            
+            // Enable/disable navigation buttons
+            document.getElementById('prev-btn').disabled = questionNumber === 1;
+            document.getElementById('next-btn').disabled = questionNumber === totalQuestions;
+            
+            // Load question data
+            const questionIndex = (questionNumber - 1) % examQuestions.length;
+            const question = examQuestions[questionIndex];
+            
+            document.getElementById('question-text').textContent = question.question;
+            
+            // Clear and populate options
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            const optionLabels = ['A', 'B', 'C', 'D'];
+            
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                if (userAnswers[questionNumber] === index) {
+                    optionElement.classList.add('selected');
+                }
+                
+                optionElement.innerHTML = `
+                    <input type="radio" name="question-${questionNumber}" value="${index}" id="option-${questionNumber}-${index}" ${userAnswers[questionNumber] === index ? 'checked' : ''}>
+                    <span class="option-label">${optionLabels[index]}</span>
+                    <span class="option-text">${option}</span>
+                `;
+                
+                // Add click event to the entire option div
+                optionElement.addEventListener('click', (e) => {
+                    // Don't trigger if clicking on the radio button itself (to avoid double trigger)
+                    if (e.target.type !== 'radio') {
+                        selectOption(questionNumber, index);
+                    }
+                });
+                
+                // Also add change event to the radio button
+                const radioInput = optionElement.querySelector('input[type="radio"]');
+                radioInput.addEventListener('change', () => {
+                    if (radioInput.checked) {
+                        selectOption(questionNumber, index);
+                    }
+                });
+                
+                optionsContainer.appendChild(optionElement);
+            });
+        }
+
+        // Select option
+        function selectOption(questionNumber, optionIndex) {
+            // Update user answer
+            userAnswers[questionNumber] = optionIndex;
+            
+            // Update all radio buttons
+            const options = document.querySelectorAll(`input[name="question-${questionNumber}"]`);
+            options.forEach((radio, index) => {
+                radio.checked = (index === optionIndex);
+            });
+            
+            // Update UI - remove selected class from all options
+            const optionElements = document.querySelectorAll('.option');
+            optionElements.forEach(option => option.classList.remove('selected'));
+            
+            // Add selected class to the chosen option
+            const selectedOption = document.querySelector(`#option-${questionNumber}-${optionIndex}`).parentElement;
+            selectedOption.classList.add('selected');
+        }
+
+        // Navigation functions
+        function showPreviousQuestion() {
+            if (currentQuestion > 1) {
+                loadQuestion(currentQuestion - 1);
+            }
+        }
+
+        function showNextQuestion() {
+            if (currentQuestion < totalQuestions) {
+                loadQuestion(currentQuestion + 1);
+            }
+        }
+
+        // Timer functions
+        function startTimer() {
+            updateTimerDisplay();
+            
+            const timerInterval = setInterval(() => {
+                if (timeRemaining > 0 && !examCompleted) {
+                    timeRemaining--;
+                    updateTimerDisplay();
+                } else if (!examCompleted) {
+                    clearInterval(timerInterval);
+                    submitExam();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const hours = Math.floor(timeRemaining / 3600);
+            const minutes = Math.floor((timeRemaining % 3600) / 60);
+            const seconds = timeRemaining % 60;
+            
+            document.getElementById('time-remaining').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Submit exam
+        function submitExam() {
+            if (examCompleted) return;
+            
+            if (confirm('Are you sure you want to submit your exam? This action cannot be undone.')) {
+                examCompleted = true;
+                showResults();
+            }
+        }
+
+        // Show results
+        function showResults() {
+            // Calculate score
+            let score = 0;
+            for (let i = 1; i <= totalQuestions; i++) {
+                const questionIndex = (i - 1) % examQuestions.length;
+                if (userAnswers[i] === examQuestions[questionIndex].correctAnswer) {
+                    score++;
+                }
+            }
+            
+            const percentage = Math.round((score / totalQuestions) * 100);
+            const passed = percentage >= 85; // 85% passing score
+            
+            // Update results display
+            document.getElementById('correctAnswers').textContent = score;
+            document.getElementById('totalQuestions').textContent = totalQuestions;
+            document.getElementById('scorePercentage').textContent = `${percentage}%`;
+            document.getElementById('examStatus').textContent = passed ? 'PASSED' : 'FAILED';
+            document.getElementById('examStatus').style.color = passed ? '#00FFB3' : '#FF6B6B';
+            
+            // Update score display
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            scoreDisplay.textContent = `${percentage}%`;
+            scoreDisplay.className = `score-display ${passed ? 'score-pass' : 'score-fail'}`;
+            
+            // Show results container, hide exam container and back buttons
+            document.getElementById('examContainer').style.display = 'none';
+            document.getElementById('resultsContainer').style.display = 'block';
+            document.getElementById('backButtons').style.display = 'none';
+        }
+
+        // Navigation functions for results
+        function goToHome() {
+            window.location.href = 'home.html';
+        }
+
+        function goToExamMode() {
+            window.location.href = 'exam-mode.html';
+        }
+
+        function reviewAnswers() {
+            inReviewMode = true;
+            reviewQuestion = 1;
+            
+            // Hide results, show review container
+            document.getElementById('resultsContainer').style.display = 'none';
+            document.getElementById('reviewContainer').style.display = 'block';
+            
+            // Load first review question
+            loadReviewQuestion(reviewQuestion);
+        }
+
+        // Load review question with answers and explanations
+        function loadReviewQuestion(questionNumber) {
+            if (questionNumber < 1 || questionNumber > totalQuestions) return;
+            
+            reviewQuestion = questionNumber;
+            
+            // Update UI
+            document.getElementById('review-question-number').textContent = questionNumber;
+            
+            // Load question data
+            const questionIndex = (questionNumber - 1) % examQuestions.length;
+            const question = examQuestions[questionIndex];
+            const correctAnswer = question.correctAnswer;
+            const userAnswer = userAnswers[questionNumber];
+            
+            document.getElementById('review-question-text').textContent = question.question;
+            document.getElementById('reviewExplanationText').textContent = question.explanation;
+            
+            // Clear and populate options
+            const optionsContainer = document.getElementById('review-options-container');
+            optionsContainer.innerHTML = '';
+            
+            const optionLabels = ['A', 'B', 'C', 'D'];
+            
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                
+                // Highlight correct and incorrect answers
+                if (index === correctAnswer) {
+                    optionElement.classList.add('correct');
+                } else if (index === userAnswer && index !== correctAnswer) {
+                    optionElement.classList.add('incorrect');
+                }
+                
+                optionElement.innerHTML = `
+                    <input type="radio" name="review-question-${questionNumber}" value="${index}" id="review-option-${questionNumber}-${index}" ${userAnswer === index ? 'checked' : ''} disabled>
+                    <span class="option-label">${optionLabels[index]}</span>
+                    <span class="option-text">${option}</span>
+                `;
+                
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            // Enable/disable navigation buttons
+            document.getElementById('review-prev-btn').disabled = questionNumber === 1;
+            document.getElementById('review-next-btn').disabled = questionNumber === totalQuestions;
+        }
+
+        // Review navigation functions
+        function showPreviousReviewQuestion() {
+            if (reviewQuestion > 1) {
+                loadReviewQuestion(reviewQuestion - 1);
+            }
+        }
+
+        function showNextReviewQuestion() {
+            if (reviewQuestion < totalQuestions) {
+                loadReviewQuestion(reviewQuestion + 1);
+            }
+        }
+
+        function backToResults() {
+            inReviewMode = false;
+            
+            // Hide review container, show results
+            document.getElementById('reviewContainer').style.display = 'none';
+            document.getElementById('resultsContainer').style.display = 'block';
+        }
+
+        // Logout functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to logout?')) {
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('token_timestamp');
+                        localStorage.removeItem('username');
+                        sessionStorage.clear();
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
+
+            // Check authentication
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Verify token is still valid - UPDATED API URL
+            fetch('https://architect-johan-secure.onrender.com/api/validate-token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.valid) {
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('token_timestamp');
+                    localStorage.removeItem('username');
+                    window.location.href = 'index.html';
+                } else {
+                    // Initialize exam directly
+                    initializeExam();
+                }
+            })
+            .catch(error => {
+                console.error('Token validation error:', error);
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('token_timestamp');
+                localStorage.removeItem('username');
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>
