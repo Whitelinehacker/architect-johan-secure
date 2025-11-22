@@ -2848,6 +2848,37 @@
             }
         });
 
+
+        function verifyPracticeAccess() {
+    const password = prompt('Enter password for Practice Set 1:');
+    if (password) {
+        fetch('/api/verify-practice-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                password: password,
+                practice_set: 'practice_set_1'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                sessionStorage.setItem('practice_set_1_verified', 'true');
+                // Continue with practice set
+            } else {
+                alert('Incorrect password!');
+                window.location.href = 'practice_sets.html';
+            }
+        });
+    } else {
+        window.location.href = 'practice_sets.html';
+    }
+}
+
     </script>
 </body>
+
 </html>
