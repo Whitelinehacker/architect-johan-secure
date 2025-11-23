@@ -1045,14 +1045,33 @@ def verify_practice_password(current_user):
         provided_password = data.get('password', '')
         practice_set = data.get('practice_set', 'practice_set_1')
         
-        if practice_set not in PRACTICE_PASSWORDS:
+        print(f"DEBUG: Received password: '{provided_password}'")
+        print(f"DEBUG: Practice set: '{practice_set}'")
+        
+        # Direct password mapping
+        expected_passwords = {
+            'practice_set_1': 'Arch1t3ch_Joh@N!X#P1_Pro@2025',
+            'practice_set_2': 'Arch1t3ch_Joh@N!X#Pr2_2025',
+            'practice_set_3': 'Arch1t3ch_Joh@N!X#P3_Pro@2025',
+            'practice_set_4': 'Arch1t3ch_Joh@N!X$P4_2025',
+            'practice_set_5': 'Arch1t3ch_Joh@N!X$P5_2025',
+            'practice_set_6': 'Arch1t3ch_Joh@N!X#Pr6_2025',
+            'practice_set_7': 'Arch1t3ch_Joh@N!X#Pr7_2025',
+            'practice_set_8': 'Arch1t3ch_Joh@N!X#Pr8_2025',
+            'practice_mode': 'Arch1t3ch_Joh@N!X#P1_Pro@2025'
+        }
+        
+        if practice_set not in expected_passwords:
             return jsonify({
                 'success': False,
                 'error': 'Invalid practice set'
             }), 400
         
-        # Direct comparison instead of bcrypt
-        if provided_password == PRACTICE_PASSWORDS[practice_set]:
+        expected_password = expected_passwords[practice_set]
+        print(f"DEBUG: Expected password: '{expected_password}'")
+        print(f"DEBUG: Passwords match: {provided_password == expected_password}")
+        
+        if provided_password == expected_password:
             log_practice_access(current_user, practice_set, request.remote_addr, 'success')
             
             redirect_url = f'practice_{practice_set.replace("practice_set_", "")}.html'
@@ -1067,16 +1086,15 @@ def verify_practice_password(current_user):
             log_practice_access(current_user, practice_set, request.remote_addr, 'failed')
             return jsonify({
                 'success': False,
-                'error': 'Incorrect password'
+                'error': f'Incorrect password. Expected: {expected_password}, Got: {provided_password}'
             }), 401
             
     except Exception as e:
         logger.error(f"Practice password verification error: {e}")
         return jsonify({
             'success': False,
-            'error': 'Verification failed'
+            'error': f'Verification failed: {str(e)}'
         }), 500
-
 @app.route('/api/csrf-token', methods=['GET'])
 def get_csrf_token():
     return jsonify({'csrf_token': generate_csrf_token()}), 200
@@ -1197,6 +1215,7 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
 
 
