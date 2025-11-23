@@ -236,6 +236,66 @@ def initialize_database():
             logger.error("Cannot initialize database - PostgreSQL not available")
         app.database_initialized = True
 
+
+
+
+
+# Exam Level Password Verification
+@app.route('/api/verify-exam-level-password', methods=['POST'])
+@token_required
+def verify_exam_level_password(current_user):
+    """Verify password for exam level access"""
+    try:
+        data = request.get_json()
+        provided_password = data.get('password', '')
+        exam_level = data.get('exam_level', 'exam_level_1')
+        
+        print(f"DEBUG: Received exam password: '{provided_password}'")
+        print(f"DEBUG: Exam level: '{exam_level}'")
+        
+        # Direct password mapping for exam levels
+        expected_passwords = {
+            'exam_level_1': 'Arch1t3ch_Joh@N!X#Exam1_2025',
+            'exam_level_2': 'Arch1t3ch_Joh@N!X#Exam2_2025',
+            'exam_level_3': 'Arch1t3ch_Joh@N!X#Exam3_2025',
+            'exam_level_4': 'Arch1t3ch_Joh@N!X#Exam4_2025',
+            'exam_level_5': 'Arch1t3ch_Joh@N!X#Exam5_2025',
+            'exam_level_6': 'Arch1t3ch_Joh@N!X#Exam6_2025'
+        }
+        
+        if exam_level not in expected_passwords:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid exam level'
+            }), 400
+        
+        expected_password = expected_passwords[exam_level]
+        print(f"DEBUG: Expected exam password: '{expected_password}'")
+        print(f"DEBUG: Passwords match: {provided_password == expected_password}")
+        
+        if provided_password == expected_password:
+            # Log exam level access (you might want to create a separate table for this)
+            log_practice_access(current_user, exam_level, request.remote_addr, 'success')
+            
+            return jsonify({
+                'success': True,
+                'message': 'Password verified successfully',
+                'exam_level': exam_level
+            }), 200
+        else:
+            log_practice_access(current_user, exam_level, request.remote_addr, 'failed')
+            return jsonify({
+                'success': False,
+                'error': 'Incorrect password'
+            }), 401
+            
+    except Exception as e:
+        logger.error(f"Exam level password verification error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Verification failed: {str(e)}'
+        }), 500
+
 # Database helper functions (updated for psycopg3)
 def get_user_by_username(username):
     """Get user from database by username"""
@@ -1215,6 +1275,7 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
 
 
