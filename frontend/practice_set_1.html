@@ -999,54 +999,61 @@
         }
 
         function verifyPasswordWithServer(password) {
-            const errorDiv = document.getElementById('passwordError');
-            const submitBtn = document.getElementById('submitPassword');
-            const originalText = submitBtn.textContent;
+    const errorDiv = document.getElementById('passwordError');
+    const submitBtn = document.getElementById('submitPassword');
+    const originalText = submitBtn.textContent;
 
-            submitBtn.textContent = 'Verifying...';
-            submitBtn.disabled = true;
-            errorDiv.style.display = 'none';
+    submitBtn.textContent = 'Verifying...';
+    submitBtn.disabled = true;
+    errorDiv.style.display = 'none';
 
-            fetch('/api/verify-practice-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    password: password,
-                    practice_set: 'practice_set_1'
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    sessionStorage.setItem('practice_set_1_verified', 'true');
-                    sessionStorage.setItem('practice_1_password', password);
-                    
-                    const modal = document.querySelector('div[style*="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 4, 10, 0.95);"]');
-                    if (modal) {
-                        document.body.removeChild(modal);
-                    }
-                    initializePracticeTest();
-                } else {
-                    throw new Error('Incorrect password');
-                }
-            })
-            .catch(error => {
-                console.error('Password verification failed:', error);
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-                errorDiv.style.display = 'block';
-                document.getElementById('practicePassword').value = '';
-                document.getElementById('practicePassword').focus();
-            });
+    console.log('Sending request with:', {
+        password: password,
+        practice_set: 'practice_set_1'
+    });
+
+    fetch('/api/verify-practice-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            password: password,
+            practice_set: 'practice_set_1'
+        })
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json().then(data => {
+            console.log('Response data:', data);
+            return { status: response.status, data: data };
+        });
+    })
+    .then(({ status, data }) => {
+        if (status === 200 && data.success) {
+            sessionStorage.setItem('practice_set_1_verified', 'true');
+            sessionStorage.setItem('practice_1_password', password);
+            
+            const modal = document.querySelector('div[style*="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 4, 10, 0.95);"]');
+            if (modal) {
+                document.body.removeChild(modal);
+            }
+            initializePracticeTest();
+        } else {
+            throw new Error(data.error || 'Incorrect password');
         }
+    })
+    .catch(error => {
+        console.error('Password verification failed:', error);
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        errorDiv.textContent = `❌ ${error.message}`;
+        errorDiv.style.display = 'block';
+        document.getElementById('practicePassword').value = '';
+        document.getElementById('practicePassword').focus();
+    });
+}
 
         // Initialize practice test with 10 sample questions
         function initializePracticeTest() {
@@ -3089,6 +3096,7 @@
 </body>
 
 </html>
+
 
 
 
