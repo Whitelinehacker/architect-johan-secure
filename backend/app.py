@@ -52,27 +52,25 @@ default_admin_password = 'Arch1t3ch_Joh@N!X#2025'
 # Practice set passwords (encrypted)
 # Practice set passwords (pre-computed static hashes)
 PRACTICE_PASSWORDS = {
-    'practice_set_1': b'$2b$12$/wBWJjFA2ntrmbv0b5cDwe8zjoSyjSZze0Y1YKdJbxe0dZX6Tr1Wy',
-    'practice_set_2': b'$2b$12$T1O/ZEcNDzlNo301QXw7VO7e.aNjNyVZt1EYjjcEn.J03a.HvuLVe',
-    'practice_set_3': b'$2b$12$pI5DD7NBaiUcFO7AVt/2De5L/SQHh56qTNreOOxdKJMQDSjnkA7za',
-    'practice_set_4': b'$2b$12$icwfFyeHWXwka1knGw3tE.x8.bhVZvwWTCaSgr24ULks8fAjK4qp2',
-    'practice_set_5': b'$2b$12$6ln7KVMrL1QWiNObb2kt1.Oe9iheGLJs9B9nhmrHTqIx8kH8N3vBO',
-    'practice_set_6': b'$2b$12$H51uC5t1vnNvVvO0o.85meJq1r5kkOgVduqyoi4HSi.bB.Xm7wR5O',
-    'practice_set_7': b'$2b$12$frW..rTLrkBH.XfLqTh5Su7Xbssf.jGFs9/TErSz3zIsA8avMZK0q',
-    'practice_set_8': b'$2b$12$ek3qExNzFXCsG2Y/mxLV5.STTbA9bbZQPCaNgB0A65/tODwh1GLmi',
-    'practice_mode': b'$2b$12$PBBJ5rH0Jm792YJTk0qRLOQfBiVyXUek9AlcmvPJBzRcCi65E1uhO'
+    'practice_set_1': 'Arch1t3ch_Joh@N!X#P1_Pro@2025',
+    'practice_set_2': 'Arch1t3ch_Joh@N!X#Pr2_2025',
+    'practice_set_3': 'Arch1t3ch_Joh@N!X#P3_Pro@2025', 
+    'practice_set_4': 'Arch1t3ch_Joh@N!X$P4_2025',
+    'practice_set_5': 'Arch1t3ch_Joh@N!X$P5_2025',
+    'practice_set_6': 'Arch1t3ch_Joh@N!X#Pr6_2025',
+    'practice_set_7': 'Arch1t3ch_Joh@N!X#Pr7_2025',
+    'practice_set_8': 'Arch1t3ch_Joh@N!X#Pr8_2025',
+    'practice_mode': 'Arch1t3ch_Joh@N!X#P1_Pro@2025'
 }
 
-# Exam level passwords
 EXAM_LEVEL_PASSWORDS = {
-    'exam_level_1': b'$2b$12$6AfW1l/F1lILv6fa1djpZeCqU.qcao/xLHS8/QkDh3F4T1Cgwc4xi',
-    'exam_level_2': b'$2b$12$jEWHokxkuHmZidlOgF39bu3S9hpTOl/f76T0MVGGv0n3T45pQWjc6',
-    'exam_level_3': b'$2b$12$8DsoDyTyxz0bEKZuQBqqpeKiEBctEJ3GK4I7y9EpchbRcl9SJvM.K',
-    'exam_level_4': b'$2b$12$Q7VuR3f8Y65DtHPnPNR6rud2zCmUemkStpkiG.uq88CULVeVzz2xO',
-    'exam_level_5': b'$2b$12$IBAjfaKhR0gk.o1cPoGv3OCpS1D4HFZN7vYY/aS/cB6y6ARpVfN.u',
-    'exam_level_6': b'$2b$12$fFYDP6PKl5WUosjrMTU7t.BuxHB4D4e038P36cRoBXdqfKDV5ctNq'
+    'exam_level_1': 'Arch1t3ch_Joh@N!X#Exam1_2025',
+    'exam_level_2': 'Arch1t3ch_Joh@N!X#Exam2_2025',
+    'exam_level_3': 'Arch1t3ch_Joh@N!X#Exam3_2025',
+    'exam_level_4': 'Arch1t3ch_Joh@N!X#Exam4_2025',
+    'exam_level_5': 'Arch1t3ch_Joh@N!X#Exam5_2025', 
+    'exam_level_6': 'Arch1t3ch_Joh@N!X#Exam6_2025'
 }
-
 # Rate limiting storage
 login_attempts = {}
 MAX_ATTEMPTS = 5
@@ -1078,41 +1076,42 @@ def serve_practice_set_8():
     return send_from_directory('../frontend', 'practice_set_8.html')
 
 # Exam Level Password Verification
-@app.route('/api/verify-exam-level-password', methods=['POST'])
+@app.route('/api/verify-practice-password', methods=['POST'])
 @token_required
-def verify_exam_level_password(current_user):
-    """Verify password for exam level access"""
+def verify_practice_password(current_user):
+    """Verify password for practice set access"""
     try:
         data = request.get_json()
         provided_password = data.get('password', '')
-        exam_level = data.get('exam_level', 'exam_level_1')
+        practice_set = data.get('practice_set', 'practice_set_1')
         
-        if exam_level not in EXAM_LEVEL_PASSWORDS:
+        if practice_set not in PRACTICE_PASSWORDS:
             return jsonify({
                 'success': False,
-                'error': 'Invalid exam level'
+                'error': 'Invalid practice set'
             }), 400
         
-        if verify_password(EXAM_LEVEL_PASSWORDS[exam_level], provided_password):
-            # Log successful access
-            log_practice_access(current_user, exam_level, request.remote_addr, 'success')
+        # Direct comparison instead of bcrypt
+        if provided_password == PRACTICE_PASSWORDS[practice_set]:
+            log_practice_access(current_user, practice_set, request.remote_addr, 'success')
+            
+            redirect_url = f'practice_{practice_set.replace("practice_set_", "")}.html'
             
             return jsonify({
                 'success': True,
                 'message': 'Password verified successfully',
-                'redirect_url': f'exam-interface.html?level={exam_level}',
-                'exam_level': exam_level
+                'redirect_url': redirect_url,
+                'practice_set': practice_set
             }), 200
         else:
-            # Log failed attempt
-            log_practice_access(current_user, exam_level, request.remote_addr, 'failed')
+            log_practice_access(current_user, practice_set, request.remote_addr, 'failed')
             return jsonify({
                 'success': False,
                 'error': 'Incorrect password'
             }), 401
             
     except Exception as e:
-        logger.error(f"Exam level password verification error: {e}")
+        logger.error(f"Practice password verification error: {e}")
         return jsonify({
             'success': False,
             'error': 'Verification failed'
@@ -1238,4 +1237,5 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
