@@ -781,10 +781,10 @@
 
                 const data = await response.json();
 
-                if (data.success) {
-                    // Password correct - redirect to practice set
-                    closePasswordModal();
-                    window.location.href = data.redirect_url;
+if (data.success) {
+    // Password correct - redirect to practice set with verification flag
+    closePasswordModal();
+    window.location.href = data.redirect_url + '?verified=true';
                 } else {
                     // Password incorrect
                     errorMessage.textContent = data.error || 'Incorrect password';
@@ -836,3 +836,4 @@
 </body>
 
 </html>
+
