@@ -967,47 +967,7 @@ def logout(current_user):
     log_user_activity(current_user, 'logout', request.remote_addr, request.headers.get('User-Agent'))
     return jsonify({'message': 'Logout successful'}), 200
 
-# Practice Set Password Verification
-@app.route('/api/verify-practice-password', methods=['POST'])
-@token_required
-def verify_practice_password(current_user):
-    """Verify password for practice set access"""
-    try:
-        data = request.get_json()
-        provided_password = data.get('password', '')
-        practice_set = data.get('practice_set', 'practice_set_1')
-        
-        if practice_set not in PRACTICE_PASSWORDS:
-            return jsonify({
-                'success': False,
-                'error': 'Invalid practice set'
-            }), 400
-        
-        if verify_password(PRACTICE_PASSWORDS[practice_set], provided_password):
-            log_practice_access(current_user, practice_set, request.remote_addr, 'success')
-            
-            # Return different redirect URLs based on practice set
-            redirect_url = f'practice_{practice_set.replace("practice_set_", "")}.html'
-            
-            return jsonify({
-                'success': True,
-                'message': 'Password verified successfully',
-                'redirect_url': redirect_url,
-                'practice_set': practice_set
-            }), 200
-        else:
-            log_practice_access(current_user, practice_set, request.remote_addr, 'failed')
-            return jsonify({
-                'success': False,
-                'error': 'Incorrect password'
-            }), 401
-            
-    except Exception as e:
-        logger.error(f"Practice password verification error: {e}")
-        return jsonify({
-            'success': False,
-            'error': 'Verification failed'
-        }), 500
+
 
 # Serve practice set HTML files
 @app.route('/practice_1.html')
@@ -1237,5 +1197,6 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
 
