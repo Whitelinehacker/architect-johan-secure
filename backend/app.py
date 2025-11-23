@@ -236,66 +236,6 @@ def initialize_database():
             logger.error("Cannot initialize database - PostgreSQL not available")
         app.database_initialized = True
 
-
-
-
-
-# Exam Level Password Verification
-@app.route('/api/verify-exam-level-password', methods=['POST'])
-@token_required
-def verify_exam_level_password(current_user):
-    """Verify password for exam level access"""
-    try:
-        data = request.get_json()
-        provided_password = data.get('password', '')
-        exam_level = data.get('exam_level', 'exam_level_1')
-        
-        print(f"DEBUG: Received exam password: '{provided_password}'")
-        print(f"DEBUG: Exam level: '{exam_level}'")
-        
-        # Direct password mapping for exam levels
-        expected_passwords = {
-            'exam_level_1': 'Arch1t3ch_Joh@N!X#Exam1_2025',
-            'exam_level_2': 'Arch1t3ch_Joh@N!X#Exam2_2025',
-            'exam_level_3': 'Arch1t3ch_Joh@N!X#Exam3_2025',
-            'exam_level_4': 'Arch1t3ch_Joh@N!X#Exam4_2025',
-            'exam_level_5': 'Arch1t3ch_Joh@N!X#Exam5_2025',
-            'exam_level_6': 'Arch1t3ch_Joh@N!X#Exam6_2025'
-        }
-        
-        if exam_level not in expected_passwords:
-            return jsonify({
-                'success': False,
-                'error': 'Invalid exam level'
-            }), 400
-        
-        expected_password = expected_passwords[exam_level]
-        print(f"DEBUG: Expected exam password: '{expected_password}'")
-        print(f"DEBUG: Passwords match: {provided_password == expected_password}")
-        
-        if provided_password == expected_password:
-            # Log exam level access (you might want to create a separate table for this)
-            log_practice_access(current_user, exam_level, request.remote_addr, 'success')
-            
-            return jsonify({
-                'success': True,
-                'message': 'Password verified successfully',
-                'exam_level': exam_level
-            }), 200
-        else:
-            log_practice_access(current_user, exam_level, request.remote_addr, 'failed')
-            return jsonify({
-                'success': False,
-                'error': 'Incorrect password'
-            }), 401
-            
-    except Exception as e:
-        logger.error(f"Exam level password verification error: {e}")
-        return jsonify({
-            'success': False,
-            'error': f'Verification failed: {str(e)}'
-        }), 500
-
 # Database helper functions (updated for psycopg3)
 def get_user_by_username(username):
     """Get user from database by username"""
@@ -590,6 +530,7 @@ def log_video_access(username, video_id, ip_address=None, status='success'):
     except Exception as e:
         logger.error(f"Failed to log video access: {e}")
 
+# AUTHENTICATION DECORATORS - MOVED BEFORE ROUTES
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -1027,7 +968,183 @@ def logout(current_user):
     log_user_activity(current_user, 'logout', request.remote_addr, request.headers.get('User-Agent'))
     return jsonify({'message': 'Logout successful'}), 200
 
+# Exam Level Password Verification
+@app.route('/api/verify-exam-level-password', methods=['POST'])
+@token_required
+def verify_exam_level_password(current_user):
+    """Verify password for exam level access"""
+    try:
+        data = request.get_json()
+        provided_password = data.get('password', '')
+        exam_level = data.get('exam_level', 'exam_level_1')
+        
+        print(f"DEBUG: Received exam password: '{provided_password}'")
+        print(f"DEBUG: Exam level: '{exam_level}'")
+        
+        # Direct password mapping for exam levels
+        expected_passwords = {
+            'exam_level_1': 'Arch1t3ch_Joh@N!X#Exam1_2025',
+            'exam_level_2': 'Arch1t3ch_Joh@N!X#Exam2_2025',
+            'exam_level_3': 'Arch1t3ch_Joh@N!X#Exam3_2025',
+            'exam_level_4': 'Arch1t3ch_Joh@N!X#Exam4_2025',
+            'exam_level_5': 'Arch1t3ch_Joh@N!X#Exam5_2025',
+            'exam_level_6': 'Arch1t3ch_Joh@N!X#Exam6_2025'
+        }
+        
+        if exam_level not in expected_passwords:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid exam level'
+            }), 400
+        
+        expected_password = expected_passwords[exam_level]
+        print(f"DEBUG: Expected exam password: '{expected_password}'")
+        print(f"DEBUG: Passwords match: {provided_password == expected_password}")
+        
+        if provided_password == expected_password:
+            # Log exam level access
+            log_practice_access(current_user, exam_level, request.remote_addr, 'success')
+            
+            return jsonify({
+                'success': True,
+                'message': 'Password verified successfully',
+                'exam_level': exam_level
+            }), 200
+        else:
+            log_practice_access(current_user, exam_level, request.remote_addr, 'failed')
+            return jsonify({
+                'success': False,
+                'error': 'Incorrect password'
+            }), 401
+            
+    except Exception as e:
+        logger.error(f"Exam level password verification error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Verification failed: {str(e)}'
+        }), 500
 
+# Practice Set Password Verification
+@app.route('/api/verify-practice-password', methods=['POST'])
+@token_required
+def verify_practice_password(current_user):
+    """Verify password for practice set access"""
+    try:
+        data = request.get_json()
+        provided_password = data.get('password', '')
+        practice_set = data.get('practice_set', 'practice_set_1')
+        
+        print(f"DEBUG: Received password: '{provided_password}'")
+        print(f"DEBUG: Practice set: '{practice_set}'")
+        
+        # Direct password mapping
+        expected_passwords = {
+            'practice_set_1': 'Arch1t3ch_Joh@N!X#P1_Pro@2025',
+            'practice_set_2': 'Arch1t3ch_Joh@N!X#Pr2_2025',
+            'practice_set_3': 'Arch1t3ch_Joh@N!X#P3_Pro@2025',
+            'practice_set_4': 'Arch1t3ch_Joh@N!X$P4_2025',
+            'practice_set_5': 'Arch1t3ch_Joh@N!X$P5_2025',
+            'practice_set_6': 'Arch1t3ch_Joh@N!X#Pr6_2025',
+            'practice_set_7': 'Arch1t3ch_Joh@N!X#Pr7_2025',
+            'practice_set_8': 'Arch1t3ch_Joh@N!X#Pr8_2025',
+            'practice_mode': 'Arch1t3ch_Joh@N!X#P1_Pro@2025'
+        }
+        
+        if practice_set not in expected_passwords:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid practice set'
+            }), 400
+        
+        expected_password = expected_passwords[practice_set]
+        print(f"DEBUG: Expected password: '{expected_password}'")
+        print(f"DEBUG: Passwords match: {provided_password == expected_password}")
+        
+        if provided_password == expected_password:
+            log_practice_access(current_user, practice_set, request.remote_addr, 'success')
+            
+            redirect_url = f'practice_{practice_set.replace("practice_set_", "")}.html'
+            
+            return jsonify({
+                'success': True,
+                'message': 'Password verified successfully',
+                'redirect_url': redirect_url,
+                'practice_set': practice_set
+            }), 200
+        else:
+            log_practice_access(current_user, practice_set, request.remote_addr, 'failed')
+            return jsonify({
+                'success': False,
+                'error': f'Incorrect password. Expected: {expected_password}, Got: {provided_password}'
+            }), 401
+            
+    except Exception as e:
+        logger.error(f"Practice password verification error: {e}")
+        return jsonify({
+            'success': False,
+            'error': f'Verification failed: {str(e)}'
+        }), 500
+
+@app.route('/api/csrf-token', methods=['GET'])
+def get_csrf_token():
+    return jsonify({'csrf_token': generate_csrf_token()}), 200
+
+@app.route('/api/user/profile', methods=['GET'])
+@token_required
+def get_user_profile(current_user):
+    """Get current user profile"""
+    try:
+        user = get_user_by_username(current_user)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Return user profile without sensitive data
+        profile_data = {
+            'username': user['username'],
+            'full_name': user['full_name'],
+            'email': user['email'],
+            'mobile_no': user['mobile_no'],
+            'role': user['role'],
+            'created_at': user['created_at'].isoformat() if user['created_at'] else None,
+            'last_login': user['last_login'].isoformat() if user['last_login'] else None
+        }
+        
+        return jsonify(profile_data), 200
+        
+    except Exception as e:
+        logger.error(f"Get user profile error: {e}")
+        return jsonify({'error': 'Failed to get user profile'}), 500
+
+# File serving routes
+@app.route('/')
+def serve_index():
+    return send_from_directory('../frontend', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('../frontend', path)
+
+# Serve assets from different directories
+@app.route('/assets/<path:path>')
+def serve_assets(path):
+    return send_from_directory('../frontend/assets', path)
+
+@app.route('/js/<path:path>')
+def serve_js(path):
+    return send_from_directory('../frontend/js', path)
+
+@app.route('/css/<path:path>')
+def serve_css(path):
+    return send_from_directory('../frontend/css', path)
+
+@app.route('/downloads/<path:filename>')
+def serve_downloads(filename):
+    return send_from_directory('../frontend/downloads', filename)
+
+# Serve reset-password.html
+@app.route('/reset-password.html')
+def serve_reset_password():
+    return send_from_directory('../frontend', 'reset-password.html')
 
 # Serve practice set HTML files
 @app.route('/practice_1.html')
@@ -1095,127 +1212,6 @@ def serve_practice_set_7():
 def serve_practice_set_8():
     return send_from_directory('../frontend', 'practice_set_8.html')
 
-# Exam Level Password Verification
-@app.route('/api/verify-practice-password', methods=['POST'])
-@token_required
-def verify_practice_password(current_user):
-    """Verify password for practice set access"""
-    try:
-        data = request.get_json()
-        provided_password = data.get('password', '')
-        practice_set = data.get('practice_set', 'practice_set_1')
-        
-        print(f"DEBUG: Received password: '{provided_password}'")
-        print(f"DEBUG: Practice set: '{practice_set}'")
-        
-        # Direct password mapping
-        expected_passwords = {
-            'practice_set_1': 'Arch1t3ch_Joh@N!X#P1_Pro@2025',
-            'practice_set_2': 'Arch1t3ch_Joh@N!X#Pr2_2025',
-            'practice_set_3': 'Arch1t3ch_Joh@N!X#P3_Pro@2025',
-            'practice_set_4': 'Arch1t3ch_Joh@N!X$P4_2025',
-            'practice_set_5': 'Arch1t3ch_Joh@N!X$P5_2025',
-            'practice_set_6': 'Arch1t3ch_Joh@N!X#Pr6_2025',
-            'practice_set_7': 'Arch1t3ch_Joh@N!X#Pr7_2025',
-            'practice_set_8': 'Arch1t3ch_Joh@N!X#Pr8_2025',
-            'practice_mode': 'Arch1t3ch_Joh@N!X#P1_Pro@2025'
-        }
-        
-        if practice_set not in expected_passwords:
-            return jsonify({
-                'success': False,
-                'error': 'Invalid practice set'
-            }), 400
-        
-        expected_password = expected_passwords[practice_set]
-        print(f"DEBUG: Expected password: '{expected_password}'")
-        print(f"DEBUG: Passwords match: {provided_password == expected_password}")
-        
-        if provided_password == expected_password:
-            log_practice_access(current_user, practice_set, request.remote_addr, 'success')
-            
-            redirect_url = f'practice_{practice_set.replace("practice_set_", "")}.html'
-            
-            return jsonify({
-                'success': True,
-                'message': 'Password verified successfully',
-                'redirect_url': redirect_url,
-                'practice_set': practice_set
-            }), 200
-        else:
-            log_practice_access(current_user, practice_set, request.remote_addr, 'failed')
-            return jsonify({
-                'success': False,
-                'error': f'Incorrect password. Expected: {expected_password}, Got: {provided_password}'
-            }), 401
-            
-    except Exception as e:
-        logger.error(f"Practice password verification error: {e}")
-        return jsonify({
-            'success': False,
-            'error': f'Verification failed: {str(e)}'
-        }), 500
-@app.route('/api/csrf-token', methods=['GET'])
-def get_csrf_token():
-    return jsonify({'csrf_token': generate_csrf_token()}), 200
-
-@app.route('/api/user/profile', methods=['GET'])
-@token_required
-def get_user_profile(current_user):
-    """Get current user profile"""
-    try:
-        user = get_user_by_username(current_user)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        # Return user profile without sensitive data
-        profile_data = {
-            'username': user['username'],
-            'full_name': user['full_name'],
-            'email': user['email'],
-            'mobile_no': user['mobile_no'],
-            'role': user['role'],
-            'created_at': user['created_at'].isoformat() if user['created_at'] else None,
-            'last_login': user['last_login'].isoformat() if user['last_login'] else None
-        }
-        
-        return jsonify(profile_data), 200
-        
-    except Exception as e:
-        logger.error(f"Get user profile error: {e}")
-        return jsonify({'error': 'Failed to get user profile'}), 500
-
-# File serving routes
-@app.route('/')
-def serve_index():
-    return send_from_directory('../frontend', 'index.html')
-
-@app.route('/<path:path>')
-def serve_static(path):
-    return send_from_directory('../frontend', path)
-
-# Serve assets from different directories
-@app.route('/assets/<path:path>')
-def serve_assets(path):
-    return send_from_directory('../frontend/assets', path)
-
-@app.route('/js/<path:path>')
-def serve_js(path):
-    return send_from_directory('../frontend/js', path)
-
-@app.route('/css/<path:path>')
-def serve_css(path):
-    return send_from_directory('../frontend/css', path)
-
-@app.route('/downloads/<path:filename>')
-def serve_downloads(filename):
-    return send_from_directory('../frontend/downloads', filename)
-
-# Serve reset-password.html
-@app.route('/reset-password.html')
-def serve_reset_password():
-    return send_from_directory('../frontend', 'reset-password.html')
-
 # Error handlers
 @app.errorhandler(404)
 def not_found(error):
@@ -1255,7 +1251,7 @@ def debug_db():
             'user_count': user_count['user_count'] if user_count else 0,
             'status': 'connected',
             'postgresql_available': POSTGRESQL_AVAILABLE
-        }), 200
+        }), 500
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1275,8 +1271,3 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
-
-
-
-
