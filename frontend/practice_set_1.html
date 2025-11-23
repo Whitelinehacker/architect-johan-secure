@@ -859,12 +859,22 @@
             }
             
             // Check if practice set is verified
-            const practiceSetVerified = sessionStorage.getItem('practice_set_1_verified');
-            if (!practiceSetVerified) {
-                verifyPracticeAccess();
-            } else {
-                initializePracticeTest();
-            }
+           // Check if practice set is verified OR if we're coming from practice_sets.html
+const practiceSetVerified = sessionStorage.getItem('practice_set_1_verified');
+const comingFromPracticeSets = document.referrer.includes('practice_sets.html');
+
+console.log('Practice set verified:', practiceSetVerified);
+console.log('Coming from practice sets:', comingFromPracticeSets);
+console.log('Referrer:', document.referrer);
+
+// Skip password check if already verified OR coming from practice sets
+if (practiceSetVerified || comingFromPracticeSets) {
+    console.log('Skipping password check - already verified or coming from practice sets');
+    initializePracticeTest();
+} else {
+    console.log('Showing password modal - not verified and not from practice sets');
+    verifyPracticeAccess();
+}
         })
         .catch(error => {
             document.body.style.cursor = 'default';
@@ -3098,6 +3108,7 @@
 </body>
 
 </html>
+
 
 
 
