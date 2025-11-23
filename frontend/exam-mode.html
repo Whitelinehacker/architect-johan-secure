@@ -800,81 +800,81 @@
             document.getElementById('loadingSpinner').style.display = 'none';
         }
 
-        function verifyPassword() {
-            const password = document.getElementById('passwordInput').value;
-            const token = localStorage.getItem('auth_token');
-            
-            if (!token) {
-                window.location.href = 'index.html';
-                return;
-            }
+  function verifyPassword() {
+    const password = document.getElementById('passwordInput').value;
+    const token = localStorage.getItem('auth_token');
+    
+    if (!token) {
+        window.location.href = 'index.html';
+        return;
+    }
 
-            if (!password) {
-                document.getElementById('errorMessage').textContent = 'Please enter a password';
-                document.getElementById('errorMessage').style.display = 'block';
-                return;
-            }
+    if (!password) {
+        document.getElementById('errorMessage').textContent = 'Please enter a password';
+        document.getElementById('errorMessage').style.display = 'block';
+        return;
+    }
 
-            document.getElementById('loadingSpinner').style.display = 'block';
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'none';
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('errorMessage').style.display = 'none';
+    document.getElementById('successMessage').style.display = 'none';
 
-            // Updated API URL to use Render backend
-            fetch('https://architect-johan-secure.onrender.com/api/verify-exam-level-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ 
-                    password: password, 
-                    exam_level: currentExamLevel 
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                document.getElementById('loadingSpinner').style.display = 'none';
-                
-                if (data.success) {
-                    document.getElementById('successMessage').style.display = 'block';
-                    
-                    // Redirect to appropriate exam level after short delay
-                    setTimeout(() => {
-                        const examLevelMap = {
-                            'exam_level_1': 'exam_mode_1.html',
-                            'exam_level_2': 'exam_mode_2.html',
-                            'exam_level_3': 'exam_mode_3.html',
-                            'exam_level_4': 'exam_mode_4.html',
-                            'exam_level_5': 'exam_mode_5.html',
-                            'exam_level_6': 'exam_mode_6.html'
-                        };
-                        
-                        const redirectUrl = examLevelMap[currentExamLevel];
-                        if (redirectUrl) {
-                            window.location.href = redirectUrl;
-                        } else {
-                            window.location.href = 'exam-mode.html';
-                        }
-                    }, 1000);
-                } else {
-                    document.getElementById('errorMessage').textContent = data.message || 'Incorrect password. Please try again.';
-                    document.getElementById('errorMessage').style.display = 'block';
-                    document.getElementById('passwordInput').value = '';
-                    document.getElementById('passwordInput').focus();
-                }
-            })
-            .catch(error => {
-                document.getElementById('loadingSpinner').style.display = 'none';
-                document.getElementById('errorMessage').textContent = 'Error verifying password. Please try again.';
-                document.getElementById('errorMessage').style.display = 'block';
-                console.error('Error:', error);
-            });
+    // Use the practice password endpoint as fallback
+    fetch('https://architect-johan-secure.onrender.com/api/verify-practice-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+            password: password, 
+            practice_set: currentExamLevel // Using practice_set parameter for now
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
         }
+        return response.json();
+    })
+    .then(data => {
+        document.getElementById('loadingSpinner').style.display = 'none';
+        
+        if (data.success) {
+            document.getElementById('successMessage').style.display = 'block';
+            
+            // Redirect to appropriate exam level after short delay
+            setTimeout(() => {
+                const examLevelMap = {
+                    'exam_level_1': 'exam_mode_1.html',
+                    'exam_level_2': 'exam_mode_2.html',
+                    'exam_level_3': 'exam_mode_3.html',
+                    'exam_level_4': 'exam_mode_4.html',
+                    'exam_level_5': 'exam_mode_5.html',
+                    'exam_level_6': 'exam_mode_6.html'
+                };
+                
+                const redirectUrl = examLevelMap[currentExamLevel];
+                if (redirectUrl) {
+                    window.location.href = redirectUrl;
+                } else {
+                    window.location.href = 'exam-mode.html';
+                }
+            }, 1000);
+        } else {
+            document.getElementById('errorMessage').textContent = data.message || 'Incorrect password. Please try again.';
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('passwordInput').focus();
+        }
+    })
+    .catch(error => {
+        document.getElementById('loadingSpinner').style.display = 'none';
+        document.getElementById('errorMessage').textContent = 'Error verifying password. Please try again.';
+        document.getElementById('errorMessage').style.display = 'block';
+        console.error('Error:', error);
+    });
+}
 
         // Logout functionality
         document.addEventListener('DOMContentLoaded', function() {
@@ -922,4 +922,5 @@
         });
     </script>
 </body>
+
 </html>
