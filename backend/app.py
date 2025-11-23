@@ -970,6 +970,7 @@ def logout(current_user):
 
 # Exam Level Password Verification
 # Exam Level Password Verification
+# Exam Level Password Verification
 @app.route('/api/verify-exam-level-password', methods=['POST'])
 @token_required
 def verify_exam_level_password(current_user):
@@ -1031,7 +1032,7 @@ def verify_exam_level_password(current_user):
             'success': False,
             'error': f'Verification failed: {str(e)}'
         }), 500
-
+        
 # Practice Set Password Verification
 @app.route('/api/verify-practice-password', methods=['POST'])
 @token_required
@@ -1325,4 +1326,5 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
