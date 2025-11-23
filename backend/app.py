@@ -969,6 +969,7 @@ def logout(current_user):
     return jsonify({'message': 'Logout successful'}), 200
 
 # Exam Level Password Verification
+# Exam Level Password Verification
 @app.route('/api/verify-exam-level-password', methods=['POST'])
 @token_required
 def verify_exam_level_password(current_user):
@@ -978,8 +979,10 @@ def verify_exam_level_password(current_user):
         provided_password = data.get('password', '')
         exam_level = data.get('exam_level', 'exam_level_1')
         
-        print(f"DEBUG: Received exam password: '{provided_password}'")
-        print(f"DEBUG: Exam level: '{exam_level}'")
+        print(f"🔐 EXAM PASSWORD VERIFICATION:")
+        print(f"   User: {current_user}")
+        print(f"   Exam Level: {exam_level}")
+        print(f"   Provided Password: '{provided_password}'")
         
         # Direct password mapping for exam levels
         expected_passwords = {
@@ -992,33 +995,38 @@ def verify_exam_level_password(current_user):
         }
         
         if exam_level not in expected_passwords:
+            print(f"❌ Invalid exam level: {exam_level}")
             return jsonify({
                 'success': False,
                 'error': 'Invalid exam level'
             }), 400
         
         expected_password = expected_passwords[exam_level]
-        print(f"DEBUG: Expected exam password: '{expected_password}'")
-        print(f"DEBUG: Passwords match: {provided_password == expected_password}")
+        print(f"   Expected Password: '{expected_password}'")
+        print(f"   Passwords Match: {provided_password == expected_password}")
         
         if provided_password == expected_password:
+            print(f"✅ Password verified successfully for {exam_level}")
             # Log exam level access
             log_practice_access(current_user, exam_level, request.remote_addr, 'success')
             
             return jsonify({
                 'success': True,
                 'message': 'Password verified successfully',
-                'exam_level': exam_level
+                'exam_level': exam_level,
+                'redirect_url': f'{exam_level.replace("_", "-")}.html'
             }), 200
         else:
+            print(f"❌ Incorrect password for {exam_level}")
             log_practice_access(current_user, exam_level, request.remote_addr, 'failed')
             return jsonify({
                 'success': False,
-                'error': 'Incorrect password'
+                'error': 'Incorrect password. Please try again.'
             }), 401
             
     except Exception as e:
         logger.error(f"Exam level password verification error: {e}")
+        print(f"💥 Exception in exam password verification: {e}")
         return jsonify({
             'success': False,
             'error': f'Verification failed: {str(e)}'
@@ -1212,6 +1220,33 @@ def serve_practice_set_7():
 def serve_practice_set_8():
     return send_from_directory('../frontend', 'practice_set_8.html')
 
+
+
+# Serve exam mode HTML files
+@app.route('/exam_mode_1.html')
+def serve_exam_mode_1():
+    return send_from_directory('../frontend', 'exam_mode_1.html')
+
+@app.route('/exam_mode_2.html')
+def serve_exam_mode_2():
+    return send_from_directory('../frontend', 'exam_mode_2.html')
+
+@app.route('/exam_mode_3.html')
+def serve_exam_mode_3():
+    return send_from_directory('../frontend', 'exam_mode_3.html')
+
+@app.route('/exam_mode_4.html')
+def serve_exam_mode_4():
+    return send_from_directory('../frontend', 'exam_mode_4.html')
+
+@app.route('/exam_mode_5.html')
+def serve_exam_mode_5():
+    return send_from_directory('../frontend', 'exam_mode_5.html')
+
+@app.route('/exam_mode_6.html')
+def serve_exam_mode_6():
+    return send_from_directory('../frontend', 'exam_mode_6.html')
+
 # Error handlers
 @app.errorhandler(404)
 def not_found(error):
@@ -1255,6 +1290,25 @@ def debug_db():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
+# Test exam passwords endpoint
+@app.route('/api/test-exam-passwords', methods=['GET'])
+def test_exam_passwords():
+    """Test endpoint to check exam passwords"""
+    exam_passwords = {
+        'exam_level_1': 'Arch1t3ch_Joh@N!X#Exam1_2025',
+        'exam_level_2': 'Arch1t3ch_Joh@N!X#Exam2_2025',
+        'exam_level_3': 'Arch1t3ch_Joh@N!X#Exam3_2025',
+        'exam_level_4': 'Arch1t3ch_Joh@N!X#Exam4_2025',
+        'exam_level_5': 'Arch1t3ch_Joh@N!X#Exam5_2025',
+        'exam_level_6': 'Arch1t3ch_Joh@N!X#Exam6_2025'
+    }
+    return jsonify({
+        'exam_passwords': exam_passwords,
+        'status': 'active',
+        'endpoint': '/api/verify-exam-level-password'
+    }), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
@@ -1271,3 +1325,4 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
