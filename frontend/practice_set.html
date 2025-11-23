@@ -767,7 +767,7 @@
                 submitBtn.textContent = 'Verifying...';
                 submitBtn.disabled = true;
 
-              const response = await fetch('https://architect-johan-secure.onrender.com/api/validate-token', {
+              const response = await fetch('https://architect-johan-secure.onrender.com/api/verify-practice-password', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -834,4 +834,5 @@
         });
     </script>
 </body>
+
 </html>
