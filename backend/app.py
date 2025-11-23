@@ -50,26 +50,27 @@ ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'your-email@gmail.com')
 default_admin_password = 'Arch1t3ch_Joh@N!X#2025'
 
 # Practice set passwords (encrypted)
+# Practice set passwords (pre-computed static hashes)
 PRACTICE_PASSWORDS = {
-    'practice_set_1': bcrypt.hashpw('Arch1t3ch_Joh@N!X#P1_Pro@2025'.encode('utf-8'), bcrypt.gensalt()),
-    'practice_set_2': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Pr2_2025'.encode('utf-8'), bcrypt.gensalt()),
-    'practice_set_3': bcrypt.hashpw('Arch1t3ch_Joh@N!X#P3_Pro@2025'.encode('utf-8'), bcrypt.gensalt()),
-    'practice_set_4': bcrypt.hashpw('Arch1t3ch_Joh@N!X$P4_2025'.encode('utf-8'), bcrypt.gensalt()),
-    'practice_set_5': bcrypt.hashpw('Arch1t3ch_Joh@N!X$P5_2025'.encode('utf-8'), bcrypt.gensalt()),
-    'practice_set_6': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Pr6_2025'.encode('utf-8'), bcrypt.gensalt()),
-    'practice_set_7': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Pr7_2025'.encode('utf-8'), bcrypt.gensalt()),
-    'practice_set_8': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Pr8_2025'.encode('utf-8'), bcrypt.gensalt()),
-    'practice_mode': bcrypt.hashpw('Arch1t3ch_Joh@N!X#P1_Pro@2025'.encode('utf-8'), bcrypt.gensalt())
+    'practice_set_1': b'$2b$12$/wBWJjFA2ntrmbv0b5cDwe8zjoSyjSZze0Y1YKdJbxe0dZX6Tr1Wy',
+    'practice_set_2': b'$2b$12$T1O/ZEcNDzlNo301QXw7VO7e.aNjNyVZt1EYjjcEn.J03a.HvuLVe',
+    'practice_set_3': b'$2b$12$pI5DD7NBaiUcFO7AVt/2De5L/SQHh56qTNreOOxdKJMQDSjnkA7za',
+    'practice_set_4': b'$2b$12$icwfFyeHWXwka1knGw3tE.x8.bhVZvwWTCaSgr24ULks8fAjK4qp2',
+    'practice_set_5': b'$2b$12$6ln7KVMrL1QWiNObb2kt1.Oe9iheGLJs9B9nhmrHTqIx8kH8N3vBO',
+    'practice_set_6': b'$2b$12$H51uC5t1vnNvVvO0o.85meJq1r5kkOgVduqyoi4HSi.bB.Xm7wR5O',
+    'practice_set_7': b'$2b$12$frW..rTLrkBH.XfLqTh5Su7Xbssf.jGFs9/TErSz3zIsA8avMZK0q',
+    'practice_set_8': b'$2b$12$ek3qExNzFXCsG2Y/mxLV5.STTbA9bbZQPCaNgB0A65/tODwh1GLmi',
+    'practice_mode': b'$2b$12$PBBJ5rH0Jm792YJTk0qRLOQfBiVyXUek9AlcmvPJBzRcCi65E1uhO'
 }
 
 # Exam level passwords
 EXAM_LEVEL_PASSWORDS = {
-    'exam_level_1': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Exam1_2025'.encode('utf-8'), bcrypt.gensalt()),
-    'exam_level_2': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Exam2_2025'.encode('utf-8'), bcrypt.gensalt()),
-    'exam_level_3': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Exam3_2025'.encode('utf-8'), bcrypt.gensalt()),
-    'exam_level_4': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Exam4_2025'.encode('utf-8'), bcrypt.gensalt()),
-    'exam_level_5': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Exam5_2025'.encode('utf-8'), bcrypt.gensalt()),
-    'exam_level_6': bcrypt.hashpw('Arch1t3ch_Joh@N!X#Exam6_2025'.encode('utf-8'), bcrypt.gensalt())
+    'exam_level_1': b'$2b$12$6AfW1l/F1lILv6fa1djpZeCqU.qcao/xLHS8/QkDh3F4T1Cgwc4xi',
+    'exam_level_2': b'$2b$12$jEWHokxkuHmZidlOgF39bu3S9hpTOl/f76T0MVGGv0n3T45pQWjc6',
+    'exam_level_3': b'$2b$12$8DsoDyTyxz0bEKZuQBqqpeKiEBctEJ3GK4I7y9EpchbRcl9SJvM.K',
+    'exam_level_4': b'$2b$12$Q7VuR3f8Y65DtHPnPNR6rud2zCmUemkStpkiG.uq88CULVeVzz2xO',
+    'exam_level_5': b'$2b$12$IBAjfaKhR0gk.o1cPoGv3OCpS1D4HFZN7vYY/aS/cB6y6ARpVfN.u',
+    'exam_level_6': b'$2b$12$fFYDP6PKl5WUosjrMTU7t.BuxHB4D4e038P36cRoBXdqfKDV5ctNq'
 }
 
 # Rate limiting storage
@@ -1237,3 +1238,4 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
