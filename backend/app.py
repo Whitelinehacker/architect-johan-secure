@@ -1545,6 +1545,48 @@ def debug_password():
         print(f"❌ TRACEBACK: {traceback.format_exc()}")
         return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
 
+@app.route('/api/reset-user-password', methods=['POST'])
+def reset_user_password():
+    """Temporary endpoint to reset user password for testing"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '')
+        new_password = data.get('new_password', 'Arch1t3ch_Joh@N!X#2025')
+        
+        print(f"🔄 RESETTING PASSWORD FOR: {username}")
+        
+        # Hash new password
+        new_password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+        
+        # Update user password
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                UPDATE users SET 
+                    password_hash = %s, 
+                    failed_attempts = 0,
+                    locked_until = NULL
+                WHERE username = %s
+            ''', (new_password_hash.decode('utf-8'), username))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ Password reset for {username} to: {new_password}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Password reset to: {new_password}',
+            'new_password': new_password
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Password reset error: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -1560,4 +1602,5 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
