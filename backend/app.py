@@ -113,28 +113,36 @@ check_environment_variables()
 
 # MSG91 SMS Functions
 def send_sms_otp(mobile_no, otp):
-    """Send OTP via MSG91 SMS service - Improved version"""
+    """Send OTP via MSG91 SMS service - Enhanced debugging"""
     try:
-        print(f"📱 Sending OTP via MSG91 to: +91{mobile_no}")
-        print(f"🔑 OTP: {otp}")
+        print(f"🚀 STARTING OTP SEND PROCESS")
+        print(f"📱 Target Mobile: +91{mobile_no}")
+        print(f"🔑 OTP to send: {otp}")
         
-        # Check if MSG91 is configured
-        if not MSG91_AUTH_KEY or not MSG91_TEMPLATE_ID:
-            print("❌ MSG91 not configured properly")
-            print(f"   Auth Key: {'✅ Set' if MSG91_AUTH_KEY else '❌ Missing'}")
-            print(f"   Template ID: {'✅ Set' if MSG91_TEMPLATE_ID else '❌ Missing'}")
+        # Check configuration
+        if not MSG91_AUTH_KEY:
+            print("❌ CRITICAL: MSG91_AUTH_KEY is not set!")
+            return False
+            
+        if not MSG91_TEMPLATE_ID:
+            print("❌ CRITICAL: MSG91_TEMPLATE_ID is not set!")
             return False
         
-        # MSG91 API endpoint for OTP
+        print(f"✅ Configuration check passed")
+        print(f"   Auth Key: {MSG91_AUTH_KEY[:10]}...{MSG91_AUTH_KEY[-4:]}")
+        print(f"   Template ID: {MSG91_TEMPLATE_ID}")
+        print(f"   Sender ID: {MSG91_SENDER_ID}")
+        
+        # MSG91 API endpoint
         url = "https://control.msg91.com/api/v5/otp"
         
-        # MSG91 payload for OTP
+        # Prepare payload
         payload = {
             "template_id": MSG91_TEMPLATE_ID,
             "mobile": f"91{mobile_no}",
             "otp": otp,
             "otp_length": 6,
-            "otp_expiry": 10  # 10 minutes
+            "otp_expiry": 10
         }
         
         headers = {
@@ -143,43 +151,41 @@ def send_sms_otp(mobile_no, otp):
             "accept": "application/json"
         }
         
-        print(f"📤 Sending request to MSG91...")
+        print(f"📤 Sending to MSG91 API...")
         print(f"   URL: {url}")
-        print(f"   Headers: { {k: v[:10] + '...' if k == 'authkey' else v for k, v in headers.items()} }")
         print(f"   Payload: {payload}")
         
         response = requests.post(url, json=payload, headers=headers, timeout=30)
         
-        print(f"📥 MSG91 Response Status: {response.status_code}")
-        print(f"📥 MSG91 Response: {response.text}")
+        print(f"📥 MSG91 Response:")
+        print(f"   Status Code: {response.status_code}")
+        print(f"   Response Text: {response.text}")
         
         if response.status_code == 200:
             response_data = response.json()
-            print(f"📥 MSG91 Response Data: {response_data}")
+            print(f"   Response JSON: {response_data}")
             
             if response_data.get('type') == 'success':
-                print(f"✅ OTP sent successfully via MSG91")
+                print("✅ OTP sent successfully via MSG91")
                 return True
             else:
-                print(f"❌ MSG91 API error: {response_data}")
+                print(f"❌ MSG91 API returned error: {response_data}")
                 return False
         else:
-            print(f"❌ MSG91 HTTP error: {response.status_code}")
-            print(f"❌ Response text: {response.text}")
+            print(f"❌ HTTP Error {response.status_code}")
             return False
             
     except requests.exceptions.Timeout:
-        print(f"❌ MSG91 request timeout")
+        print("❌ MSG91 request timeout")
         return False
     except requests.exceptions.ConnectionError:
-        print(f"❌ MSG91 connection error")
+        print("❌ MSG91 connection error")
         return False
     except Exception as e:
-        print(f"❌ MSG91 error: {str(e)}")
+        print(f"❌ Unexpected error: {str(e)}")
         import traceback
         print(f"❌ Traceback: {traceback.format_exc()}")
         return False
-
 # PostgreSQL Database Connection (psycopg3)
 def get_db_connection():
     """Get PostgreSQL database connection using psycopg3"""
@@ -1872,6 +1878,52 @@ def check_msg91_status():
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/api/debug-msg91', methods=['GET'])
+def debug_msg91():
+    """Debug MSG91 configuration in detail"""
+    try:
+        print("🔍 DEBUGGING MSG91 CONFIGURATION")
+        print(f"📱 MSG91_AUTH_KEY: {'✅ SET' if MSG91_AUTH_KEY else '❌ NOT SET'}")
+        if MSG91_AUTH_KEY:
+            print(f"   Key: {MSG91_AUTH_KEY[:10]}...{MSG91_AUTH_KEY[-4:]}")
+            print(f"   Length: {len(MSG91_AUTH_KEY)}")
+        
+        print(f"📋 MSG91_TEMPLATE_ID: {'✅ SET' if MSG91_TEMPLATE_ID else '❌ NOT SET'}")
+        if MSG91_TEMPLATE_ID:
+            print(f"   Template: {MSG91_TEMPLATE_ID}")
+        
+        print(f"📧 MSG91_SENDER_ID: {'✅ SET' if MSG91_SENDER_ID else '❌ NOT SET'}")
+        if MSG91_SENDER_ID:
+            print(f"   Sender: {MSG91_SENDER_ID}")
+        
+        # Test MSG91 API directly
+        import requests
+        test_url = "https://control.msg91.com/api/v5/otp"
+        test_headers = {
+            "authkey": MSG91_AUTH_KEY,
+            "Content-Type": "application/json"
+        }
+        
+        print(f"🧪 Testing MSG91 API connectivity...")
+        
+        response = requests.post(test_url, json={}, headers=test_headers, timeout=10)
+        print(f"📡 MSG91 API Response: {response.status_code}")
+        
+        return jsonify({
+            'msg91_auth_key_set': bool(MSG91_AUTH_KEY),
+            'msg91_template_id_set': bool(MSG91_TEMPLATE_ID),
+            'msg91_sender_id_set': bool(MSG91_SENDER_ID),
+            'api_test_status': response.status_code,
+            'auth_key_length': len(MSG91_AUTH_KEY) if MSG91_AUTH_KEY else 0,
+            'template_id': MSG91_TEMPLATE_ID,
+            'sender_id': MSG91_SENDER_ID
+        })
+        
+    except Exception as e:
+        print(f"❌ Debug error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
@@ -1889,5 +1941,6 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
 
