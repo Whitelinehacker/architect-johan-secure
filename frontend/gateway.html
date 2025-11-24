@@ -1,137 +1,524 @@
-<!-- New comprehensive gateway.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Access Verification Required - Architect Johan</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #02040A 0%, #0A0F2D 50%, #02040A 100%);
+            font-family: 'Courier New', 'Consolas', monospace;
+            color: #00FFB3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .gateway-container {
+            background: rgba(2, 4, 10, 0.95);
+            backdrop-filter: blur(15px);
+            border: 2px solid #00FFB3;
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 0 50px rgba(0, 255, 179, 0.4);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            border: 2px solid #00FFB3;
+            border-radius: 50%;
+            background: rgba(0, 255, 179, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 179, 0.5);
+            animation: logoSpin 20s linear infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        @keyframes logoSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #00FFB3;
+        }
+
+        .subtitle {
+            color: #2EC6FF;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
         .verification-steps {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
             margin: 30px 0;
         }
+
         .step {
-            padding: 15px;
+            padding: 20px;
             border: 1px solid #00FFB3;
             border-radius: 10px;
             background: rgba(0, 255, 179, 0.05);
+            transition: all 0.3s ease;
         }
+
         .step.completed {
             background: rgba(0, 255, 179, 0.2);
             border-color: #00FFB3;
         }
+
         .step.incomplete {
             background: rgba(255, 0, 76, 0.1);
             border-color: #FF004C;
         }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00FFB3;
+        }
+
+        .step-status {
+            font-size: 14px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .status-incomplete {
+            background: rgba(255, 0, 76, 0.2);
+            color: #FF004C;
+            border: 1px solid #FF004C;
+        }
+
+        .status-completed {
+            background: rgba(0, 255, 179, 0.2);
+            color: #00FFB3;
+            border: 1px solid #00FFB3;
+        }
+
+        .step-description {
+            color: #2EC6FF;
+            font-size: 14px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .step-action {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            background: rgba(46, 198, 255, 0.2);
+            border: 1px solid #2EC6FF;
+            color: #2EC6FF;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .action-btn:hover {
+            background: rgba(46, 198, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .verify-btn {
+            background: rgba(0, 255, 179, 0.2);
+            border: 1px solid #00FFB3;
+            color: #00FFB3;
+        }
+
+        .verify-btn:hover {
+            background: rgba(0, 255, 179, 0.3);
+        }
+
+        .continue-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 255, 179, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 179, 0.2);
+            display: none;
+        }
+
+        .continue-btn {
+            background: #00FFB3;
+            color: #02040A;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .continue-btn:hover {
+            background: #2EC6FF;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 179, 0.4);
+        }
+
+        .security-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 255, 179, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 179, 0.2);
+        }
+
+        .security-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #2EC6FF;
+        }
+
+        .footer-text {
+            text-align: center;
+            font-size: 10px;
+            color: #00FFB3;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 255, 179, 0.05);
+            border-radius: 5px;
+            border: 1px solid rgba(0, 255, 179, 0.1);
+        }
+
+        @media (max-width: 480px) {
+            .gateway-container {
+                padding: 30px 20px;
+            }
+            
+            .step-action {
+                flex-direction: column;
+            }
+            
+            .action-btn {
+                min-width: auto;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Access Verification Required</h2>
-        <p>Complete all steps to unlock website access:</p>
+    <div class="gateway-container">
+        <div class="logo">AJ</div>
+        <h1>Access Verification Required</h1>
+        <p class="subtitle">Complete all steps to unlock website access</p>
         
         <div class="verification-steps">
             <!-- Step 1: YouTube Subscription -->
             <div class="step" id="youtube-step">
-                <h3>1. Subscribe to YouTube Channel</h3>
-                <button onclick="verifyYouTube()">Subscribe & Verify</button>
-                <span id="youtube-status">❌ Not completed</span>
+                <div class="step-header">
+                    <div class="step-title">1. Subscribe to YouTube</div>
+                    <div class="step-status status-incomplete" id="youtube-status">❌ Incomplete</div>
+                </div>
+                <div class="step-description">
+                    Subscribe to our YouTube channel for exclusive content and updates.
+                </div>
+                <div class="step-action">
+                    <a href="https://youtube.com/@architect_johan?sub_confirmation=1" target="_blank" class="action-btn">
+                        📺 Open YouTube
+                    </a>
+                    <button class="action-btn verify-btn" onclick="verifyYouTube()">
+                        ✅ Verify Subscription
+                    </button>
+                </div>
             </div>
 
             <!-- Step 2: Telegram Join -->
             <div class="step" id="telegram-step">
-                <h3>2. Join Telegram Channel</h3>
-                <button onclick="verifyTelegram()">Join & Verify</button>
-                <span id="telegram-status">❌ Not completed</span>
+                <div class="step-header">
+                    <div class="step-title">2. Join Telegram</div>
+                    <div class="step-status status-incomplete" id="telegram-status">❌ Incomplete</div>
+                </div>
+                <div class="step-description">
+                    Join our Telegram channel for community discussions and support.
+                </div>
+                <div class="step-action">
+                    <a href="https://t.me/Architect_Johan" target="_blank" class="action-btn">
+                        📱 Open Telegram
+                    </a>
+                    <button class="action-btn verify-btn" onclick="verifyTelegram()">
+                        ✅ Verify Join
+                    </button>
+                </div>
             </div>
 
             <!-- Step 3: Instagram Follow -->
             <div class="step" id="instagram-step">
-                <h3>3. Follow Instagram Page</h3>
-                <button onclick="verifyInstagram()">Follow & Verify</button>
-                <span id="instagram-status">❌ Not completed</span>
+                <div class="step-header">
+                    <div class="step-title">3. Follow Instagram</div>
+                    <div class="step-status status-incomplete" id="instagram-status">❌ Incomplete</div>
+                </div>
+                <div class="step-description">
+                    Follow our Instagram page for design inspiration and updates.
+                </div>
+                <div class="step-action">
+                    <a href="https://instagram.com/architect_johan" target="_blank" class="action-btn">
+                        📸 Open Instagram
+                    </a>
+                    <button class="action-btn verify-btn" onclick="verifyInstagram()">
+                        ✅ Verify Follow
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div id="continue-section" style="display: none;">
-            <button onclick="proceedToSignup()">Continue to Signup</button>
+        <div class="continue-section" id="continue-section">
+            <h3>✅ All Steps Completed!</h3>
+            <p>You can now proceed to create your account</p>
+            <button class="continue-btn" onclick="proceedToSignup()">
+                Continue to Signup
+            </button>
+        </div>
+
+        <div class="security-info">
+            <div class="security-item">
+                <span>🔒</span>
+                <span>Secure Access Verification</span>
+            </div>
+            <div class="security-item">
+                <span>🛡️</span>
+                <span>Community Engagement Required</span>
+            </div>
+            <div class="security-item">
+                <span>⚡</span>
+                <span>Instant Verification</span>
+            </div>
+        </div>
+
+        <div class="footer-text">
+            ENCRYPTED CONNECTION ESTABLISHED | ACCESS CONTROL ACTIVE | SECURE VERIFICATION
         </div>
     </div>
 
     <script>
+        // Social media verification status
         const verificationStatus = {
             youtube: false,
             telegram: false,
             instagram: false
         };
 
-        function verifyYouTube() {
-            window.open('https://youtube.com/@architect_johan?sub_confirmation=1', '_blank');
-            // In real implementation, use YouTube API to verify subscription
-            setTimeout(() => {
-                if(confirm("Have you subscribed to the YouTube channel?")) {
-                    verificationStatus.youtube = true;
-                    updateUI();
+        // Check if already verified
+        function checkExistingVerification() {
+            const saved = localStorage.getItem('social_verification');
+            if (saved) {
+                const status = JSON.parse(saved);
+                if (status.youtube && status.telegram && status.instagram) {
+                    // All steps completed, redirect to signup
+                    window.location.href = 'signup.html';
                 }
-            }, 3000);
-        }
-
-        function verifyTelegram() {
-            window.open('https://t.me/Architect_Johan', '_blank');
-            setTimeout(() => {
-                if(confirm("Have you joined the Telegram channel?")) {
-                    verificationStatus.telegram = true;
-                    updateUI();
-                }
-            }, 3000);
-        }
-
-        function verifyInstagram() {
-            window.open('https://instagram.com/architect_johan', '_blank');
-            setTimeout(() => {
-                if(confirm("Have you followed the Instagram page?")) {
-                    verificationStatus.instagram = true;
-                    updateUI();
-                }
-            }, 3000);
-        }
-
-        function updateUI() {
-            // Update YouTube status
-            document.getElementById('youtube-status').textContent = 
-                verificationStatus.youtube ? '✅ Completed' : '❌ Not completed';
-            document.getElementById('youtube-step').className = 
-                verificationStatus.youtube ? 'step completed' : 'step incomplete';
-
-            // Update Telegram status
-            document.getElementById('telegram-status').textContent = 
-                verificationStatus.telegram ? '✅ Completed' : '❌ Not completed';
-            document.getElementById('telegram-step').className = 
-                verificationStatus.telegram ? 'step completed' : 'step incomplete';
-
-            // Update Instagram status
-            document.getElementById('instagram-status').textContent = 
-                verificationStatus.instagram ? '✅ Completed' : '❌ Not completed';
-            document.getElementById('instagram-step').className = 
-                verificationStatus.instagram ? 'step completed' : 'step incomplete';
-
-            // Show continue button if all completed
-            if(verificationStatus.youtube && verificationStatus.telegram && verificationStatus.instagram) {
-                document.getElementById('continue-section').style.display = 'block';
             }
         }
 
+        // Update UI based on verification status
+        function updateUI() {
+            // YouTube
+            const youtubeStep = document.getElementById('youtube-step');
+            const youtubeStatus = document.getElementById('youtube-status');
+            
+            if (verificationStatus.youtube) {
+                youtubeStep.className = 'step completed';
+                youtubeStatus.className = 'step-status status-completed';
+                youtubeStatus.textContent = '✅ Completed';
+            } else {
+                youtubeStep.className = 'step incomplete';
+                youtubeStatus.className = 'step-status status-incomplete';
+                youtubeStatus.textContent = '❌ Incomplete';
+            }
+
+            // Telegram
+            const telegramStep = document.getElementById('telegram-step');
+            const telegramStatus = document.getElementById('telegram-status');
+            
+            if (verificationStatus.telegram) {
+                telegramStep.className = 'step completed';
+                telegramStatus.className = 'step-status status-completed';
+                telegramStatus.textContent = '✅ Completed';
+            } else {
+                telegramStep.className = 'step incomplete';
+                telegramStatus.className = 'step-status status-incomplete';
+                telegramStatus.textContent = '❌ Incomplete';
+            }
+
+            // Instagram
+            const instagramStep = document.getElementById('instagram-step');
+            const instagramStatus = document.getElementById('instagram-status');
+            
+            if (verificationStatus.instagram) {
+                instagramStep.className = 'step completed';
+                instagramStatus.className = 'step-status status-completed';
+                instagramStatus.textContent = '✅ Completed';
+            } else {
+                instagramStep.className = 'step incomplete';
+                instagramStatus.className = 'step-status status-incomplete';
+                instagramStatus.textContent = '❌ Incomplete';
+            }
+
+            // Show continue button if all completed
+            const continueSection = document.getElementById('continue-section');
+            if (verificationStatus.youtube && verificationStatus.telegram && verificationStatus.instagram) {
+                continueSection.style.display = 'block';
+                
+                // Save verification status
+                localStorage.setItem('social_verification', JSON.stringify(verificationStatus));
+                sessionStorage.setItem('social_verification', 'completed');
+            } else {
+                continueSection.style.display = 'none';
+            }
+        }
+
+        // YouTube verification
+        function verifyYouTube() {
+            // Open YouTube in new tab
+            window.open('https://youtube.com/@architect_johan?sub_confirmation=1', '_blank');
+            
+            // Show verification dialog
+            setTimeout(() => {
+                if (confirm("Have you subscribed to Architect Johan YouTube channel?\n\nPlease make sure you:\n✓ Clicked the Subscribe button\n✓ Turned on notifications (bell icon)\n\nClick OK if you have completed these steps.")) {
+                    verificationStatus.youtube = true;
+                    updateUI();
+                    alert('✅ YouTube subscription verified!');
+                } else {
+                    alert('⚠️ Please complete the YouTube subscription to continue.');
+                }
+            }, 2000);
+        }
+
+        // Telegram verification
+        function verifyTelegram() {
+            // Open Telegram in new tab
+            window.open('https://t.me/Architect_Johan', '_blank');
+            
+            // Show verification dialog
+            setTimeout(() => {
+                if (confirm("Have you joined the Architect Johan Telegram channel?\n\nPlease make sure you:\n✓ Clicked the Join Channel button\n✓ Are seeing messages in the channel\n\nClick OK if you have completed these steps.")) {
+                    verificationStatus.telegram = true;
+                    updateUI();
+                    alert('✅ Telegram join verified!');
+                } else {
+                    alert('⚠️ Please join the Telegram channel to continue.');
+                }
+            }, 2000);
+        }
+
+        // Instagram verification
+        function verifyInstagram() {
+            // Open Instagram in new tab
+            window.open('https://instagram.com/architect_johan', '_blank');
+            
+            // Show verification dialog
+            setTimeout(() => {
+                if (confirm("Have you followed Architect Johan on Instagram?\n\nPlease make sure you:\n✓ Clicked the Follow button\n✓ Are following our page\n\nClick OK if you have completed these steps.")) {
+                    verificationStatus.instagram = true;
+                    updateUI();
+                    alert('✅ Instagram follow verified!');
+                } else {
+                    alert('⚠️ Please follow our Instagram page to continue.');
+                }
+            }, 2000);
+        }
+
+        // Proceed to signup
         function proceedToSignup() {
-            // Store verification in sessionStorage
+            // Save final verification status
+            localStorage.setItem('social_verification', JSON.stringify(verificationStatus));
             sessionStorage.setItem('social_verification', 'completed');
+            
+            // Redirect to signup
             window.location.href = 'signup.html';
         }
 
-        // Check if already verified
-        if(sessionStorage.getItem('social_verification') === 'completed') {
-            window.location.href = 'signup.html';
+        // Load existing verification status
+        function loadVerificationStatus() {
+            const saved = localStorage.getItem('social_verification');
+            if (saved) {
+                const status = JSON.parse(saved);
+                verificationStatus.youtube = status.youtube || false;
+                verificationStatus.telegram = status.telegram || false;
+                verificationStatus.instagram = status.instagram || false;
+            }
+            updateUI();
+        }
+
+        // Auto-redirect if already verified
+        function checkAutoRedirect() {
+            const socialVerified = sessionStorage.getItem('social_verification');
+            if (socialVerified === 'completed') {
+                window.location.href = 'signup.html';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAutoRedirect();
+            loadVerificationStatus();
+            
+            // Add click tracking for social links
+            document.querySelectorAll('a[target="_blank"]').forEach(link => {
+                link.addEventListener('click', function() {
+                    // Small delay to ensure the tab opens
+                    setTimeout(() => {
+                        alert('🔗 Link opened in new tab. Please complete the action and return to verify.');
+                    }, 500);
+                });
+            });
+        });
+
+        // Prevent bypassing verification
+        window.addEventListener('beforeunload', function() {
+            if (!verificationStatus.youtube || !verificationStatus.telegram || !verificationStatus.instagram) {
+                // Don't allow bypassing
+                return;
+            }
+        });
+
+        // Block direct access to signup without verification
+        if (window.location.pathname.includes('signup.html') && !sessionStorage.getItem('social_verification')) {
+            window.location.href = 'gateway.html';
         }
     </script>
 </body>
