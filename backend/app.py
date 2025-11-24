@@ -1471,6 +1471,80 @@ def test_exam_passwords():
         'endpoint': '/api/verify-exam-level-password'
     }), 200
 
+
+
+@app.route('/api/debug-password', methods=['POST'])
+def debug_password():
+    """Debug password verification specifically"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '')
+        provided_password = data.get('password', '')
+        
+        print(f"🔍 DEBUG PASSWORD VERIFICATION:")
+        print(f"   Username: {username}")
+        print(f"   Provided Password: {provided_password}")
+        
+        # Get user from database
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        with conn.cursor() as cursor:
+            cursor.execute('SELECT password_hash FROM users WHERE username = %s', (username,))
+            user = cursor.fetchone()
+        
+        conn.close()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        stored_hash = user['password_hash']
+        print(f"   Stored Hash: {stored_hash}")
+        print(f"   Hash Length: {len(stored_hash)}")
+        print(f"   Is BCrypt: {stored_hash.startswith('$2b$')}")
+        
+        # Test password verification step by step
+        try:
+            if isinstance(stored_hash, str):
+                stored_hash_bytes = stored_hash.encode('utf-8')
+            else:
+                stored_hash_bytes = stored_hash
+                
+            provided_password_bytes = provided_password.encode('utf-8')
+            
+            print(f"   Stored Hash Bytes: {stored_hash_bytes[:50]}...")
+            print(f"   Provided Password Bytes: {provided_password_bytes}")
+            
+            # Test the actual bcrypt verification
+            result = bcrypt.checkpw(provided_password_bytes, stored_hash_bytes)
+            print(f"   BCrypt Result: {result}")
+            
+            return jsonify({
+                'password_match': result,
+                'hash_info': {
+                    'length': len(stored_hash),
+                    'is_bcrypt': stored_hash.startswith('$2b$'),
+                    'prefix': stored_hash[:4]
+                },
+                'verification_result': result
+            }), 200
+            
+        except Exception as bcrypt_error:
+            print(f"❌ BCrypt Error: {bcrypt_error}")
+            import traceback
+            print(f"❌ BCrypt Traceback: {traceback.format_exc()}")
+            return jsonify({
+                'bcrypt_error': str(bcrypt_error),
+                'traceback': traceback.format_exc()
+            }), 500
+        
+    except Exception as e:
+        print(f"❌ DEBUG PASSWORD ERROR: {e}")
+        import traceback
+        print(f"❌ TRACEBACK: {traceback.format_exc()}")
+        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -1486,3 +1560,4 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
