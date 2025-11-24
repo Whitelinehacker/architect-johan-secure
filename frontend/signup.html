@@ -756,6 +756,7 @@
         </div>
     </div>
 <!-- Enhanced Debug Section -->
+<!-- Enhanced Debug Section -->
 <div style="text-align: center; margin: 20px 0; padding: 15px; background: rgba(255, 138, 0, 0.1); border: 1px solid #FF8A00; border-radius: 10px;">
     <h4 style="color: #FF8A00; margin-bottom: 10px;">🔧 Debug Tools</h4>
     <button onclick="debugMSG91Config()" class="otp-btn" style="background: #FF8A00; margin: 5px;">
@@ -767,15 +768,115 @@
     <button onclick="checkServerLogs()" class="otp-btn" style="background: #2EC6FF; margin: 5px;">
         Check Server Status
     </button>
+    <button onclick="clearOTPStorage()" class="otp-btn" style="background: #FF004C; margin: 5px;">
+        Clear OTP Data
+    </button>
 </div>
     <script src="js/matrix.js"></script>
  <script>
-    // API Base URL
+    // API Base URL - FIXED: Use your actual Render URL
     const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
 
     // OTP Management
     let otpCountdown = 0;
     let otpTimer = null;
+
+    // Debug functions - ADD THESE AT THE TOP
+    async function debugMSG91Config() {
+        try {
+            console.log('Testing MSG91 configuration...');
+            const response = await fetch(`${API_BASE_URL}/api/debug-msg91`);
+            const data = await response.json();
+            
+            let message = `MSG91 Configuration Debug:\n\n`;
+            message += `Auth Key Set: ${data.msg91_auth_key_set ? '✅' : '❌'}\n`;
+            message += `Template ID Set: ${data.msg91_template_id_set ? '✅' : '❌'}\n`;
+            message += `Sender ID Set: ${data.msg91_sender_id_set ? '✅' : '❌'}\n`;
+            message += `API Test Status: ${data.api_test_status}\n`;
+            message += `Auth Key Length: ${data.auth_key_length}\n`;
+            message += `Template ID: ${data.template_id}\n`;
+            message += `Sender ID: ${data.sender_id}`;
+            
+            alert(message);
+            console.log('MSG91 Debug Details:', data);
+        } catch (error) {
+            alert('Error debugging MSG91: ' + error.message);
+            console.error('Debug error:', error);
+        }
+    }
+
+    async function forceSendOTP() {
+        const mobileNo = document.getElementById('mobile_no').value;
+        if (!mobileNo || mobileNo.length !== 10) {
+            alert('Please enter a valid 10-digit mobile number first');
+            return;
+        }
+
+        const sendOtpBtn = document.getElementById('send-otp-btn');
+        const otpStatus = document.getElementById('otp-status');
+
+        sendOtpBtn.disabled = true;
+        sendOtpBtn.textContent = 'Sending...';
+        otpStatus.innerHTML = '<span style="color: #2EC6FF">Force sending OTP...</span>';
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    mobile_no: '+91' + mobileNo
+                })
+            });
+
+            const data = await response.json();
+            console.log('Force OTP Response:', data);
+
+            if (response.ok) {
+                document.getElementById('otp').style.display = 'block';
+                document.getElementById('verify-otp-btn').style.display = 'block';
+                startOTPTimer();
+                
+                if (data.otp) {
+                    otpStatus.innerHTML = `<span style="color: #FF8A00">📱 OTP for testing: <strong>${data.otp}</strong></span>`;
+                    alert(`OTP Generated: ${data.otp}\n\nSMS delivery failed, but you can use this OTP to test.`);
+                } else {
+                    otpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent via SMS!</span>';
+                }
+            } else {
+                alert('Failed to send OTP: ' + (data.error || 'Unknown error'));
+                otpStatus.innerHTML = '<span style="color: #FF004C">Failed to send OTP</span>';
+            }
+        } catch (error) {
+            alert('Network error: ' + error.message);
+            otpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
+        } finally {
+            sendOtpBtn.disabled = false;
+            sendOtpBtn.textContent = 'Send OTP';
+        }
+    }
+
+    async function checkServerLogs() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/debug-env`);
+            const data = await response.json();
+            
+            alert(`Server Environment:\n\n` +
+                  `Database: ${data.DATABASE_URL}\n` +
+                  `Email: ${data.EMAIL_USER}\n` +
+                  `All services should be running on Render`);
+        } catch (error) {
+            alert('Cannot reach server: ' + error.message);
+        }
+    }
+
+    function clearOTPStorage() {
+        sessionStorage.removeItem('mobile_verified');
+        sessionStorage.removeItem('verified_mobile');
+        resetOTPVerification();
+        alert('OTP storage cleared!');
+    }
 
     function startOTPTimer() {
         const sendOtpBtn = document.getElementById('send-otp-btn');
@@ -798,72 +899,67 @@
         }, 1000);
     }
 
-   async function sendOTP() {
-    const mobileInput = document.getElementById('mobile_no');
-    const mobileNo = mobileInput.value;
-    const sendOtpBtn = document.getElementById('send-otp-btn');
-    const otpInput = document.getElementById('otp');
-    const verifyOtpBtn = document.getElementById('verify-otp-btn');
-    const otpStatus = document.getElementById('otp-status');
+    async function sendOTP() {
+        const mobileInput = document.getElementById('mobile_no');
+        const mobileNo = mobileInput.value;
+        const sendOtpBtn = document.getElementById('send-otp-btn');
+        const otpInput = document.getElementById('otp');
+        const verifyOtpBtn = document.getElementById('verify-otp-btn');
+        const otpStatus = document.getElementById('otp-status');
 
-    // Validate mobile number first
-    if (!mobileNo || mobileNo.length !== 10 || !/^[6-9]\d{9}$/.test(mobileNo)) {
-        showError('Please enter a valid 10-digit Indian mobile number starting with 6-9');
-        mobileInput.focus();
-        return;
-    }
+        // Validate mobile number first
+        if (!mobileNo || mobileNo.length !== 10 || !/^[6-9]\d{9}$/.test(mobileNo)) {
+            showError('Please enter a valid 10-digit Indian mobile number starting with 6-9');
+            mobileInput.focus();
+            return;
+        }
 
-    // Update UI for loading
-    sendOtpBtn.disabled = true;
-    sendOtpBtn.textContent = 'Sending OTP...';
-    otpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP via SMS...</span>';
+        // Update UI for loading
+        sendOtpBtn.disabled = true;
+        sendOtpBtn.textContent = 'Sending OTP...';
+        otpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP via SMS...</span>';
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                mobile_no: '+91' + mobileNo
-            })
-        });
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    mobile_no: '+91' + mobileNo
+                })
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (response.ok) {
-            // Show OTP input field
-            otpInput.style.display = 'block';
-            verifyOtpBtn.style.display = 'block';
-            otpInput.value = ''; // Clear previous OTP
-            
-            // Start countdown timer
-            startOTPTimer();
-            
-            // Check if OTP is provided in response (SMS failed case)
-            if (data.otp) {
-                otpStatus.innerHTML = `<span style="color: #FF8A00">📱 SMS service issue. Use OTP: <strong>${data.otp}</strong></span>`;
-                console.log(`📱 Test OTP (SMS failed): ${data.otp}`);
-                showSuccess('OTP generated! Check the red message below for your OTP.');
-            } else {
-                otpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent via SMS! Check your phone.</span>';
+            if (response.ok) {
+                // Show OTP input field
+                otpInput.style.display = 'block';
+                verifyOtpBtn.style.display = 'block';
+                otpInput.value = ''; // Clear previous OTP
+                
+                // Start countdown timer
+                startOTPTimer();
+                
+                // Show success message
+                otpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent to your mobile number via SMS!</span>';
+                
                 showSuccess('OTP sent successfully! Check your mobile phone.');
+                
+            } else {
+                showError(data.error || 'Failed to send OTP');
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.textContent = 'Send OTP';
+                otpStatus.innerHTML = '<span style="color: #FF004C">Failed to send OTP</span>';
             }
-            
-        } else {
-            showError(data.error || 'Failed to send OTP');
+        } catch (error) {
+            console.error('OTP sending error:', error);
+            showError('Network error. Please check your connection and try again.');
             sendOtpBtn.disabled = false;
             sendOtpBtn.textContent = 'Send OTP';
-            otpStatus.innerHTML = '<span style="color: #FF004C">Failed to send OTP</span>';
+            otpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
         }
-    } catch (error) {
-        console.error('OTP sending error:', error);
-        showError('Network error. Please check your connection and try again.');
-        sendOtpBtn.disabled = false;
-        sendOtpBtn.textContent = 'Send OTP';
-        otpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
     }
-}
 
     async function verifyOTP() {
         const mobileNo = document.getElementById('mobile_no').value;
@@ -1202,6 +1298,8 @@
 
     // Main signup functionality
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('Signup page loaded - debug buttons should work now');
+        
         // Check if user completed social verification
         if (!checkSocialVerification()) {
             showError('Please complete social media verification first. Redirecting to gateway...');
@@ -1461,108 +1559,6 @@
     if (window.history.replaceState) {
         window.history.replaceState(null, null, window.location.href);
     }
-
-
-
-    async function testMSG91Config() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/check-msg91-status`);
-        const data = await response.json();
-        alert(`MSG91 Status:\nConfigured: ${data.msg91_configured}\nAuth Key: ${data.auth_key_exists}\nTemplate ID: ${data.template_id_exists}`);
-        console.log('MSG91 Config:', data);
-    } catch (error) {
-        alert('Error testing MSG91 config: ' + error.message);
-    }
-}
-
-
-
-async function debugMSG91Config() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/debug-msg91`);
-        const data = await response.json();
-        
-        let message = `MSG91 Configuration Debug:\n\n`;
-        message += `Auth Key Set: ${data.msg91_auth_key_set ? '✅' : '❌'}\n`;
-        message += `Template ID Set: ${data.msg91_template_id_set ? '✅' : '❌'}\n`;
-        message += `Sender ID Set: ${data.msg91_sender_id_set ? '✅' : '❌'}\n`;
-        message += `API Test Status: ${data.api_test_status}\n`;
-        message += `Auth Key Length: ${data.auth_key_length}\n`;
-        message += `Template ID: ${data.template_id}\n`;
-        message += `Sender ID: ${data.sender_id}`;
-        
-        alert(message);
-        console.log('MSG91 Debug Details:', data);
-    } catch (error) {
-        alert('Error debugging MSG91: ' + error.message);
-    }
-}
-
-async function forceSendOTP() {
-    const mobileNo = document.getElementById('mobile_no').value;
-    if (!mobileNo || mobileNo.length !== 10) {
-        alert('Please enter a valid 10-digit mobile number first');
-        return;
-    }
-
-    const sendOtpBtn = document.getElementById('send-otp-btn');
-    const otpStatus = document.getElementById('otp-status');
-
-    sendOtpBtn.disabled = true;
-    sendOtpBtn.textContent = 'Sending...';
-    otpStatus.innerHTML = '<span style="color: #2EC6FF">Force sending OTP...</span>';
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                mobile_no: '+91' + mobileNo
-            })
-        });
-
-        const data = await response.json();
-        console.log('Force OTP Response:', data);
-
-        if (response.ok) {
-            document.getElementById('otp').style.display = 'block';
-            document.getElementById('verify-otp-btn').style.display = 'block';
-            startOTPTimer();
-            
-            if (data.otp) {
-                otpStatus.innerHTML = `<span style="color: #FF8A00">📱 OTP for testing: <strong>${data.otp}</strong></span>`;
-                alert(`OTP Generated: ${data.otp}\n\nSMS delivery failed, but you can use this OTP to test.`);
-            } else {
-                otpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent via SMS!</span>';
-            }
-        } else {
-            alert('Failed to send OTP: ' + (data.error || 'Unknown error'));
-            otpStatus.innerHTML = '<span style="color: #FF004C">Failed to send OTP</span>';
-        }
-    } catch (error) {
-        alert('Network error: ' + error.message);
-        otpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
-    } finally {
-        sendOtpBtn.disabled = false;
-        sendOtpBtn.textContent = 'Send OTP';
-    }
-}
-
-async function checkServerLogs() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/debug-env`);
-        const data = await response.json();
-        
-        alert(`Server Environment:\n\n` +
-              `Database: ${data.DATABASE_URL}\n` +
-              `Email: ${data.EMAIL_USER}\n` +
-              `All services should be running on Render`);
-    } catch (error) {
-        alert('Cannot reach server: ' + error.message);
-    }
-}
 </script>
 </body>
 </html>
