@@ -206,8 +206,8 @@ async function sendOTP() {
     const otpStatus = document.getElementById('otp-status');
 
     // Validate mobile number first
-    if (!mobileNo || mobileNo.length !== 10 || !/^\d+$/.test(mobileNo)) {
-        showError('Please enter a valid 10-digit Indian mobile number first');
+    if (!mobileNo || mobileNo.length !== 10 || !/^[6-9]\d{9}$/.test(mobileNo)) {
+        showError('Please enter a valid 10-digit Indian mobile number starting with 6-9');
         mobileInput.focus();
         return;
     }
@@ -215,7 +215,7 @@ async function sendOTP() {
     // Update UI for loading
     sendOtpBtn.disabled = true;
     sendOtpBtn.textContent = 'Sending OTP...';
-    otpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP...</span>';
+    otpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP via SMS...</span>';
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
@@ -234,17 +234,20 @@ async function sendOTP() {
             // Show OTP input field
             otpInput.style.display = 'block';
             verifyOtpBtn.style.display = 'block';
+            otpInput.value = ''; // Clear previous OTP
             
             // Start countdown timer
             startOTPTimer();
             
-            // For testing - show OTP in console (remove in production)
+            // Show success message
             if (data.otp) {
-                console.log(`TEST OTP: ${data.otp}`);
-                otpStatus.innerHTML += `<br><small style="color: #FF8A00">Test OTP: ${data.otp}</small>`;
+                // SMS failed, but OTP generated for testing
+                otpStatus.innerHTML = `<span style="color: #FF8A00">SMS service issue. Use OTP: ${data.otp}</span>`;
+                console.log(`📱 Test OTP (SMS failed): ${data.otp}`);
+            } else {
+                otpStatus.innerHTML = '<span style="color: #00FFB3">OTP sent via SMS! Check your phone.</span>';
             }
             
-            showSuccess('OTP sent to your mobile number!');
         } else {
             showError(data.error || 'Failed to send OTP');
             sendOtpBtn.disabled = false;
@@ -255,6 +258,7 @@ async function sendOTP() {
         showError('Network error. Please check your connection and try again.');
         sendOtpBtn.disabled = false;
         sendOtpBtn.textContent = 'Send OTP';
+        otpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
     }
 }
 
@@ -292,7 +296,7 @@ async function verifyOTP() {
 
         if (response.ok) {
             // OTP verified successfully
-            otpStatus.innerHTML = '<span style="color: #00FFB3">✅ Mobile number verified!</span>';
+            otpStatus.innerHTML = '<span style="color: #00FFB3">✅ Mobile number verified via SMS!</span>';
             verifyOtpBtn.textContent = 'Verified';
             verifyOtpBtn.disabled = true;
             verifyOtpBtn.style.background = '#00FFB3';
@@ -301,24 +305,40 @@ async function verifyOTP() {
             // Store mobile verification status
             sessionStorage.setItem('mobile_verified', 'true');
             sessionStorage.setItem('verified_mobile', '+91' + mobileNo);
+            sessionStorage.setItem('verified_at', new Date().toISOString());
             
             showSuccess('Mobile number verified successfully!');
+            
+            // Clear OTP timer
+            if (otpTimer) {
+                clearInterval(otpTimer);
+            }
         } else {
             showError(data.error || 'Invalid OTP');
             verifyOtpBtn.disabled = false;
             verifyOtpBtn.textContent = 'Verify OTP';
+            
+            if (data.attempts_remaining) {
+                otpStatus.innerHTML = `<span style="color: #FF004C">${data.error}</span>`;
+            }
         }
     } catch (error) {
         console.error('OTP verification error:', error);
         showError('Network error during OTP verification');
         verifyOtpBtn.disabled = false;
         verifyOtpBtn.textContent = 'Verify OTP';
+        otpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
     }
 }
 
 // Check if mobile is already verified
 function isMobileVerified() {
     return sessionStorage.getItem('mobile_verified') === 'true';
+}
+
+// Check social media verification
+function checkSocialVerification() {
+    return sessionStorage.getItem('social_verification') === 'completed';
 }
 
 // Validate form data
@@ -350,8 +370,8 @@ function validateFormData(formData) {
 
     // Validate mobile number
     const mobileDigits = formData.mobile_no.replace('+91', '');
-    if (mobileDigits.length !== 10 || !/^\d+$/.test(mobileDigits)) {
-        return { isValid: false, error: 'Please enter a valid 10-digit Indian mobile number', field: 'mobile_no' };
+    if (mobileDigits.length !== 10 || !/^[6-9]\d{9}$/.test(mobileDigits)) {
+        return { isValid: false, error: 'Please enter a valid 10-digit Indian mobile number starting with 6-9', field: 'mobile_no' };
     }
 
     // Check mobile verification
@@ -379,16 +399,11 @@ function validateFormData(formData) {
     return { isValid: true };
 }
 
-// Check social media verification
-function checkSocialVerification() {
-    return sessionStorage.getItem('social_verification') === 'completed';
-}
-
 // Main signup functionality
 document.addEventListener('DOMContentLoaded', function() {
     // Check if user completed social verification
     if (!checkSocialVerification()) {
-        showError('Please complete social media verification first');
+        showError('Please complete social media verification first. Redirecting to gateway...');
         setTimeout(() => {
             window.location.href = 'gateway.html';
         }, 3000);
@@ -673,6 +688,26 @@ function togglePasswordVisibility(inputId) {
     const input = document.getElementById(inputId);
     const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
     input.setAttribute('type', type);
+}
+
+// Test MSG91 integration
+async function testMSG91() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/test-msg91`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                mobile_no: '9999999999'
+            })
+        });
+        const result = await response.json();
+        console.log('MSG91 Test Result:', result);
+        return result;
+    } catch (error) {
+        console.error('MSG91 Test Error:', error);
+    }
 }
 
 // Export functions for testing (if needed)
