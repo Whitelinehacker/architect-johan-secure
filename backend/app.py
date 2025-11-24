@@ -49,7 +49,6 @@ ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'your-email@gmail.com')
 # Default admin user
 default_admin_password = 'Arch1t3ch_Joh@N!X#2025'
 
-# Practice set passwords (encrypted)
 # Practice set passwords (pre-computed static hashes)
 PRACTICE_PASSWORDS = {
     'practice_set_1': 'Arch1t3ch_Joh@N!X#P1_Pro@2025',
@@ -71,6 +70,7 @@ EXAM_LEVEL_PASSWORDS = {
     'exam_level_5': 'Arch1t3ch_Joh@N!X#Exam5_2025', 
     'exam_level_6': 'Arch1t3ch_Joh@N!X#Exam6_2025'
 }
+
 # Rate limiting storage
 login_attempts = {}
 MAX_ATTEMPTS = 5
@@ -314,11 +314,11 @@ def update_user(user):
                     reset_token_expiry = %s
                 WHERE username = %s
             ''', (
-                user['last_login'],
-                user['failed_attempts'],
-                user['locked_until'],
-                user['reset_token'],
-                user['reset_token_expiry'],
+                user.get('last_login'),
+                user.get('failed_attempts', 0),
+                user.get('locked_until'),
+                user.get('reset_token'),
+                user.get('reset_token_expiry'),
                 user['username']
             ))
         
@@ -355,6 +355,50 @@ def create_user(user_data):
     except Exception as e:
         logger.error(f"Error creating user: {e}")
         return False
+
+# Rate limiting and utility functions
+def update_login_attempts(client_ip, current_time):
+    """Update login attempts for rate limiting"""
+    if client_ip not in login_attempts:
+        login_attempts[client_ip] = {
+            'count': 1,
+            'first_attempt': current_time,
+            'last_attempt': current_time
+        }
+    else:
+        login_attempts[client_ip]['count'] += 1
+        login_attempts[client_ip]['last_attempt'] = current_time
+
+def verify_password(stored_hash, provided_password):
+    """Verify bcrypt encrypted password with better error handling"""
+    try:
+        print(f"🔑 PASSWORD VERIFICATION:")
+        print(f"   Stored Hash: {stored_hash[:50]}...")
+        print(f"   Provided Password Length: {len(provided_password)}")
+        
+        if not stored_hash:
+            print("❌ No stored hash found")
+            return False
+            
+        if isinstance(stored_hash, str):
+            stored_hash = stored_hash.encode('utf-8')
+            
+        # Check if the stored hash looks like a bcrypt hash
+        if not stored_hash.startswith(b'$2b$'):
+            print(f"❌ Invalid hash format: {stored_hash[:20]}...")
+            return False
+            
+        result = bcrypt.checkpw(provided_password.encode('utf-8'), stored_hash)
+        print(f"   Verification Result: {result}")
+        return result
+    except Exception as e:
+        print(f"❌ Password verification error: {e}")
+        import traceback
+        print(f"❌ PASSWORD VERIFICATION TRACEBACK: {traceback.format_exc()}")
+        return False
+
+def generate_csrf_token():
+    return secrets.token_urlsafe(32)
 
 def send_password_reset_email(email, reset_token):
     """Send password reset email using Gmail App Password"""
@@ -463,31 +507,6 @@ Architect Johan Security Team
         print(f"❌ Email configuration error: {e}")
         return False
 
-def generate_csrf_token():
-    return secrets.token_urlsafe(32)
-
-def verify_password(stored_hash, provided_password):
-    """Verify bcrypt encrypted password with better error handling"""
-    try:
-        print(f"🔑 PASSWORD VERIFICATION:")
-        print(f"   Stored Hash: {stored_hash[:50]}...")
-        print(f"   Provided Password: {'*' * len(provided_password)}")
-        
-        if isinstance(stored_hash, str):
-            stored_hash = stored_hash.encode('utf-8')
-            
-        # Check if the stored hash looks like a bcrypt hash
-        if not stored_hash.startswith(b'$2b$'):
-            print(f"❌ Invalid hash format: {stored_hash[:20]}...")
-            return False
-            
-        result = bcrypt.checkpw(provided_password.encode('utf-8'), stored_hash)
-        print(f"   Verification Result: {result}")
-        return result
-    except Exception as e:
-        print(f"❌ Password verification error: {e}")
-        return False
-
 def log_user_activity(username, action, ip_address=None, user_agent=None):
     """Log user activities for security monitoring"""
     try:
@@ -542,7 +561,7 @@ def log_video_access(username, video_id, ip_address=None, status='success'):
     except Exception as e:
         logger.error(f"Failed to log video access: {e}")
 
-# AUTHENTICATION DECORATORS - MOVED BEFORE ROUTES
+# AUTHENTICATION DECORATORS
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -609,6 +628,84 @@ def admin_required(f):
         return f(current_user, *args, **kwargs)
     
     return decorated
+
+# Debug endpoints
+@app.route('/api/debug-login', methods=['POST'])
+def debug_login():
+    try:
+        data = request.get_json()
+        print("🔍 DEBUG LOGIN REQUEST:")
+        print(f"   Username: {data.get('username')}")
+        print(f"   Password Length: {len(data.get('password', ''))}")
+        
+        # Test database connection
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        with conn.cursor() as cursor:
+            # Check database info
+            cursor.execute("SELECT current_database(), current_user")
+            db_info = cursor.fetchone()
+            print(f"   Database Info: {db_info}")
+            
+            # Check if user exists
+            username = data.get('username')
+            cursor.execute('SELECT username, email, role, failed_attempts, locked_until FROM users WHERE username = %s', (username,))
+            user = cursor.fetchone()
+            print(f"   User Found: {bool(user)}")
+            
+            user_data = None
+            if user:
+                user_data = dict(user)
+                print(f"   User Details: {user_data}")
+                
+                # Check password hash format
+                cursor.execute('SELECT password_hash FROM users WHERE username = %s', (username,))
+                pwd_result = cursor.fetchone()
+                if pwd_result:
+                    pwd_hash = pwd_result['password_hash']
+                    print(f"   Password Hash: {pwd_hash[:50]}...")
+                    print(f"   Hash Length: {len(pwd_hash)}")
+                    print(f"   Is BCrypt: {pwd_hash.startswith('$2b$')}")
+        
+        conn.close()
+        
+        return jsonify({
+            'database_connected': True,
+            'db_info': db_info,
+            'user_exists': bool(user),
+            'user_data': user_data,
+            'server_time': datetime.datetime.utcnow().isoformat()
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ DEBUG LOGIN ERROR: {e}")
+        import traceback
+        print(f"❌ TRACEBACK: {traceback.format_exc()}")
+        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
+
+@app.route('/api/test-user/<username>', methods=['GET'])
+def test_user(username):
+    """Test if a user exists in the database"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'No database connection'}), 500
+            
+        with conn.cursor() as cursor:
+            cursor.execute('SELECT username, email, role, created_at FROM users WHERE username = %s', (username,))
+            user = cursor.fetchone()
+        
+        conn.close()
+        
+        return jsonify({
+            'user_exists': bool(user),
+            'user_data': dict(user) if user else None
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Database Initialization Route
 @app.route('/create-db')
@@ -739,6 +836,9 @@ def signup():
 def login():
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON data received'}), 400
+            
         username = data.get('username', '').strip()
         password = data.get('password', '')
         
@@ -777,7 +877,8 @@ def login():
             return jsonify({'error': 'Invalid username or password'}), 401
         
         print(f"✅ User found: {user['username']}")
-        print(f"   Stored Hash: {user['password_hash'][:50]}...")
+        print(f"   User Role: {user['role']}")
+        print(f"   Failed Attempts: {user.get('failed_attempts', 0)}")
         
         # Check if account is locked
         if user.get('locked_until'):
@@ -795,6 +896,8 @@ def login():
         
         # Verify password with detailed debugging
         print("🔑 Verifying password...")
+        print(f"   Stored hash: {user['password_hash'][:50]}...")
+        
         password_valid = verify_password(user['password_hash'], password)
         print(f"   Password Valid: {password_valid}")
         
@@ -820,7 +923,7 @@ def login():
         print("✅ Login successful!")
         user['failed_attempts'] = 0
         user['locked_until'] = None
-        user['last_login'] = current_time
+        user['last_login'] = datetime.datetime.utcnow()
         update_user(user)
         
         # Clear rate limiting for this IP
@@ -1030,8 +1133,6 @@ def logout(current_user):
     log_user_activity(current_user, 'logout', request.remote_addr, request.headers.get('User-Agent'))
     return jsonify({'message': 'Logout successful'}), 200
 
-# Exam Level Password Verification
-# Exam Level Password Verification
 # Exam Level Password Verification
 @app.route('/api/verify-exam-level-password', methods=['POST'])
 @token_required
@@ -1283,8 +1384,6 @@ def serve_practice_set_7():
 def serve_practice_set_8():
     return send_from_directory('../frontend', 'practice_set_8.html')
 
-
-
 # Serve exam mode HTML files
 @app.route('/exam_mode_1.html')
 def serve_exam_mode_1():
@@ -1349,12 +1448,11 @@ def debug_db():
             'user_count': user_count['user_count'] if user_count else 0,
             'status': 'connected',
             'postgresql_available': POSTGRESQL_AVAILABLE
-        }), 500
+        }), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-
 # Test exam passwords endpoint
 @app.route('/api/test-exam-passwords', methods=['GET'])
 def test_exam_passwords():
@@ -1373,48 +1471,6 @@ def test_exam_passwords():
         'endpoint': '/api/verify-exam-level-password'
     }), 200
 
-
-
-# Add this debug endpoint to check login issues
-@app.route('/api/debug-login', methods=['POST'])
-def debug_login():
-    try:
-        data = request.get_json()
-        print("🔍 DEBUG LOGIN REQUEST:")
-        print(f"   Username: {data.get('username')}")
-        print(f"   Password Length: {len(data.get('password', ''))}")
-        print(f"   Headers: {dict(request.headers)}")
-        
-        # Test database connection
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({'error': 'Database connection failed'}), 500
-            
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT current_database(), current_user, version()")
-            db_info = cursor.fetchone()
-            print(f"   Database Info: {db_info}")
-            
-            # Check if user exists
-            cursor.execute('SELECT * FROM users WHERE username = %s', (data.get('username'),))
-            user = cursor.fetchone()
-            print(f"   User Found: {bool(user)}")
-            if user:
-                print(f"   User Details: {dict(user)}")
-        
-        conn.close()
-        
-        return jsonify({
-            'database_connected': True,
-            'db_info': db_info,
-            'user_exists': bool(user),
-            'user_data': dict(user) if user else None
-        }), 200
-        
-    except Exception as e:
-        print(f"❌ DEBUG LOGIN ERROR: {e}")
-        return jsonify({'error': str(e)}), 500
-
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -1430,6 +1486,3 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
-
-
