@@ -467,13 +467,25 @@ def generate_csrf_token():
     return secrets.token_urlsafe(32)
 
 def verify_password(stored_hash, provided_password):
-    """Verify bcrypt encrypted password"""
+    """Verify bcrypt encrypted password with better error handling"""
     try:
+        print(f"🔑 PASSWORD VERIFICATION:")
+        print(f"   Stored Hash: {stored_hash[:50]}...")
+        print(f"   Provided Password: {'*' * len(provided_password)}")
+        
         if isinstance(stored_hash, str):
             stored_hash = stored_hash.encode('utf-8')
-        return bcrypt.checkpw(provided_password.encode('utf-8'), stored_hash)
+            
+        # Check if the stored hash looks like a bcrypt hash
+        if not stored_hash.startswith(b'$2b$'):
+            print(f"❌ Invalid hash format: {stored_hash[:20]}...")
+            return False
+            
+        result = bcrypt.checkpw(provided_password.encode('utf-8'), stored_hash)
+        print(f"   Verification Result: {result}")
+        return result
     except Exception as e:
-        logger.error(f"Password verification error: {e}")
+        print(f"❌ Password verification error: {e}")
         return False
 
 def log_user_activity(username, action, ip_address=None, user_agent=None):
@@ -727,13 +739,18 @@ def signup():
 def login():
     try:
         data = request.get_json()
-        username = data.get('username', '').strip().lower()  # Normalize username
+        username = data.get('username', '').strip()
         password = data.get('password', '')
         
+        print(f"🔐 LOGIN ATTEMPT:")
+        print(f"   Username: {username}")
+        print(f"   Password Provided: {'*' * len(password)}")
+        
         if not username or not password:
+            print("❌ Missing username or password")
             return jsonify({'error': 'Username and password required'}), 400
         
-        # Enhanced rate limiting with IP and username tracking
+        # Enhanced rate limiting
         client_ip = request.remote_addr
         current_time = datetime.datetime.utcnow()
         
@@ -744,46 +761,63 @@ def login():
             if attempts_info['count'] >= MAX_ATTEMPTS:
                 time_since_first_attempt = (current_time - attempts_info['first_attempt']).total_seconds()
                 if time_since_first_attempt < 3600:
-                    return jsonify({'error': 'Too many login attempts from your IP. Please try again later.'}), 429
+                    print(f"❌ Rate limited for IP: {client_ip}")
+                    return jsonify({'error': 'Too many login attempts. Please try again later.'}), 429
         
-        # Get user from database
+        # Get user from database with better error handling
+        print(f"🔍 Searching for user: {username}")
         user = get_user_by_username(username)
+        
         if not user:
             # Simulate password check to prevent timing attacks
+            print(f"❌ User not found: {username}")
             bcrypt.checkpw(password.encode('utf-8'), bcrypt.gensalt())
             update_login_attempts(ip_key, current_time)
             log_user_activity(username, 'login_failed_nonexistent', client_ip, request.headers.get('User-Agent'))
             return jsonify({'error': 'Invalid username or password'}), 401
+        
+        print(f"✅ User found: {user['username']}")
+        print(f"   Stored Hash: {user['password_hash'][:50]}...")
         
         # Check if account is locked
         if user.get('locked_until'):
             locked_until = user['locked_until']
             if datetime.datetime.utcnow() < locked_until:
                 time_remaining = (locked_until - datetime.datetime.utcnow()).seconds // 60
+                print(f"❌ Account locked until: {locked_until}")
                 return jsonify({'error': f'Account temporarily locked. Try again in {time_remaining} minutes.'}), 423
             else:
                 # Unlock account
                 user['locked_until'] = None
                 user['failed_attempts'] = 0
                 update_user(user)
+                print("✅ Account unlocked")
         
-        # Verify password
-        if not verify_password(user['password_hash'], password):
+        # Verify password with detailed debugging
+        print("🔑 Verifying password...")
+        password_valid = verify_password(user['password_hash'], password)
+        print(f"   Password Valid: {password_valid}")
+        
+        if not password_valid:
             user['failed_attempts'] = user.get('failed_attempts', 0) + 1
+            print(f"   Failed attempts: {user['failed_attempts']}")
             
             # Lock account after too many failed attempts
             if user['failed_attempts'] >= MAX_ATTEMPTS:
                 user['locked_until'] = (datetime.datetime.utcnow() + datetime.timedelta(seconds=LOCKOUT_TIME))
                 update_user(user)
                 log_user_activity(username, 'account_locked', client_ip, request.headers.get('User-Agent'))
+                print(f"❌ Account locked due to {user['failed_attempts']} failed attempts")
                 return jsonify({'error': 'Account locked due to too many failed attempts. Please try again later.'}), 423
             
             update_user(user)
             update_login_attempts(ip_key, current_time)
             log_user_activity(username, 'login_failed_invalid_password', client_ip, request.headers.get('User-Agent'))
+            print("❌ Invalid password")
             return jsonify({'error': 'Invalid username or password'}), 401
         
         # Successful login - reset counters
+        print("✅ Login successful!")
         user['failed_attempts'] = 0
         user['locked_until'] = None
         user['last_login'] = current_time
@@ -796,18 +830,19 @@ def login():
         # Log successful login
         log_user_activity(username, 'login_success', client_ip, request.headers.get('User-Agent'))
         
-        # Generate secure JWT token
+        # Generate JWT token
         token_payload = {
             'username': username,
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=SESSION_TIMEOUT),
             'iat': datetime.datetime.utcnow(),
             'role': user['role'],
-            'session_id': secrets.token_urlsafe(32),  # Longer session ID
-            'ip': client_ip  # Bind token to IP
+            'session_id': secrets.token_urlsafe(16)
         }
         
         token = jwt.encode(token_payload, JWT_SECRET, algorithm='HS256')
         new_csrf_token = generate_csrf_token()
+        
+        print(f"✅ Token generated for {username}")
         
         return jsonify({
             'message': 'Login successful',
@@ -820,6 +855,9 @@ def login():
         }), 200
         
     except Exception as e:
+        print(f"💥 LOGIN ERROR: {str(e)}")
+        import traceback
+        print(f"💥 TRACEBACK: {traceback.format_exc()}")
         logger.error(f"Login error: {e}")
         return jsonify({'error': 'Login failed due to server error'}), 500
 
@@ -1334,6 +1372,48 @@ def test_exam_passwords():
         'status': 'active',
         'endpoint': '/api/verify-exam-level-password'
     }), 200
+
+
+
+# Add this debug endpoint to check login issues
+@app.route('/api/debug-login', methods=['POST'])
+def debug_login():
+    try:
+        data = request.get_json()
+        print("🔍 DEBUG LOGIN REQUEST:")
+        print(f"   Username: {data.get('username')}")
+        print(f"   Password Length: {len(data.get('password', ''))}")
+        print(f"   Headers: {dict(request.headers)}")
+        
+        # Test database connection
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT current_database(), current_user, version()")
+            db_info = cursor.fetchone()
+            print(f"   Database Info: {db_info}")
+            
+            # Check if user exists
+            cursor.execute('SELECT * FROM users WHERE username = %s', (data.get('username'),))
+            user = cursor.fetchone()
+            print(f"   User Found: {bool(user)}")
+            if user:
+                print(f"   User Details: {dict(user)}")
+        
+        conn.close()
+        
+        return jsonify({
+            'database_connected': True,
+            'db_info': db_info,
+            'user_exists': bool(user),
+            'user_data': dict(user) if user else None
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ DEBUG LOGIN ERROR: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
