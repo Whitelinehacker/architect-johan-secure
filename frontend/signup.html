@@ -757,7 +757,7 @@
     </div>
 
     <script src="js/matrix.js"></script>
-   <script>
+ <script>
     // API Base URL
     const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
 
@@ -804,7 +804,7 @@
         // Update UI for loading
         sendOtpBtn.disabled = true;
         sendOtpBtn.textContent = 'Sending OTP...';
-        otpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP...</span>';
+        otpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP via SMS...</span>';
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
@@ -829,18 +829,15 @@
                 startOTPTimer();
                 
                 // Show success message
-                if (data.otp) {
-                    // For testing - show OTP in console and status
-                    otpStatus.innerHTML = `<span style="color: #00FFB3">OTP sent! Use: ${data.otp}</span>`;
-                    console.log(`📱 Test OTP: ${data.otp}`);
-                } else {
-                    otpStatus.innerHTML = '<span style="color: #00FFB3">OTP sent successfully!</span>';
-                }
+                otpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent to your mobile number via SMS!</span>';
+                
+                showSuccess('OTP sent successfully! Check your mobile phone.');
                 
             } else {
                 showError(data.error || 'Failed to send OTP');
                 sendOtpBtn.disabled = false;
                 sendOtpBtn.textContent = 'Send OTP';
+                otpStatus.innerHTML = '<span style="color: #FF004C">Failed to send OTP</span>';
             }
         } catch (error) {
             console.error('OTP sending error:', error);
@@ -909,6 +906,8 @@
                 
                 if (data.attempts_remaining) {
                     otpStatus.innerHTML = `<span style="color: #FF004C">${data.error}</span>`;
+                } else {
+                    otpStatus.innerHTML = '<span style="color: #FF004C">Invalid OTP</span>';
                 }
             }
         } catch (error) {
@@ -1049,7 +1048,10 @@
             'tempmail.com', 'guerrillamail.com', 'mailinator.com',
             '10minutemail.com', 'throwawaymail.com', 'fakeinbox.com',
             'yopmail.com', 'trashmail.com', 'temp-mail.org',
-            'sharklasers.com', 'guerrillamail.biz', 'grr.la'
+            'sharklasers.com', 'guerrillamail.biz', 'grr.la',
+            'guerrillamail.org', 'guerrillamail.net', 'guerrillamail.de',
+            'spam4.me', 'fake-mail.com', 'dispostable.com',
+            'mailnesia.com', 'getairmail.com', 'maildrop.cc'
         ];
         
         const domain = email.split('@')[1].toLowerCase();
@@ -1445,6 +1447,7 @@
 </script>
 </body>
 </html>
+
 
 
 
