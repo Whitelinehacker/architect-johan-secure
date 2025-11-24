@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="js/config.js"></script>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4DFDBZPTLD"></script>
     <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-4DFDBZPTLD');
-</script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-4DFDBZPTLD');
+    </script>
+    <script src="js/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Architect Johan — Secure Login</title>
@@ -98,9 +96,80 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Debug panel styles */
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00FFB3;
+            border-radius: 8px;
+            padding: 10px;
+            color: #00FFB3;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+        }
+
+        .debug-toggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #FF004C;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 1001;
+            font-size: 12px;
+        }
+
+        .debug-log {
+            margin: 5px 0;
+            padding: 3px;
+            border-bottom: 1px solid rgba(0, 255, 179, 0.3);
+        }
+
+        .debug-success { color: #00FFB3; }
+        .debug-error { color: #FF004C; }
+        .debug-warning { color: #FF8A00; }
+        .debug-info { color: #2EC6FF; }
+
+        /* Loading animation for button */
+        .login-btn.loading {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn.loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
     </style>
 </head>
 <body class="login-page-body">
+    <!-- Debug Panel -->
+    <button class="debug-toggle" onclick="toggleDebug()">Debug</button>
+    <div class="debug-panel" id="debug-panel">
+        <strong>Debug Console</strong>
+        <div id="debug-logs"></div>
+    </div>
+
     <!-- Matrix background -->
     <canvas id="matrix-canvas" class="login-background"></canvas>
 
@@ -109,7 +178,6 @@
         <div class="login-card" id="login-card">
             <div class="login-header">
                 <div class="logo">
-                    <!-- Replace 'images/logo.jpg' with your actual image path -->
                     <img src="assets/images/cropped_circle_image.png" alt="Architect Johan Logo" 
                          onerror="this.style.display='none'; this.parentElement.innerHTML='AJ';">
                 </div>
@@ -204,156 +272,277 @@
     <script src="js/matrix.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/security.js"></script>
-   <script>
-    // Enhanced auth.js functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const loginForm = document.getElementById('login-form');
-        const loginBtn = document.getElementById('login-btn');
-        const errorMessage = document.getElementById('error-message');
-        const successMessage = document.getElementById('success-message');
-        const successOverlay = document.getElementById('success-overlay');
-        const csrfTokenInput = document.getElementById('csrf_token');
+    <script>
+        // Debug functions
+        function debugLog(message, type = 'info') {
+            const debugPanel = document.getElementById('debug-logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = `debug-log debug-${type}`;
+            logEntry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            debugPanel.appendChild(logEntry);
+            debugPanel.scrollTop = debugPanel.scrollHeight;
+            console.log(`[DEBUG ${type.toUpperCase()}] ${message}`);
+        }
 
-        // Use Render backend URL directly
-        const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
+        function toggleDebug() {
+            const debugPanel = document.getElementById('debug-panel');
+            debugPanel.style.display = debugPanel.style.display === 'none' ? 'block' : 'none';
+        }
 
-        // Check if user is already logged in
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-            // Validate token with correct endpoint
-            fetch(`${API_BASE_URL}/api/validate-token`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
+        // Test server connection
+        async function testServerConnection() {
+            try {
+                debugLog('Testing server connection...', 'info');
+                const response = await fetch(`${API_BASE_URL}/api/csrf-token`);
+                debugLog(`Server response: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                return response.ok;
+            } catch (error) {
+                debugLog(`Server connection failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Debug login function
+        async function debugLogin(formData) {
+            try {
+                debugLog('Running login debug analysis...', 'info');
+                
+                // Test 1: Check if user exists
+                debugLog('Checking if user exists in database...', 'info');
+                const debugResponse = await fetch(`${API_BASE_URL}/api/debug-login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const debugData = await debugResponse.json();
+                debugLog(`Debug results: ${JSON.stringify(debugData, null, 2)}`, debugResponse.ok ? 'success' : 'error');
+                
+                if (!debugData.user_exists) {
+                    debugLog('User not found in database', 'error');
+                    return false;
                 }
-            })
-            .then(response => {
-                if (response.ok) {
-                    window.location.href = 'home.html';
-                } else {
+                
+                debugLog('User found in database', 'success');
+                return true;
+                
+            } catch (debugError) {
+                debugLog(`Debug analysis failed: ${debugError.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Enhanced auth.js functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('login-form');
+            const loginBtn = document.getElementById('login-btn');
+            const errorMessage = document.getElementById('error-message');
+            const successMessage = document.getElementById('success-message');
+            const successOverlay = document.getElementById('success-overlay');
+            const csrfTokenInput = document.getElementById('csrf_token');
+
+            // Use Render backend URL directly
+            const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
+
+            debugLog('Login page initialized', 'success');
+            debugLog(`API Base URL: ${API_BASE_URL}`, 'info');
+
+            // Test server connection on load
+            testServerConnection();
+
+            // Check if user is already logged in
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                debugLog('Found existing token, validating...', 'info');
+                // Validate token with correct endpoint
+                fetch(`${API_BASE_URL}/api/validate-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        debugLog('Token is valid, redirecting to home', 'success');
+                        window.location.href = 'home.html';
+                    } else {
+                        debugLog('Token is invalid, clearing storage', 'warning');
+                        // Token is invalid, clear it
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('username');
+                        localStorage.removeItem('user_role');
+                    }
+                })
+                .catch((error) => {
+                    debugLog(`Token validation failed: ${error.message}`, 'error');
                     // Token is invalid, clear it
                     localStorage.removeItem('auth_token');
                     localStorage.removeItem('username');
                     localStorage.removeItem('user_role');
-                }
-            })
-            .catch(() => {
-                // Token is invalid, clear it
-                localStorage.removeItem('auth_token');
-                localStorage.removeItem('username');
-                localStorage.removeItem('user_role');
-            });
-        }
-
-        // Get CSRF token
-        fetch(`${API_BASE_URL}/api/csrf-token`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.csrf_token) {
-                    csrfTokenInput.value = data.csrf_token;
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching CSRF token:', error);
-            });
-
-        loginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-
-            if (!username || !password) {
-                showError('Please enter both username and password');
-                return;
+                });
             }
 
-            const formData = {
-                username: username,
-                password: password,
-                csrf_token: csrfTokenInput.value
-            };
-
-            loginBtn.disabled = true;
-            loginBtn.innerHTML = '<span class="btn-text">Authenticating...</span>';
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': csrfTokenInput.value
-                    },
-                    body: JSON.stringify(formData)
+            // Get CSRF token
+            fetch(`${API_BASE_URL}/api/csrf-token`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.csrf_token) {
+                        csrfTokenInput.value = data.csrf_token;
+                        debugLog('CSRF token obtained successfully', 'success');
+                    } else {
+                        debugLog('No CSRF token in response', 'error');
+                    }
+                })
+                .catch(error => {
+                    debugLog(`Error fetching CSRF token: ${error.message}`, 'error');
+                    showError('Security token initialization failed. Please refresh the page.');
                 });
 
-                const data = await response.json();
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
 
-                if (response.ok) {
-                    // Store token and user info
-                    localStorage.setItem('auth_token', data.token);
-                    localStorage.setItem('username', data.username);
-                    localStorage.setItem('user_role', data.role);
-                    localStorage.setItem('full_name', data.full_name);
-                    localStorage.setItem('csrf_token', data.csrf_token);
-
-                    showSuccess('Access granted! Redirecting...');
-                    
-                    // Show success animation
-                    successOverlay.classList.add('show');
-                    loginBtn.classList.add('success');
-                    
-                    setTimeout(() => {
-                        window.location.href = 'home.html';
-                    }, 1500);
-                } else {
-                    showError(data.error || 'Authentication failed');
-                    loginBtn.classList.add('glitch');
-                    setTimeout(() => loginBtn.classList.remove('glitch'), 1000);
+                if (!username || !password) {
+                    showError('Please enter both username and password');
+                    return;
                 }
-            } catch (error) {
-                showError('Network error. Please check your connection.');
-                console.error('Login error:', error);
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = '<span class="btn-text">Initialize Access</span>';
+
+                const formData = {
+                    username: username,
+                    password: password,
+                    csrf_token: csrfTokenInput.value
+                };
+
+                debugLog(`Login attempt for user: ${username}`, 'info');
+
+                loginBtn.disabled = true;
+                loginBtn.innerHTML = '<span class="btn-text">Authenticating...</span>';
+                loginBtn.classList.add('loading');
+
+                try {
+                    debugLog('Sending login request to server...', 'info');
+                    
+                    const response = await fetch(`${API_BASE_URL}/api/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfTokenInput.value
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    debugLog(`Server response status: ${response.status}`, 'info');
+
+                    const data = await response.json();
+                    debugLog(`Server response data: ${JSON.stringify(data)}`, 'info');
+
+                    if (response.ok) {
+                        debugLog('Login successful!', 'success');
+                        // Store token and user info
+                        localStorage.setItem('auth_token', data.token);
+                        localStorage.setItem('username', data.username);
+                        localStorage.setItem('user_role', data.role);
+                        localStorage.setItem('full_name', data.full_name);
+                        localStorage.setItem('csrf_token', data.csrf_token);
+
+                        showSuccess('Access granted! Redirecting...');
+                        
+                        // Show success animation
+                        successOverlay.classList.add('show');
+                        loginBtn.classList.add('success');
+                        
+                        setTimeout(() => {
+                            window.location.href = 'home.html';
+                        }, 1500);
+                    } else {
+                        debugLog(`Login failed: ${data.error}`, 'error');
+                        showError(data.error || 'Authentication failed');
+                        loginBtn.classList.add('glitch');
+                        setTimeout(() => loginBtn.classList.remove('glitch'), 1000);
+                        
+                        // Run debug analysis if login fails
+                        if (data.error.includes('server error')) {
+                            debugLog('Running detailed debug analysis...', 'warning');
+                            await debugLogin(formData);
+                        }
+                    }
+                } catch (error) {
+                    debugLog(`Network error: ${error.message}`, 'error');
+                    showError('Network error. Please check your connection.');
+                    
+                    // Test server connection
+                    const serverOnline = await testServerConnection();
+                    if (!serverOnline) {
+                        showError('Server is unreachable. Please try again later.');
+                    }
+                } finally {
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '<span class="btn-text">Initialize Access</span>';
+                    loginBtn.classList.remove('loading');
+                }
+            });
+
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.add('show');
+                successMessage.classList.remove('show');
+                
+                const card = document.getElementById('login-card');
+                card.classList.add('shake');
+                setTimeout(() => card.classList.remove('shake'), 500);
+                
+                debugLog(`UI Error: ${message}`, 'error');
             }
+
+            function showSuccess(message) {
+                successMessage.textContent = message;
+                successMessage.classList.add('show');
+                errorMessage.classList.remove('show');
+                debugLog(`UI Success: ${message}`, 'success');
+            }
+
+            // Enter key support for form submission
+            document.getElementById('username').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('login-form').dispatchEvent(new Event('submit'));
+                }
+            });
+
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('login-form').dispatchEvent(new Event('submit'));
+                }
+            });
+
+            // Auto-focus on username field
+            document.getElementById('username').focus();
+
+            // Quick test credentials for debugging (remove in production)
+            document.addEventListener('keydown', function(e) {
+                // Press Ctrl+Shift+D to fill test credentials
+                if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                    e.preventDefault();
+                    document.getElementById('username').value = 'ArchitectJohan';
+                    document.getElementById('password').value = 'Arch1t3ch_Joh@N!X#2025';
+                    debugLog('Test credentials filled', 'warning');
+                }
+            });
         });
 
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.classList.add('show');
-            successMessage.classList.remove('show');
-            
-            const card = document.getElementById('login-card');
-            card.classList.add('shake');
-            setTimeout(() => card.classList.remove('shake'), 500);
-        }
-
-        function showSuccess(message) {
-            successMessage.textContent = message;
-            successMessage.classList.add('show');
-            errorMessage.classList.remove('show');
-        }
-
-        // Enter key support for form submission
-        document.getElementById('username').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('login-form').dispatchEvent(new Event('submit'));
-            }
-        });
-
-        document.getElementById('password').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('login-form').dispatchEvent(new Event('submit'));
-            }
-        });
-
-        // Auto-focus on username field
-        document.getElementById('username').focus();
-    });
-</script>
+        // Export debug functions for browser console access
+        window.debugLogin = debugLogin;
+        window.testServerConnection = testServerConnection;
+        window.debugLog = debugLog;
+    </script>
 </body>
-
 </html>
