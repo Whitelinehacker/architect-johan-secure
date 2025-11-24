@@ -15,6 +15,7 @@ import re
 import json
 import requests
 import random
+from datetime import timezone
 
 # Import psycopg3 (new version)
 try:
@@ -713,10 +714,10 @@ def send_otp():
         # Generate 6-digit OTP
         otp = str(random.randint(100000, 999999))
         
-        # Store OTP with expiry (10 minutes)
+        # Store OTP with expiry (10 minutes) - FIXED LINE
         otp_storage[mobile_no] = {
             'otp': otp,
-            'expiry': datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
+            'expiry': datetime.datetime.now(timezone.utc) + datetime.timedelta(minutes=10),
             'attempts': 0,
             'verified': False
         }
@@ -736,15 +737,11 @@ def send_otp():
                 'mobile': f'+91{mobile_no}'
             }), 200
         else:
-            print(f"❌ SMS sending failed, but OTP generated")
-            # Even if SMS fails, return success but include OTP for testing
+            print(f"❌ SMS sending failed")
             return jsonify({
-                'success': True,
-                'message': 'OTP generated (SMS service issue)',
-                'otp': otp,  # Remove this in production
-                'mobile': f'+91{mobile_no}',
-                'note': 'SMS service temporarily unavailable'
-            }), 200
+                'success': False,
+                'error': 'Failed to send OTP via SMS. Please try again.'
+            }), 500
             
     except Exception as e:
         logger.error(f"OTP sending error: {e}")
@@ -769,8 +766,8 @@ def verify_otp():
         otp_data = otp_storage[mobile_no]
         print(f"📋 Stored OTP data: {otp_data}")
         
-        # Check expiry
-        if datetime.datetime.utcnow() > otp_data['expiry']:
+        # Check expiry - FIXED LINE
+        if datetime.datetime.now(timezone.utc) > otp_data['expiry']:
             del otp_storage[mobile_no]
             print(f"❌ OTP expired for: {mobile_no}")
             return jsonify({'error': 'OTP has expired. Please request a new OTP.'}), 400
@@ -785,7 +782,7 @@ def verify_otp():
         if otp_attempt == otp_data['otp']:
             # Mark mobile as verified
             otp_storage[mobile_no]['verified'] = True
-            otp_storage[mobile_no]['verified_at'] = datetime.datetime.utcnow()
+            otp_storage[mobile_no]['verified_at'] = datetime.datetime.now(timezone.utc)  # FIXED LINE
             
             print(f"✅ OTP verified successfully for: {mobile_no}")
             
@@ -1853,3 +1850,4 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
