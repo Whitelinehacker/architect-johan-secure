@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Architect Johan — Create Account</title>
+    <title>Architect Johan — Create Secure Account</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
     <link rel="stylesheet" href="css/responsive.css">
@@ -18,6 +18,7 @@
             min-height: 100vh;
             overflow-x: hidden;
             overflow-y: auto;
+            font-family: 'Courier New', 'Consolas', monospace;
         }
 
         .login-page-body {
@@ -27,11 +28,12 @@
             justify-content: center;
             padding: 20px;
             overflow-y: auto;
+            background: linear-gradient(135deg, #02040A 0%, #0A0F2D 50%, #02040A 100%);
         }
 
         .login-content {
             width: 100%;
-            max-width: 450px;
+            max-width: 480px;
             margin: 40px auto;
             position: relative;
             z-index: 10;
@@ -73,12 +75,37 @@
             text-decoration: underline;
         }
 
+        .password-strength {
+            margin-top: 8px;
+        }
+
+        .strength-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .strength-fill.weak { width: 20%; background: #FF004C; }
+        .strength-fill.fair { width: 40%; background: #FF8A00; }
+        .strength-fill.good { width: 60%; background: #FFD600; }
+        .strength-fill.strong { width: 80%; background: #8CE300; }
+        .strength-fill.very-strong { width: 100%; background: #00FFB3; }
+
         .password-requirements {
-            font-size: 12px;
+            font-size: 11px;
             color: #2EC6FF;
-            margin-top: 5px;
-            margin-bottom: 15px;
             line-height: 1.4;
+            margin-top: 5px;
         }
 
         .mobile-input {
@@ -110,6 +137,33 @@
         .form-group {
             margin-bottom: 20px;
             position: relative;
+        }
+
+        /* Loading state for button */
+        .login-btn.loading {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn.loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* Input focus states */
+        .input-wrapper.focused {
+            box-shadow: 0 0 10px rgba(0, 255, 179, 0.3);
         }
 
         /* Custom scrollbar for the card */
@@ -174,6 +228,92 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Security info styles */
+        .security-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 255, 179, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 179, 0.2);
+        }
+
+        .security-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #2EC6FF;
+        }
+
+        .security-icon {
+            font-size: 14px;
+        }
+
+        .footer-text {
+            text-align: center;
+            font-size: 10px;
+            color: #00FFB3;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 255, 179, 0.05);
+            border-radius: 5px;
+            border: 1px solid rgba(0, 255, 179, 0.1);
+        }
+
+        /* Error and success messages */
+        .error-message {
+            background: rgba(255, 0, 76, 0.1);
+            border: 1px solid rgba(255, 0, 76, 0.3);
+            color: #FF004C;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            background: rgba(0, 255, 179, 0.1);
+            border: 1px solid rgba(0, 255, 179, 0.3);
+            color: #00FFB3;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Shake animation for errors */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
         /* Responsive adjustments */
         @media (max-height: 800px) {
             .login-content {
@@ -217,6 +357,7 @@
             
             .login-content {
                 margin: 20px auto;
+                max-width: 95%;
             }
             
             .login-card {
@@ -238,6 +379,11 @@
             .login-btn {
                 padding: 16px;
                 font-size: 14px;
+            }
+
+            .password-requirements {
+                font-size: 10px;
+                line-height: 1.3;
             }
         }
 
@@ -266,7 +412,7 @@
                     <img src="assets/images/cropped_circle_image.png" alt="Architect Johan Logo" 
                          onerror="this.style.display='none'; this.parentElement.innerHTML='AJ';">
                 </div>
-                <h1>Create Account</h1>
+                <h1>Create Secure Account</h1>
                 <p>Join Architect Johan Community</p>
             </div>
 
@@ -280,10 +426,13 @@
                             type="text" 
                             id="username" 
                             name="username" 
-                            placeholder="Choose a username"
+                            placeholder="Choose a username (3-30 characters)"
                             autocomplete="username"
                             required
-                            maxlength="50"
+                            minlength="3"
+                            maxlength="30"
+                            pattern="[a-zA-Z0-9_]+"
+                            title="Only letters, numbers, and underscores allowed"
                         >
                     </div>
                 </div>
@@ -298,6 +447,7 @@
                             placeholder="Enter your full name"
                             autocomplete="name"
                             required
+                            minlength="2"
                             maxlength="100"
                         >
                     </div>
@@ -326,11 +476,12 @@
                             type="tel" 
                             id="mobile_no" 
                             name="mobile_no" 
-                            placeholder="Enter your mobile number"
+                            placeholder="Enter 10-digit mobile number"
                             autocomplete="tel"
                             required
                             maxlength="10"
                             pattern="[0-9]{10}"
+                            title="Please enter a valid 10-digit mobile number"
                         >
                     </div>
                 </div>
@@ -342,15 +493,20 @@
                             type="password" 
                             id="password" 
                             name="password" 
-                            placeholder="Create a password (min 8 characters)"
+                            placeholder="Create a strong password"
                             autocomplete="new-password"
                             required
                             minlength="8"
                             maxlength="100"
                         >
                     </div>
-                    <div class="password-requirements">
-                        Password must be at least 8 characters long
+                    <div class="password-strength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strength-fill"></div>
+                        </div>
+                        <div class="password-requirements" id="password-requirements">
+                            • 8+ characters • Uppercase • Lowercase • Number • Special character
+                        </div>
                     </div>
                 </div>
 
@@ -371,7 +527,7 @@
                 </div>
 
                 <button type="submit" class="login-btn" id="signup-btn">
-                    <span class="btn-text">Create Account</span>
+                    <span class="btn-text">Create Secure Account</span>
                 </button>
 
                 <div class="error-message" id="error-message">
@@ -390,16 +546,24 @@
             <div class="security-info">
                 <div class="security-item">
                     <span class="security-icon">🔒</span>
-                    <span>Encrypted Connection</span>
+                    <span>End-to-End Encryption</span>
                 </div>
                 <div class="security-item">
                     <span class="security-icon">🛡️</span>
-                    <span>Secure Registration</span>
+                    <span>CSRF Protection Active</span>
+                </div>
+                <div class="security-item">
+                    <span class="security-icon">⚡</span>
+                    <span>Secure Password Hashing</span>
+                </div>
+                <div class="security-item">
+                    <span class="security-icon">📧</span>
+                    <span>Email & Username Validation</span>
                 </div>
             </div>
 
             <div class="footer-text">
-                ENCRYPTED CONNECTION ESTABLISHED | CSRF PROTECTION ACTIVE
+                ENCRYPTED CONNECTION ESTABLISHED | RATE LIMITING ACTIVE | SECURE REGISTRATION
             </div>
         </div>
     </div>
@@ -409,6 +573,176 @@
         // API Base URL
         const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
 
+        // Password strength checker
+        function checkPasswordStrength(password) {
+            let strength = 0;
+            const requirements = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                number: /[0-9]/.test(password),
+                special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>?`~]/.test(password)
+            };
+
+            Object.values(requirements).forEach(req => {
+                if (req) strength++;
+            });
+
+            return { strength, requirements };
+        }
+
+        // Update password strength indicator
+        function updatePasswordStrength(password) {
+            const strengthFill = document.getElementById('strength-fill');
+            const requirements = document.getElementById('password-requirements');
+            
+            if (!password) {
+                strengthFill.style.width = '0%';
+                strengthFill.className = 'strength-fill';
+                requirements.innerHTML = '• 8+ characters • Uppercase • Lowercase • Number • Special character';
+                return;
+            }
+
+            const { strength, requirements: reqs } = checkPasswordStrength(password);
+            
+            // Update strength bar
+            switch(strength) {
+                case 0:
+                case 1:
+                    strengthFill.style.width = '20%';
+                    strengthFill.className = 'strength-fill weak';
+                    break;
+                case 2:
+                    strengthFill.style.width = '40%';
+                    strengthFill.className = 'strength-fill fair';
+                    break;
+                case 3:
+                    strengthFill.style.width = '60%';
+                    strengthFill.className = 'strength-fill good';
+                    break;
+                case 4:
+                    strengthFill.style.width = '80%';
+                    strengthFill.className = 'strength-fill strong';
+                    break;
+                case 5:
+                    strengthFill.style.width = '100%';
+                    strengthFill.className = 'strength-fill very-strong';
+                    break;
+            }
+
+            // Update requirements text
+            let reqText = '';
+            if (!reqs.length) reqText += '• <span style="color: #FF004C">8+ characters</span> ';
+            else reqText += '• <span style="color: #00FFB3">8+ characters</span> ';
+
+            if (!reqs.uppercase) reqText += '• <span style="color: #FF004C">Uppercase</span> ';
+            else reqText += '• <span style="color: #00FFB3">Uppercase</span> ';
+
+            if (!reqs.lowercase) reqText += '• <span style="color: #FF004C">Lowercase</span> ';
+            else reqText += '• <span style="color: #00FFB3">Lowercase</span> ';
+
+            if (!reqs.number) reqText += '• <span style="color: #FF004C">Number</span> ';
+            else reqText += '• <span style="color: #00FFB3">Number</span> ';
+
+            if (!reqs.special) reqText += '• <span style="color: #FF004C">Special character</span>';
+            else reqText += '• <span style="color: #00FFB3">Special character</span>';
+
+            requirements.innerHTML = reqText;
+        }
+
+        // Input sanitization function
+        function sanitizeInput(input) {
+            return input.replace(/[<>"'`]/g, '').trim();
+        }
+
+        // Validate email format
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // Validate username format
+        function validateUsername(username) {
+            const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+            return usernameRegex.test(username);
+        }
+
+        // Show error message with animation
+        function showError(message) {
+            const errorMessage = document.getElementById('error-message');
+            const successMessage = document.getElementById('success-message');
+            const card = document.getElementById('signup-card');
+            
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+            successMessage.classList.remove('show');
+            
+            card.classList.add('shake');
+            setTimeout(() => card.classList.remove('shake'), 500);
+            
+            // Auto-hide error after 5 seconds
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const errorMessage = document.getElementById('error-message');
+            const successMessage = document.getElementById('success-message');
+            
+            successMessage.textContent = message;
+            successMessage.classList.add('show');
+            errorMessage.classList.remove('show');
+        }
+
+        // Validate form data
+        function validateFormData(formData) {
+            // Check required fields
+            if (!formData.username || !formData.full_name || !formData.email || !formData.mobile_no || !formData.password) {
+                return { isValid: false, error: 'Please fill in all required fields' };
+            }
+
+            // Validate username
+            if (formData.username.length < 3 || formData.username.length > 30) {
+                return { isValid: false, error: 'Username must be between 3 and 30 characters long', field: 'username' };
+            }
+
+            if (!validateUsername(formData.username)) {
+                return { isValid: false, error: 'Username can only contain letters, numbers, and underscores', field: 'username' };
+            }
+
+            // Validate full name
+            if (formData.full_name.length < 2 || formData.full_name.length > 100) {
+                return { isValid: false, error: 'Full name must be between 2 and 100 characters long', field: 'full_name' };
+            }
+
+            // Validate email
+            if (!validateEmail(formData.email)) {
+                return { isValid: false, error: 'Please enter a valid email address', field: 'email' };
+            }
+
+            // Validate mobile number
+            const mobileDigits = formData.mobile_no.replace('+91', '');
+            if (mobileDigits.length !== 10 || !/^\d+$/.test(mobileDigits)) {
+                return { isValid: false, error: 'Please enter a valid 10-digit mobile number', field: 'mobile_no' };
+            }
+
+            // Validate password strength
+            const passwordStrength = checkPasswordStrength(formData.password);
+            if (passwordStrength.strength < 3) {
+                return { isValid: false, error: 'Password is too weak. Please include uppercase letters, lowercase letters, numbers, and special characters', field: 'password' };
+            }
+
+            // Check password confirmation
+            if (formData.password !== formData.confirm_password) {
+                return { isValid: false, error: 'Passwords do not match', field: 'confirm_password' };
+            }
+
+            return { isValid: true };
+        }
+
+        // Main signup functionality
         document.addEventListener('DOMContentLoaded', function() {
             const signupForm = document.getElementById('signup-form');
             const signupBtn = document.getElementById('signup-btn');
@@ -418,79 +752,107 @@
 
             // Get CSRF token
             fetch(`${API_BASE_URL}/api/csrf-token`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to get CSRF token');
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    csrfTokenInput.value = data.csrf_token;
+                    if (data.csrf_token) {
+                        csrfTokenInput.value = data.csrf_token;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching CSRF token:', error);
+                    showError('Security token initialization failed. Please refresh the page.');
                 });
 
-            // Password confirmation validation
+            // Password strength real-time feedback
             const passwordInput = document.getElementById('password');
-            const confirmPasswordInput = document.getElementById('confirm_password');
+            if (passwordInput) {
+                passwordInput.addEventListener('input', function() {
+                    updatePasswordStrength(this.value);
+                });
+            }
 
-            confirmPasswordInput.addEventListener('input', function() {
-                if (passwordInput.value !== confirmPasswordInput.value) {
-                    confirmPasswordInput.style.borderColor = '#FF004C';
-                } else {
-                    confirmPasswordInput.style.borderColor = '#00FFB3';
-                }
-            });
+            // Password confirmation validation
+            const confirmPasswordInput = document.getElementById('confirm_password');
+            if (confirmPasswordInput) {
+                confirmPasswordInput.addEventListener('input', function() {
+                    const password = document.getElementById('password').value;
+                    if (this.value && password !== this.value) {
+                        this.style.borderColor = '#FF004C';
+                        this.setCustomValidity('Passwords do not match');
+                    } else {
+                        this.style.borderColor = '#00FFB3';
+                        this.setCustomValidity('');
+                    }
+                });
+            }
 
             // Mobile number validation (only numbers)
             const mobileInput = document.getElementById('mobile_no');
-            mobileInput.addEventListener('input', function() {
-                this.value = this.value.replace(/[^0-9]/g, '');
-            });
+            if (mobileInput) {
+                mobileInput.addEventListener('input', function() {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                    if (this.value.length > 10) {
+                        this.value = this.value.slice(0, 10);
+                    }
+                });
+            }
 
+            // Username validation
+            const usernameInput = document.getElementById('username');
+            if (usernameInput) {
+                usernameInput.addEventListener('input', function() {
+                    this.value = this.value.replace(/[^a-zA-Z0-9_]/g, '');
+                });
+            }
+
+            // Real-time email validation
+            const emailInput = document.getElementById('email');
+            if (emailInput) {
+                emailInput.addEventListener('blur', function() {
+                    if (this.value && !validateEmail(this.value)) {
+                        this.style.borderColor = '#FF004C';
+                    } else if (this.value) {
+                        this.style.borderColor = '#00FFB3';
+                    }
+                });
+            }
+
+            // Form submission handler
             signupForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
+                // Collect form data
                 const formData = {
-                    username: document.getElementById('username').value.trim(),
-                    full_name: document.getElementById('full_name').value.trim(),
-                    email: document.getElementById('email').value.trim(),
-                    mobile_no: '+91' + document.getElementById('mobile_no').value.trim(),
+                    username: sanitizeInput(document.getElementById('username').value),
+                    full_name: sanitizeInput(document.getElementById('full_name').value),
+                    email: sanitizeInput(document.getElementById('email').value).toLowerCase(),
+                    mobile_no: '+91' + document.getElementById('mobile_no').value,
                     password: document.getElementById('password').value,
                     confirm_password: document.getElementById('confirm_password').value,
                     csrf_token: csrfTokenInput.value
                 };
 
-                // Validate required fields
-                if (!formData.username || !formData.full_name || !formData.email || !formData.mobile_no || !formData.password) {
-                    showError('Please fill in all required fields');
+                // Validate form data
+                const validation = validateFormData(formData);
+                if (!validation.isValid) {
+                    showError(validation.error);
+                    if (validation.field) {
+                        document.getElementById(validation.field).focus();
+                    }
                     return;
                 }
 
-                // Validate passwords match
-                if (formData.password !== formData.confirm_password) {
-                    showError('Passwords do not match');
-                    confirmPasswordInput.focus();
-                    return;
-                }
-
-                // Validate password length
-                if (formData.password.length < 8) {
-                    showError('Password must be at least 8 characters long');
-                    passwordInput.focus();
-                    return;
-                }
-
-                // Validate mobile number
-                if (formData.mobile_no.replace('+91', '').length !== 10) {
-                    showError('Please enter a valid 10-digit mobile number');
-                    mobileInput.focus();
-                    return;
-                }
-
-                // Validate email format
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(formData.email)) {
-                    showError('Please enter a valid email address');
-                    document.getElementById('email').focus();
-                    return;
-                }
-
+                // Update UI for loading state
                 signupBtn.disabled = true;
-                signupBtn.innerHTML = '<span class="btn-text">Creating Account...</span>';
+                signupBtn.innerHTML = '<span class="btn-text">Creating Secure Account...</span>';
+                
+                // Add loading animation to button
+                signupBtn.classList.add('loading');
 
                 try {
                     const response = await fetch(`${API_BASE_URL}/api/signup`, {
@@ -506,35 +868,44 @@
 
                     if (response.ok) {
                         showSuccess(data.message || 'Account created successfully!');
+                        
+                        // Log successful signup attempt
+                        console.log('User registration successful:', formData.username);
+                        
+                        // Redirect to login page after delay
                         setTimeout(() => {
                             window.location.href = 'index.html';
                         }, 2000);
                     } else {
-                        showError(data.error || 'Registration failed');
+                        // Handle specific error messages
+                        let errorMessage = data.error || 'Registration failed';
+                        
+                        // Provide specific guidance based on error type
+                        if (errorMessage.includes('username') || errorMessage.includes('Username')) {
+                            errorMessage += ' Please choose a different username.';
+                            document.getElementById('username').focus();
+                        } else if (errorMessage.includes('email') || errorMessage.includes('Email')) {
+                            errorMessage += ' Please use a different email or try logging in.';
+                            document.getElementById('email').focus();
+                        } else if (errorMessage.includes('password')) {
+                            document.getElementById('password').focus();
+                        }
+                        
+                        showError(errorMessage);
+                        
+                        // Log failed signup attempt
+                        console.warn('User registration failed:', errorMessage);
                     }
                 } catch (error) {
-                    showError('Network error. Please try again.');
+                    console.error('Signup network error:', error);
+                    showError('Network error. Please check your internet connection and try again.');
                 } finally {
+                    // Reset UI state
                     signupBtn.disabled = false;
-                    signupBtn.innerHTML = '<span class="btn-text">Create Account</span>';
+                    signupBtn.innerHTML = '<span class="btn-text">Create Secure Account</span>';
+                    signupBtn.classList.remove('loading');
                 }
             });
-
-            function showError(message) {
-                errorMessage.textContent = message;
-                errorMessage.classList.add('show');
-                successMessage.classList.remove('show');
-                
-                const card = document.getElementById('signup-card');
-                card.classList.add('shake');
-                setTimeout(() => card.classList.remove('shake'), 500);
-            }
-
-            function showSuccess(message) {
-                successMessage.textContent = message;
-                successMessage.classList.add('show');
-                errorMessage.classList.remove('show');
-            }
 
             // Auto-advance to next field on Enter key
             const inputs = document.querySelectorAll('input');
@@ -545,15 +916,44 @@
                         if (index < inputs.length - 1) {
                             inputs[index + 1].focus();
                         } else {
+                            // If last input, submit form
                             signupForm.dispatchEvent(new Event('submit'));
                         }
                     }
                 });
             });
 
+            // Input focus effects
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.classList.add('focused');
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('focused');
+                });
+            });
+
             // Auto-focus on first input
             document.getElementById('username').focus();
+
+            // Add security logging
+            console.log('Secure signup page initialized:', new Date().toISOString());
         });
+
+        // Additional security features
+        window.addEventListener('beforeunload', function() {
+            // Clear sensitive data from memory
+            const passwordInputs = document.querySelectorAll('input[type="password"]');
+            passwordInputs.forEach(input => {
+                input.value = '';
+            });
+        });
+
+        // Prevent form resubmission on page refresh
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
     </script>
 </body>
 </html>
