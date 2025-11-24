@@ -303,36 +303,71 @@
         }
 
         // Debug login function
-        async function debugLogin(formData) {
-            try {
-                debugLog('Running login debug analysis...', 'info');
-                
-                // Test 1: Check if user exists
-                debugLog('Checking if user exists in database...', 'info');
-                const debugResponse = await fetch(`${API_BASE_URL}/api/debug-login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
-                
-                const debugData = await debugResponse.json();
-                debugLog(`Debug results: ${JSON.stringify(debugData, null, 2)}`, debugResponse.ok ? 'success' : 'error');
-                
-                if (!debugData.user_exists) {
-                    debugLog('User not found in database', 'error');
-                    return false;
-                }
-                
-                debugLog('User found in database', 'success');
-                return true;
-                
-            } catch (debugError) {
-                debugLog(`Debug analysis failed: ${debugError.message}`, 'error');
-                return false;
-            }
+   async function debugLogin(formData) {
+    try {
+        debugLog('Running login debug analysis...', 'info');
+        
+        // Test 1: Simple user existence check
+        debugLog('Testing user existence via simple endpoint...', 'info');
+        const userTest = await fetch(`${API_BASE_URL}/api/test-user/${encodeURIComponent(formData.username)}`);
+        const userData = await userTest.json();
+        debugLog(`User test: ${JSON.stringify(userData)}`, userTest.ok ? 'success' : 'error');
+
+        if (!userData.user_exists) {
+            debugLog('❌ User not found in database', 'error');
+            return false;
         }
+
+        debugLog('✅ User found in database', 'success');
+
+        // Test 2: Detailed password verification
+        debugLog('Testing password verification specifically...', 'info');
+        const passwordDebug = await fetch(`${API_BASE_URL}/api/debug-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (passwordDebug.ok) {
+            const passwordData = await passwordDebug.json();
+            debugLog(`Password debug: ${JSON.stringify(passwordData, null, 2)}`, 'success');
+            
+            if (passwordData.password_match) {
+                debugLog('✅ Password verification should work!', 'success');
+            } else {
+                debugLog('❌ Password does not match stored hash', 'error');
+            }
+        } else {
+            debugLog(`Password debug failed: ${passwordDebug.status}`, 'error');
+        }
+
+        // Test 3: Detailed debug endpoint
+        debugLog('Running detailed debug analysis...', 'info');
+        const debugResponse = await fetch(`${API_BASE_URL}/api/debug-login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (!debugResponse.ok) {
+            debugLog(`Debug endpoint failed: ${debugResponse.status}`, 'error');
+            return false;
+        }
+
+        const debugData = await debugResponse.json();
+        debugLog(`Detailed debug: ${JSON.stringify(debugData, null, 2)}`, 'success');
+
+        return true;
+
+    } catch (debugError) {
+        debugLog(`Debug analysis failed: ${debugError.message}`, 'error');
+        return false;
+    }
+}
 
         // Enhanced auth.js functionality
         document.addEventListener('DOMContentLoaded', function() {
@@ -546,3 +581,4 @@
     </script>
 </body>
 </html>
+
