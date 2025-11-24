@@ -755,10 +755,17 @@
             </div>
         </div>
     </div>
-<!-- Add this button temporarily for testing -->
-<div style="text-align: center; margin: 10px 0;">
-    <button onclick="testMSG91Config()" style="background: #FF8A00; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">
-        Test MSG91 Config
+<!-- Enhanced Debug Section -->
+<div style="text-align: center; margin: 20px 0; padding: 15px; background: rgba(255, 138, 0, 0.1); border: 1px solid #FF8A00; border-radius: 10px;">
+    <h4 style="color: #FF8A00; margin-bottom: 10px;">🔧 Debug Tools</h4>
+    <button onclick="debugMSG91Config()" class="otp-btn" style="background: #FF8A00; margin: 5px;">
+        Debug MSG91 Config
+    </button>
+    <button onclick="forceSendOTP()" class="otp-btn" style="background: #00FFB3; margin: 5px;">
+        Force Send OTP
+    </button>
+    <button onclick="checkServerLogs()" class="otp-btn" style="background: #2EC6FF; margin: 5px;">
+        Check Server Status
     </button>
 </div>
     <script src="js/matrix.js"></script>
@@ -1467,9 +1474,99 @@
         alert('Error testing MSG91 config: ' + error.message);
     }
 }
+
+
+
+async function debugMSG91Config() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/debug-msg91`);
+        const data = await response.json();
+        
+        let message = `MSG91 Configuration Debug:\n\n`;
+        message += `Auth Key Set: ${data.msg91_auth_key_set ? '✅' : '❌'}\n`;
+        message += `Template ID Set: ${data.msg91_template_id_set ? '✅' : '❌'}\n`;
+        message += `Sender ID Set: ${data.msg91_sender_id_set ? '✅' : '❌'}\n`;
+        message += `API Test Status: ${data.api_test_status}\n`;
+        message += `Auth Key Length: ${data.auth_key_length}\n`;
+        message += `Template ID: ${data.template_id}\n`;
+        message += `Sender ID: ${data.sender_id}`;
+        
+        alert(message);
+        console.log('MSG91 Debug Details:', data);
+    } catch (error) {
+        alert('Error debugging MSG91: ' + error.message);
+    }
+}
+
+async function forceSendOTP() {
+    const mobileNo = document.getElementById('mobile_no').value;
+    if (!mobileNo || mobileNo.length !== 10) {
+        alert('Please enter a valid 10-digit mobile number first');
+        return;
+    }
+
+    const sendOtpBtn = document.getElementById('send-otp-btn');
+    const otpStatus = document.getElementById('otp-status');
+
+    sendOtpBtn.disabled = true;
+    sendOtpBtn.textContent = 'Sending...';
+    otpStatus.innerHTML = '<span style="color: #2EC6FF">Force sending OTP...</span>';
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                mobile_no: '+91' + mobileNo
+            })
+        });
+
+        const data = await response.json();
+        console.log('Force OTP Response:', data);
+
+        if (response.ok) {
+            document.getElementById('otp').style.display = 'block';
+            document.getElementById('verify-otp-btn').style.display = 'block';
+            startOTPTimer();
+            
+            if (data.otp) {
+                otpStatus.innerHTML = `<span style="color: #FF8A00">📱 OTP for testing: <strong>${data.otp}</strong></span>`;
+                alert(`OTP Generated: ${data.otp}\n\nSMS delivery failed, but you can use this OTP to test.`);
+            } else {
+                otpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent via SMS!</span>';
+            }
+        } else {
+            alert('Failed to send OTP: ' + (data.error || 'Unknown error'));
+            otpStatus.innerHTML = '<span style="color: #FF004C">Failed to send OTP</span>';
+        }
+    } catch (error) {
+        alert('Network error: ' + error.message);
+        otpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
+    } finally {
+        sendOtpBtn.disabled = false;
+        sendOtpBtn.textContent = 'Send OTP';
+    }
+}
+
+async function checkServerLogs() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/debug-env`);
+        const data = await response.json();
+        
+        alert(`Server Environment:\n\n` +
+              `Database: ${data.DATABASE_URL}\n` +
+              `Email: ${data.EMAIL_USER}\n` +
+              `All services should be running on Render`);
+    } catch (error) {
+        alert('Cannot reach server: ' + error.message);
+    }
+}
 </script>
 </body>
 </html>
+
 
 
 
