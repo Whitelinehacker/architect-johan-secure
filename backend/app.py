@@ -13,6 +13,8 @@ from email.mime.multipart import MIMEMultipart
 import logging
 import re
 import json
+import requests
+import random
 
 # Import psycopg3 (new version)
 try:
@@ -46,6 +48,11 @@ EMAIL_USER = os.getenv('EMAIL_USER', 'your-email@gmail.com')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', 'your-app-password')
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'your-email@gmail.com')
 
+# MSG91 Configuration
+MSG91_AUTH_KEY = os.getenv('MSG91_AUTH_KEY')
+MSG91_TEMPLATE_ID = os.getenv('MSG91_TEMPLATE_ID')
+MSG91_SENDER_ID = os.getenv('MSG91_SENDER_ID', 'ARCHJT')
+
 # Default admin user
 default_admin_password = 'Arch1t3ch_Joh@N!X#2025'
 
@@ -76,6 +83,9 @@ login_attempts = {}
 MAX_ATTEMPTS = 5
 LOCKOUT_TIME = 900  # 15 minutes
 
+# OTP storage (in production, use Redis)
+otp_storage = {}
+
 # Validate required environment variables
 def check_environment_variables():
     required_vars = ['SECRET_KEY', 'JWT_SECRET', 'DATABASE_URL']
@@ -90,9 +100,67 @@ def check_environment_variables():
         logger.warning("Email configuration missing - password reset emails will not work")
     else:
         logger.info("Email configuration found - password reset emails are enabled")
+    
+    # Check MSG91 configuration
+    if not MSG91_AUTH_KEY or not MSG91_TEMPLATE_ID:
+        logger.warning("MSG91 configuration missing - OTP SMS will not work")
+    else:
+        logger.info("MSG91 configuration found - OTP SMS are enabled")
 
 # Call this during startup
 check_environment_variables()
+
+# MSG91 SMS Functions
+def send_sms_otp(mobile_no, otp):
+    """Send OTP via MSG91 SMS service"""
+    try:
+        print(f"📱 Sending OTP via MSG91 to: +91{mobile_no}")
+        print(f"🔑 OTP: {otp}")
+        
+        # MSG91 API endpoint
+        url = "https://api.msg91.com/api/v5/otp"
+        
+        # MSG91 payload for OTP
+        payload = {
+            "template_id": MSG91_TEMPLATE_ID,
+            "mobile": f"91{mobile_no}",
+            "otp": otp,
+            "otp_length": 6,
+            "otp_expiry": 10  # 10 minutes
+        }
+        
+        headers = {
+            "authkey": MSG91_AUTH_KEY,
+            "Content-Type": "application/json"
+        }
+        
+        print(f"📤 Sending request to MSG91...")
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        
+        print(f"📥 MSG91 Response Status: {response.status_code}")
+        print(f"📥 MSG91 Response: {response.text}")
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            if response_data.get('type') == 'success':
+                print(f"✅ OTP sent successfully via MSG91")
+                return True
+            else:
+                print(f"❌ MSG91 API error: {response_data}")
+                return False
+        else:
+            print(f"❌ MSG91 HTTP error: {response.status_code}")
+            return False
+            
+    except requests.exceptions.Timeout:
+        print(f"❌ MSG91 request timeout")
+        return False
+    except requests.exceptions.ConnectionError:
+        print(f"❌ MSG91 connection error")
+        return False
+    except Exception as e:
+        print(f"❌ MSG91 error: {str(e)}")
+        return False
 
 # PostgreSQL Database Connection (psycopg3)
 def get_db_connection():
@@ -629,6 +697,140 @@ def admin_required(f):
     
     return decorated
 
+# OTP Endpoints
+@app.route('/api/send-otp', methods=['POST'])
+def send_otp():
+    try:
+        data = request.get_json()
+        mobile_no = data.get('mobile_no', '').replace('+91', '')
+        
+        print(f"🔍 OTP Request for: {mobile_no}")
+        
+        # Validate Indian mobile number
+        if not re.match(r'^[6-9]\d{9}$', mobile_no):
+            return jsonify({'error': 'Invalid Indian mobile number. Must start with 6-9 and be 10 digits.'}), 400
+        
+        # Generate 6-digit OTP
+        otp = str(random.randint(100000, 999999))
+        
+        # Store OTP with expiry (10 minutes)
+        otp_storage[mobile_no] = {
+            'otp': otp,
+            'expiry': datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
+            'attempts': 0,
+            'verified': False
+        }
+        
+        print(f"🔐 Generated OTP for {mobile_no}: {otp}")
+        print(f"💾 Stored OTP data: {otp_storage[mobile_no]}")
+        
+        # Send SMS via MSG91
+        print(f"📤 Attempting to send SMS via MSG91...")
+        sms_sent = send_sms_otp(mobile_no, otp)
+        
+        if sms_sent:
+            print(f"✅ OTP sent successfully via MSG91")
+            return jsonify({
+                'success': True,
+                'message': 'OTP sent to your mobile number',
+                'mobile': f'+91{mobile_no}'
+            }), 200
+        else:
+            print(f"❌ SMS sending failed, but OTP generated")
+            # Even if SMS fails, return success but include OTP for testing
+            return jsonify({
+                'success': True,
+                'message': 'OTP generated (SMS service issue)',
+                'otp': otp,  # Remove this in production
+                'mobile': f'+91{mobile_no}',
+                'note': 'SMS service temporarily unavailable'
+            }), 200
+            
+    except Exception as e:
+        logger.error(f"OTP sending error: {e}")
+        print(f"💥 OTP sending exception: {str(e)}")
+        return jsonify({'error': 'Failed to send OTP'}), 500
+
+@app.route('/api/verify-otp', methods=['POST'])
+def verify_otp():
+    try:
+        data = request.get_json()
+        mobile_no = data.get('mobile_no', '').replace('+91', '')
+        otp_attempt = data.get('otp', '').strip()
+        
+        print(f"🔍 OTP Verification for: {mobile_no}")
+        print(f"🔑 Attempted OTP: {otp_attempt}")
+        
+        # Check if OTP exists
+        if mobile_no not in otp_storage:
+            print(f"❌ OTP not found for mobile: {mobile_no}")
+            return jsonify({'error': 'OTP not found or expired. Please request a new OTP.'}), 400
+        
+        otp_data = otp_storage[mobile_no]
+        print(f"📋 Stored OTP data: {otp_data}")
+        
+        # Check expiry
+        if datetime.datetime.utcnow() > otp_data['expiry']:
+            del otp_storage[mobile_no]
+            print(f"❌ OTP expired for: {mobile_no}")
+            return jsonify({'error': 'OTP has expired. Please request a new OTP.'}), 400
+        
+        # Check attempts
+        if otp_data['attempts'] >= 3:
+            del otp_storage[mobile_no]
+            print(f"❌ Too many attempts for: {mobile_no}")
+            return jsonify({'error': 'Too many failed attempts. Please request a new OTP.'}), 400
+        
+        # Verify OTP
+        if otp_attempt == otp_data['otp']:
+            # Mark mobile as verified
+            otp_storage[mobile_no]['verified'] = True
+            otp_storage[mobile_no]['verified_at'] = datetime.datetime.utcnow()
+            
+            print(f"✅ OTP verified successfully for: {mobile_no}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Mobile number verified successfully',
+                'mobile': f'+91{mobile_no}'
+            }), 200
+        else:
+            otp_storage[mobile_no]['attempts'] += 1
+            remaining_attempts = 3 - otp_data['attempts']
+            print(f"❌ Invalid OTP for: {mobile_no}. Attempts: {otp_data['attempts']}")
+            
+            return jsonify({
+                'error': f'Invalid OTP. {remaining_attempts} attempts remaining',
+                'attempts_remaining': remaining_attempts
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"OTP verification error: {e}")
+        print(f"💥 OTP verification exception: {str(e)}")
+        return jsonify({'error': 'OTP verification failed'}), 500
+
+@app.route('/api/check-otp-status', methods=['POST'])
+def check_otp_status():
+    """Check if mobile number is verified"""
+    try:
+        data = request.get_json()
+        mobile_no = data.get('mobile_no', '').replace('+91', '')
+        
+        if mobile_no in otp_storage and otp_storage[mobile_no].get('verified'):
+            return jsonify({
+                'verified': True,
+                'mobile': f'+91{mobile_no}'
+            }), 200
+        else:
+            return jsonify({
+                'verified': False,
+                'mobile': f'+91{mobile_no}'
+            }), 200
+            
+    except Exception as e:
+        logger.error(f"OTP status check error: {e}")
+        return jsonify({'error': 'Status check failed'}), 500
+
 # Debug endpoints
 @app.route('/api/debug-login', methods=['POST'])
 def debug_login():
@@ -767,15 +969,33 @@ def signup():
         if not any(char in '!@#$%^&*()_+-=[]{}|;:,.<>?`~' for char in password):
             return jsonify({'error': 'Password must contain at least one special character'}), 400
         
-        # Validate email
+        # Validate email - Gmail only
         email = data['email'].strip().lower()  # Normalize email
-        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
-            return jsonify({'error': 'Invalid email format'}), 400
+        
+        # Gmail validation
+        gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
+        if not re.match(gmail_regex, email):
+            return jsonify({'error': 'Only Gmail accounts are allowed. Please use a valid Gmail address ending with @gmail.com'}), 400
+        
+        # Disposable email check
+        disposable_domains = [
+            'tempmail.com', 'guerrillamail.com', 'mailinator.com', '10minutemail.com',
+            'throwawaymail.com', 'fakeinbox.com', 'yopmail.com', 'trashmail.com',
+            'temp-mail.org', 'sharklasers.com', 'guerrillamail.biz', 'grr.la'
+        ]
+        email_domain = email.split('@')[1].lower()
+        if email_domain in disposable_domains:
+            return jsonify({'error': 'Temporary/disposable email addresses are not allowed. Please use your personal Gmail account.'}), 400
         
         # Validate mobile number
         mobile_no = data['mobile_no']
-        if not re.match(r'^\+?[0-9]{10,15}$', mobile_no):
-            return jsonify({'error': 'Invalid mobile number format'}), 400
+        mobile_digits = mobile_no.replace('+91', '')
+        if not re.match(r'^[6-9]\d{9}$', mobile_digits):
+            return jsonify({'error': 'Invalid Indian mobile number. Must start with 6-9 and be 10 digits.'}), 400
+        
+        # Check mobile verification
+        if mobile_digits not in otp_storage or not otp_storage[mobile_digits].get('verified'):
+            return jsonify({'error': 'Mobile number not verified. Please complete OTP verification.'}), 400
         
         # Validate username
         username = data['username'].strip()
@@ -818,6 +1038,10 @@ def signup():
         }
         
         if create_user(user_data):
+            # Clear OTP verification after successful signup
+            if mobile_digits in otp_storage:
+                del otp_storage[mobile_digits]
+            
             # Log signup activity
             log_user_activity(username, 'signup', request.remote_addr, request.headers.get('User-Agent'))
             
@@ -1471,8 +1695,6 @@ def test_exam_passwords():
         'endpoint': '/api/verify-exam-level-password'
     }), 200
 
-
-
 @app.route('/api/debug-password', methods=['POST'])
 def debug_password():
     """Debug password verification specifically"""
@@ -1587,6 +1809,34 @@ def reset_user_password():
         print(f"❌ Password reset error: {e}")
         return jsonify({'error': str(e)}), 500
 
+# Test MSG91 endpoint
+@app.route('/api/test-msg91', methods=['POST'])
+def test_msg91():
+    """Test MSG91 configuration"""
+    try:
+        data = request.get_json()
+        test_mobile = data.get('mobile_no', '9999999999').replace('+91', '')
+        
+        print(f"🧪 Testing MSG91 configuration...")
+        print(f"🔑 Auth Key: {MSG91_AUTH_KEY[:10]}...")
+        print(f"📋 Template ID: {MSG91_TEMPLATE_ID}")
+        print(f"📱 Test Mobile: {test_mobile}")
+        
+        # Test OTP sending
+        test_otp = '123456'
+        sms_sent = send_sms_otp(test_mobile, test_otp)
+        
+        return jsonify({
+            'msg91_configured': bool(MSG91_AUTH_KEY and MSG91_TEMPLATE_ID),
+            'sms_sent': sms_sent,
+            'auth_key_prefix': MSG91_AUTH_KEY[:10] + '...' if MSG91_AUTH_KEY else None,
+            'template_id': MSG91_TEMPLATE_ID,
+            'test_mobile': test_mobile
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -1597,10 +1847,9 @@ if __name__ == '__main__':
     
     # Print environment status
     print(f"📧 Email Configuration: {'✅ Available' if EMAIL_USER and EMAIL_PASSWORD else '❌ Missing'}")
+    print(f"📱 MSG91 Configuration: {'✅ Available' if MSG91_AUTH_KEY and MSG91_TEMPLATE_ID else '❌ Missing'}")
     print(f"🔑 SECRET_KEY: {'✅ Set' if os.getenv('SECRET_KEY') else '❌ Missing'}")
     print(f"🔑 JWT_SECRET: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
-
