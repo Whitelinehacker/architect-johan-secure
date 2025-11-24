@@ -420,6 +420,147 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+
+
+<style>
+    /* Add these styles to your existing CSS */
+
+    .otp-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 8px;
+    }
+
+    .otp-btn {
+        background: rgba(0, 255, 179, 0.1);
+        border: 2px solid #00FFB3;
+        color: #00FFB3;
+        padding: 12px 16px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .otp-btn:hover {
+        background: rgba(0, 255, 179, 0.2);
+        box-shadow: 0 0 15px rgba(0, 255, 179, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .otp-btn:active {
+        transform: translateY(0);
+    }
+
+    .otp-btn:disabled {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(0, 255, 179, 0.3);
+        color: rgba(0, 255, 179, 0.5);
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+    }
+
+    .otp-btn.verified {
+        background: rgba(0, 255, 179, 0.3);
+        border-color: #00FFB3;
+        color: #02040A;
+        font-weight: bold;
+    }
+
+    .otp-input {
+        background: rgba(2, 4, 10, 0.8);
+        border: 2px solid rgba(0, 255, 179, 0.3);
+        border-radius: 10px;
+        color: #00FFB3;
+        padding: 12px 16px;
+        font-size: 16px;
+        font-family: 'Courier New', monospace;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .otp-input:focus {
+        outline: none;
+        border-color: #00FFB3;
+        box-shadow: 0 0 10px rgba(0, 255, 179, 0.3);
+    }
+
+    .otp-input::placeholder {
+        color: rgba(0, 255, 179, 0.5);
+    }
+
+    .otp-status {
+        font-size: 12px;
+        color: #2EC6FF;
+        text-align: center;
+        margin-top: 5px;
+        min-height: 18px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .otp-status.success {
+        color: #00FFB3;
+    }
+
+    .otp-status.error {
+        color: #FF004C;
+    }
+
+    .otp-status.warning {
+        color: #FF8A00;
+    }
+
+    .otp-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .otp-row .otp-btn {
+        flex: 1;
+    }
+
+    /* Responsive adjustments for OTP section */
+    @media (max-width: 480px) {
+        .otp-btn {
+            padding: 10px 14px;
+            font-size: 13px;
+        }
+
+        .otp-input {
+            padding: 10px 14px;
+            font-size: 14px;
+        }
+
+        .otp-status {
+            font-size: 11px;
+        }
+
+        .otp-row {
+            flex-direction: column;
+            gap: 8px;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .otp-btn {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .otp-input {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+    }
+</style>
         
     </style>
 </head>
@@ -489,44 +630,47 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="mobile_no">Mobile Number</label>
-                    <div class="mobile-input">
-                        <div class="country-code">+91</div>
-                        <input 
-                            type="tel" 
-                            id="mobile_no" 
-                            name="mobile_no" 
-                            placeholder="Enter 10-digit mobile number"
-                            autocomplete="tel"
-                            required
-                            maxlength="10"
-                            pattern="[0-9]{10}"
-                            title="Please enter a valid 10-digit mobile number"
-                        >
-                    </div>
-                </div>
-
-
-                <!-- Add this to signup.html after mobile number field -->
-<div class="form-group">
-    <label for="otp">Mobile Verification</label>
+               <div class="form-group">
+    <label for="mobile_no">Mobile Number</label>
+    <div class="mobile-input">
+        <div class="country-code">+91</div>
+        <input 
+            type="tel" 
+            id="mobile_no" 
+            name="mobile_no" 
+            placeholder="Enter 10-digit mobile number"
+            autocomplete="tel"
+            required
+            maxlength="10"
+            pattern="[0-9]{10}"
+            title="Please enter a valid 10-digit mobile number"
+        >
+    </div>
+    
     <div class="otp-section">
-        <button type="button" id="send-otp-btn" onclick="sendOTP()">
-            Send OTP
-        </button>
+        <div class="otp-row">
+            <button type="button" id="send-otp-btn" class="otp-btn" onclick="sendOTP()">
+                Send OTP
+            </button>
+        </div>
+        
         <input 
             type="text" 
             id="otp" 
             name="otp" 
             placeholder="Enter 6-digit OTP"
             maxlength="6"
+            class="otp-input"
             style="display: none;"
         >
-        <button type="button" id="verify-otp-btn" onclick="verifyOTP()" style="display: none;">
-            Verify OTP
-        </button>
-        <span id="otp-status"></span>
+        
+        <div class="otp-row">
+            <button type="button" id="verify-otp-btn" class="otp-btn" onclick="verifyOTP()" style="display: none;">
+                Verify OTP
+            </button>
+        </div>
+        
+        <div id="otp-status" class="otp-status"></div>
     </div>
 </div>
 
@@ -998,7 +1142,31 @@
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
         }
+
+
+
+        // In your sendOTP function, update the UI changes:
+otpInput.style.display = 'block';
+verifyOtpBtn.style.display = 'block';
+
+// In your verifyOTP function, when OTP is verified:
+verifyOtpBtn.classList.add('verified');
+verifyOtpBtn.textContent = '✓ Verified';
+verifyOtpBtn.disabled = true;
+
+// Update OTP status with classes
+otpStatus.className = 'otp-status success';
+otpStatus.innerHTML = '<span style="color: #00FFB3">✅ Mobile number verified via SMS!</span>';
+
+// For error states:
+otpStatus.className = 'otp-status error';
+otpStatus.innerHTML = '<span style="color: #FF004C">Invalid OTP</span>';
+
+// For warning states:
+otpStatus.className = 'otp-status warning';
+otpStatus.innerHTML = '<span style="color: #FF8A00">OTP sent! Check your phone.</span>';
     </script>
 </body>
 </html>
+
 
