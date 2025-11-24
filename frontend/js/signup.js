@@ -1,4 +1,4 @@
-// Add API base URL
+// signup.js - Enhanced with Gmail validation and OTP verification
 const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
 
 // Password strength checker
@@ -83,6 +83,54 @@ function sanitizeInput(input) {
     return input.replace(/[<>"'`]/g, '').trim();
 }
 
+// Gmail validation function
+function validateGmail(email) {
+    const gmailRegex = /^[a-zA-Z0-9.]+@gmail\.com$/;
+    return gmailRegex.test(email);
+}
+
+// Disposable email domain check
+function isDisposableEmail(email) {
+    const disposableDomains = [
+        'tempmail.com', 'guerrillamail.com', 'mailinator.com',
+        '10minutemail.com', 'throwawaymail.com', 'fakeinbox.com',
+        'yopmail.com', 'trashmail.com', 'temp-mail.org',
+        'sharklasers.com', 'guerrillamail.biz', 'grr.la',
+        'guerrillamail.org', 'guerrillamail.net', 'guerrillamail.de',
+        'spam4.me', 'fake-mail.com', 'dispostable.com',
+        'mailnesia.com', 'getairmail.com', 'maildrop.cc'
+    ];
+    
+    const domain = email.split('@')[1].toLowerCase();
+    return disposableDomains.includes(domain);
+}
+
+// Enhanced email validation
+function validateEmailEnhanced(email) {
+    if (!email) {
+        return {
+            isValid: false,
+            error: 'Email is required'
+        };
+    }
+
+    if (!validateGmail(email)) {
+        return {
+            isValid: false,
+            error: 'Only Gmail accounts are allowed. Please use a valid Gmail address ending with @gmail.com'
+        };
+    }
+    
+    if (isDisposableEmail(email)) {
+        return {
+            isValid: false,
+            error: 'Temporary/disposable email addresses are not allowed. Please use your personal Gmail account.'
+        };
+    }
+    
+    return { isValid: true };
+}
+
 // Validate email format
 function validateEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -124,6 +172,155 @@ function showSuccess(message) {
     errorMessage.classList.remove('show');
 }
 
+// OTP Management
+let otpCountdown = 0;
+let otpTimer = null;
+
+function startOTPTimer() {
+    const sendOtpBtn = document.getElementById('send-otp-btn');
+    const otpStatus = document.getElementById('otp-status');
+    
+    otpCountdown = 60;
+    sendOtpBtn.disabled = true;
+    
+    otpTimer = setInterval(() => {
+        otpCountdown--;
+        sendOtpBtn.textContent = `Resend OTP (${otpCountdown}s)`;
+        otpStatus.innerHTML = `<span style="color: #FF8A00">OTP sent! Valid for 10 minutes. Resend in ${otpCountdown}s</span>`;
+        
+        if (otpCountdown <= 0) {
+            clearInterval(otpTimer);
+            sendOtpBtn.disabled = false;
+            sendOtpBtn.textContent = 'Resend OTP';
+            otpStatus.innerHTML = '<span style="color: #FF004C">OTP expired. Click to resend.</span>';
+        }
+    }, 1000);
+}
+
+async function sendOTP() {
+    const mobileInput = document.getElementById('mobile_no');
+    const mobileNo = mobileInput.value;
+    const sendOtpBtn = document.getElementById('send-otp-btn');
+    const otpInput = document.getElementById('otp');
+    const verifyOtpBtn = document.getElementById('verify-otp-btn');
+    const otpStatus = document.getElementById('otp-status');
+
+    // Validate mobile number first
+    if (!mobileNo || mobileNo.length !== 10 || !/^\d+$/.test(mobileNo)) {
+        showError('Please enter a valid 10-digit Indian mobile number first');
+        mobileInput.focus();
+        return;
+    }
+
+    // Update UI for loading
+    sendOtpBtn.disabled = true;
+    sendOtpBtn.textContent = 'Sending OTP...';
+    otpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP...</span>';
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                mobile_no: '+91' + mobileNo
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Show OTP input field
+            otpInput.style.display = 'block';
+            verifyOtpBtn.style.display = 'block';
+            
+            // Start countdown timer
+            startOTPTimer();
+            
+            // For testing - show OTP in console (remove in production)
+            if (data.otp) {
+                console.log(`TEST OTP: ${data.otp}`);
+                otpStatus.innerHTML += `<br><small style="color: #FF8A00">Test OTP: ${data.otp}</small>`;
+            }
+            
+            showSuccess('OTP sent to your mobile number!');
+        } else {
+            showError(data.error || 'Failed to send OTP');
+            sendOtpBtn.disabled = false;
+            sendOtpBtn.textContent = 'Send OTP';
+        }
+    } catch (error) {
+        console.error('OTP sending error:', error);
+        showError('Network error. Please check your connection and try again.');
+        sendOtpBtn.disabled = false;
+        sendOtpBtn.textContent = 'Send OTP';
+    }
+}
+
+async function verifyOTP() {
+    const mobileNo = document.getElementById('mobile_no').value;
+    const otpInput = document.getElementById('otp');
+    const otpValue = otpInput.value;
+    const verifyOtpBtn = document.getElementById('verify-otp-btn');
+    const otpStatus = document.getElementById('otp-status');
+
+    if (!otpValue || otpValue.length !== 6 || !/^\d+$/.test(otpValue)) {
+        showError('Please enter a valid 6-digit OTP');
+        otpInput.focus();
+        return;
+    }
+
+    // Update UI for loading
+    verifyOtpBtn.disabled = true;
+    verifyOtpBtn.textContent = 'Verifying...';
+    otpStatus.innerHTML = '<span style="color: #2EC6FF">Verifying OTP...</span>';
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/verify-otp`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                mobile_no: '+91' + mobileNo,
+                otp: otpValue
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // OTP verified successfully
+            otpStatus.innerHTML = '<span style="color: #00FFB3">✅ Mobile number verified!</span>';
+            verifyOtpBtn.textContent = 'Verified';
+            verifyOtpBtn.disabled = true;
+            verifyOtpBtn.style.background = '#00FFB3';
+            verifyOtpBtn.style.color = '#02040A';
+            
+            // Store mobile verification status
+            sessionStorage.setItem('mobile_verified', 'true');
+            sessionStorage.setItem('verified_mobile', '+91' + mobileNo);
+            
+            showSuccess('Mobile number verified successfully!');
+        } else {
+            showError(data.error || 'Invalid OTP');
+            verifyOtpBtn.disabled = false;
+            verifyOtpBtn.textContent = 'Verify OTP';
+        }
+    } catch (error) {
+        console.error('OTP verification error:', error);
+        showError('Network error during OTP verification');
+        verifyOtpBtn.disabled = false;
+        verifyOtpBtn.textContent = 'Verify OTP';
+    }
+}
+
+// Check if mobile is already verified
+function isMobileVerified() {
+    return sessionStorage.getItem('mobile_verified') === 'true';
+}
+
 // Validate form data
 function validateFormData(formData) {
     // Check required fields
@@ -145,15 +342,27 @@ function validateFormData(formData) {
         return { isValid: false, error: 'Full name must be between 2 and 100 characters long', field: 'full_name' };
     }
 
-    // Validate email
-    if (!validateEmail(formData.email)) {
-        return { isValid: false, error: 'Please enter a valid email address', field: 'email' };
+    // Enhanced Gmail validation
+    const emailValidation = validateEmailEnhanced(formData.email);
+    if (!emailValidation.isValid) {
+        return { isValid: false, error: emailValidation.error, field: 'email' };
     }
 
     // Validate mobile number
     const mobileDigits = formData.mobile_no.replace('+91', '');
     if (mobileDigits.length !== 10 || !/^\d+$/.test(mobileDigits)) {
-        return { isValid: false, error: 'Please enter a valid 10-digit mobile number', field: 'mobile_no' };
+        return { isValid: false, error: 'Please enter a valid 10-digit Indian mobile number', field: 'mobile_no' };
+    }
+
+    // Check mobile verification
+    if (!isMobileVerified()) {
+        return { isValid: false, error: 'Please verify your mobile number with OTP before signing up', field: 'mobile_no' };
+    }
+
+    // Check if mobile number matches verified number
+    const verifiedMobile = sessionStorage.getItem('verified_mobile');
+    if (verifiedMobile !== formData.mobile_no) {
+        return { isValid: false, error: 'Mobile number does not match verified number. Please verify the correct number.', field: 'mobile_no' };
     }
 
     // Validate password strength
@@ -170,8 +379,22 @@ function validateFormData(formData) {
     return { isValid: true };
 }
 
+// Check social media verification
+function checkSocialVerification() {
+    return sessionStorage.getItem('social_verification') === 'completed';
+}
+
 // Main signup functionality
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if user completed social verification
+    if (!checkSocialVerification()) {
+        showError('Please complete social media verification first');
+        setTimeout(() => {
+            window.location.href = 'gateway.html';
+        }, 3000);
+        return;
+    }
+
     const signupForm = document.getElementById('signup-form');
     const signupBtn = document.getElementById('signup-btn');
     const errorMessage = document.getElementById('error-message');
@@ -227,6 +450,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.value.length > 10) {
                 this.value = this.value.slice(0, 10);
             }
+            
+            // Reset OTP verification if mobile number changes
+            const verifiedMobile = sessionStorage.getItem('verified_mobile');
+            if (verifiedMobile && verifiedMobile !== '+91' + this.value) {
+                resetOTPVerification();
+            }
         });
     }
 
@@ -238,14 +467,41 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Real-time email validation
+    // Real-time email validation with Gmail check
     const emailInput = document.getElementById('email');
     if (emailInput) {
         emailInput.addEventListener('blur', function() {
-            if (this.value && !validateEmail(this.value)) {
-                this.style.borderColor = '#FF004C';
+            if (this.value) {
+                const emailValidation = validateEmailEnhanced(this.value);
+                if (!emailValidation.isValid) {
+                    this.style.borderColor = '#FF004C';
+                    showError(emailValidation.error);
+                } else if (!validateEmail(this.value)) {
+                    this.style.borderColor = '#FF004C';
+                    showError('Please enter a valid email address');
+                } else {
+                    this.style.borderColor = '#00FFB3';
+                }
+            }
+        });
+        
+        // Real-time Gmail validation
+        emailInput.addEventListener('input', function() {
+            if (this.value && !this.value.endsWith('@gmail.com')) {
+                this.style.borderColor = '#FF8A00';
             } else if (this.value) {
                 this.style.borderColor = '#00FFB3';
+            }
+        });
+    }
+
+    // OTP input validation
+    const otpInput = document.getElementById('otp');
+    if (otpInput) {
+        otpInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            if (this.value.length > 6) {
+                this.value = this.value.slice(0, 6);
             }
         });
     }
@@ -297,6 +553,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 showSuccess(data.message || 'Account created successfully!');
                 
+                // Clear verification status
+                sessionStorage.removeItem('mobile_verified');
+                sessionStorage.removeItem('verified_mobile');
+                sessionStorage.removeItem('social_verification');
+                
                 // Log successful signup attempt
                 console.log('User registration successful:', formData.username);
                 
@@ -313,10 +574,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     errorMessage += ' Please choose a different username.';
                     document.getElementById('username').focus();
                 } else if (errorMessage.includes('email') || errorMessage.includes('Email')) {
-                    errorMessage += ' Please use a different email or try logging in.';
+                    errorMessage += ' Please use a different Gmail or try logging in.';
                     document.getElementById('email').focus();
                 } else if (errorMessage.includes('password')) {
                     document.getElementById('password').focus();
+                } else if (errorMessage.includes('mobile')) {
+                    document.getElementById('mobile_no').focus();
                 }
                 
                 showError(errorMessage);
@@ -330,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             // Reset UI state
             signupBtn.disabled = false;
-            signupBtn.innerHTML = '<span class="btn-text">Create Account</span>';
+            signupBtn.innerHTML = '<span class="btn-text">Create Secure Account</span>';
             signupBtn.classList.remove('loading');
         }
     });
@@ -366,8 +629,30 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('username').focus();
 
     // Add security logging
-    console.log('Signup page security initialized:', new Date().toISOString());
+    console.log('Secure signup page initialized:', new Date().toISOString());
 });
+
+// Reset OTP verification when mobile number changes
+function resetOTPVerification() {
+    const otpInput = document.getElementById('otp');
+    const verifyOtpBtn = document.getElementById('verify-otp-btn');
+    const otpStatus = document.getElementById('otp-status');
+    
+    if (otpTimer) {
+        clearInterval(otpTimer);
+    }
+    
+    otpInput.style.display = 'none';
+    verifyOtpBtn.style.display = 'none';
+    verifyOtpBtn.disabled = false;
+    verifyOtpBtn.textContent = 'Verify OTP';
+    verifyOtpBtn.style.background = '';
+    verifyOtpBtn.style.color = '';
+    otpStatus.innerHTML = '';
+    
+    sessionStorage.removeItem('mobile_verified');
+    sessionStorage.removeItem('verified_mobile');
+}
 
 // Additional security features
 window.addEventListener('beforeunload', function() {
@@ -396,6 +681,9 @@ if (typeof module !== 'undefined' && module.exports) {
         checkPasswordStrength,
         validateEmail,
         validateUsername,
+        validateEmailEnhanced,
+        validateGmail,
+        isDisposableEmail,
         sanitizeInput,
         validateFormData
     };
