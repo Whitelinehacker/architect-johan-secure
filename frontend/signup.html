@@ -423,7 +423,7 @@
 
 
 
-<style>
+
     /* Add these styles to your existing CSS */
 
     .otp-section {
@@ -755,7 +755,12 @@
             </div>
         </div>
     </div>
-
+<!-- Add this button temporarily for testing -->
+<div style="text-align: center; margin: 10px 0;">
+    <button onclick="testMSG91Config()" style="background: #FF8A00; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">
+        Test MSG91 Config
+    </button>
+</div>
     <script src="js/matrix.js"></script>
  <script>
     // API Base URL
@@ -786,67 +791,72 @@
         }, 1000);
     }
 
-    async function sendOTP() {
-        const mobileInput = document.getElementById('mobile_no');
-        const mobileNo = mobileInput.value;
-        const sendOtpBtn = document.getElementById('send-otp-btn');
-        const otpInput = document.getElementById('otp');
-        const verifyOtpBtn = document.getElementById('verify-otp-btn');
-        const otpStatus = document.getElementById('otp-status');
+   async function sendOTP() {
+    const mobileInput = document.getElementById('mobile_no');
+    const mobileNo = mobileInput.value;
+    const sendOtpBtn = document.getElementById('send-otp-btn');
+    const otpInput = document.getElementById('otp');
+    const verifyOtpBtn = document.getElementById('verify-otp-btn');
+    const otpStatus = document.getElementById('otp-status');
 
-        // Validate mobile number first
-        if (!mobileNo || mobileNo.length !== 10 || !/^[6-9]\d{9}$/.test(mobileNo)) {
-            showError('Please enter a valid 10-digit Indian mobile number starting with 6-9');
-            mobileInput.focus();
-            return;
-        }
+    // Validate mobile number first
+    if (!mobileNo || mobileNo.length !== 10 || !/^[6-9]\d{9}$/.test(mobileNo)) {
+        showError('Please enter a valid 10-digit Indian mobile number starting with 6-9');
+        mobileInput.focus();
+        return;
+    }
 
-        // Update UI for loading
-        sendOtpBtn.disabled = true;
-        sendOtpBtn.textContent = 'Sending OTP...';
-        otpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP via SMS...</span>';
+    // Update UI for loading
+    sendOtpBtn.disabled = true;
+    sendOtpBtn.textContent = 'Sending OTP...';
+    otpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP via SMS...</span>';
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    mobile_no: '+91' + mobileNo
-                })
-            });
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                mobile_no: '+91' + mobileNo
+            })
+        });
 
-            const data = await response.json();
+        const data = await response.json();
 
-            if (response.ok) {
-                // Show OTP input field
-                otpInput.style.display = 'block';
-                verifyOtpBtn.style.display = 'block';
-                otpInput.value = ''; // Clear previous OTP
-                
-                // Start countdown timer
-                startOTPTimer();
-                
-                // Show success message
-                otpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent to your mobile number via SMS!</span>';
-                
-                showSuccess('OTP sent successfully! Check your mobile phone.');
-                
+        if (response.ok) {
+            // Show OTP input field
+            otpInput.style.display = 'block';
+            verifyOtpBtn.style.display = 'block';
+            otpInput.value = ''; // Clear previous OTP
+            
+            // Start countdown timer
+            startOTPTimer();
+            
+            // Check if OTP is provided in response (SMS failed case)
+            if (data.otp) {
+                otpStatus.innerHTML = `<span style="color: #FF8A00">📱 SMS service issue. Use OTP: <strong>${data.otp}</strong></span>`;
+                console.log(`📱 Test OTP (SMS failed): ${data.otp}`);
+                showSuccess('OTP generated! Check the red message below for your OTP.');
             } else {
-                showError(data.error || 'Failed to send OTP');
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.textContent = 'Send OTP';
-                otpStatus.innerHTML = '<span style="color: #FF004C">Failed to send OTP</span>';
+                otpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent via SMS! Check your phone.</span>';
+                showSuccess('OTP sent successfully! Check your mobile phone.');
             }
-        } catch (error) {
-            console.error('OTP sending error:', error);
-            showError('Network error. Please check your connection and try again.');
+            
+        } else {
+            showError(data.error || 'Failed to send OTP');
             sendOtpBtn.disabled = false;
             sendOtpBtn.textContent = 'Send OTP';
-            otpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
+            otpStatus.innerHTML = '<span style="color: #FF004C">Failed to send OTP</span>';
         }
+    } catch (error) {
+        console.error('OTP sending error:', error);
+        showError('Network error. Please check your connection and try again.');
+        sendOtpBtn.disabled = false;
+        sendOtpBtn.textContent = 'Send OTP';
+        otpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
     }
+}
 
     async function verifyOTP() {
         const mobileNo = document.getElementById('mobile_no').value;
@@ -1444,9 +1454,23 @@
     if (window.history.replaceState) {
         window.history.replaceState(null, null, window.location.href);
     }
+
+
+
+    async function testMSG91Config() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/check-msg91-status`);
+        const data = await response.json();
+        alert(`MSG91 Status:\nConfigured: ${data.msg91_configured}\nAuth Key: ${data.auth_key_exists}\nTemplate ID: ${data.template_id_exists}`);
+        console.log('MSG91 Config:', data);
+    } catch (error) {
+        alert('Error testing MSG91 config: ' + error.message);
+    }
+}
 </script>
 </body>
 </html>
+
 
 
 
