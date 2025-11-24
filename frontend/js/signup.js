@@ -337,9 +337,34 @@ function isMobileVerified() {
 }
 
 // Check social media verification
-function checkSocialVerification() {
-    return sessionStorage.getItem('social_verification') === 'completed';
-}
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced social verification check
+    function checkSocialVerification() {
+        const sessionVerified = sessionStorage.getItem('social_verification') === 'completed';
+        const localVerified = localStorage.getItem('social_verification');
+        
+        if (localVerified) {
+            try {
+                const status = JSON.parse(localVerified);
+                if (status.youtube && status.telegram && status.instagram) {
+                    return true;
+                }
+            } catch (e) {
+                console.error('Error parsing social verification:', e);
+            }
+        }
+        
+        return sessionVerified;
+    }
+
+    // Check if user completed social verification
+    if (!checkSocialVerification()) {
+        showError('Please complete social media verification first. Redirecting to gateway...');
+        setTimeout(() => {
+            window.location.href = 'gateway.html';
+        }, 3000);
+        return;
+    }
 
 // Validate form data
 function validateFormData(formData) {
@@ -723,3 +748,4 @@ if (typeof module !== 'undefined' && module.exports) {
         validateFormData
     };
 }
+
