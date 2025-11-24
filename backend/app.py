@@ -645,8 +645,21 @@ def signup():
         if len(password) < 8:
             return jsonify({'error': 'Password must be at least 8 characters long'}), 400
         
+        # Enhanced password strength validation
+        if not any(char.isupper() for char in password):
+            return jsonify({'error': 'Password must contain at least one uppercase letter'}), 400
+        
+        if not any(char.islower() for char in password):
+            return jsonify({'error': 'Password must contain at least one lowercase letter'}), 400
+        
+        if not any(char.isdigit() for char in password):
+            return jsonify({'error': 'Password must contain at least one number'}), 400
+        
+        if not any(char in '!@#$%^&*()_+-=[]{}|;:,.<>?`~' for char in password):
+            return jsonify({'error': 'Password must contain at least one special character'}), 400
+        
         # Validate email
-        email = data['email']
+        email = data['email'].strip().lower()  # Normalize email
         if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
             return jsonify({'error': 'Invalid email format'}), 400
         
@@ -655,82 +668,99 @@ def signup():
         if not re.match(r'^\+?[0-9]{10,15}$', mobile_no):
             return jsonify({'error': 'Invalid mobile number format'}), 400
         
-        # Check if username or email already exists
+        # Validate username
+        username = data['username'].strip()
+        if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
+            return jsonify({'error': 'Username must be 3-30 characters long and contain only letters, numbers, and underscores'}), 400
+        
+        # Check if username or email already exists with separate error messages
         conn = get_db_connection()
         if not conn:
             return jsonify({'error': 'Database connection failed'}), 500
             
         with conn.cursor() as cursor:
-            cursor.execute('SELECT * FROM users WHERE username = %s OR email = %s', (data['username'], data['email']))
-            existing_user = cursor.fetchone()
+            # Check username
+            cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
+            existing_username = cursor.fetchone()
+            
+            # Check email
+            cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
+            existing_email = cursor.fetchone()
         
         conn.close()
         
-        if existing_user:
-            return jsonify({'error': 'Username or email already exists'}), 400
+        if existing_username:
+            return jsonify({'error': 'Username already taken. Please choose a different username.'}), 400
         
-        # Hash password
-        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        if existing_email:
+            return jsonify({'error': 'Email address is already registered. Please use a different email or try logging in.'}), 400
+        
+        # Hash password with stronger salt rounds
+        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=12))
         
         # Create user
         user_data = {
-            'username': data['username'],
-            'full_name': data['full_name'],
-            'email': data['email'],
+            'username': username,
+            'full_name': data['full_name'].strip(),
+            'email': email,
             'password_hash': password_hash.decode('utf-8'),
-            'mobile_no': data['mobile_no'],
+            'mobile_no': mobile_no,
             'role': 'user'
         }
         
         if create_user(user_data):
             # Log signup activity
-            log_user_activity(data['username'], 'signup', request.remote_addr, request.headers.get('User-Agent'))
+            log_user_activity(username, 'signup', request.remote_addr, request.headers.get('User-Agent'))
             
             return jsonify({
                 'success': True,
-                'message': 'User created successfully. Please login.'
+                'message': 'Account created successfully! You can now login.'
             }), 201
         else:
-            return jsonify({'error': 'Failed to create user'}), 500
+            return jsonify({'error': 'Failed to create user account'}), 500
             
     except Exception as e:
         logger.error(f"Signup error: {e}")
-        return jsonify({'error': 'Registration failed'}), 500
+        return jsonify({'error': 'Registration failed due to server error'}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
     try:
         data = request.get_json()
-        username = data.get('username', '').strip()
+        username = data.get('username', '').strip().lower()  # Normalize username
         password = data.get('password', '')
         
         if not username or not password:
             return jsonify({'error': 'Username and password required'}), 400
         
-        # Rate limiting check
+        # Enhanced rate limiting with IP and username tracking
         client_ip = request.remote_addr
         current_time = datetime.datetime.utcnow()
         
-        if client_ip in login_attempts:
-            attempts_info = login_attempts[client_ip]
+        # IP-based rate limiting
+        ip_key = f"ip_{client_ip}"
+        if ip_key in login_attempts:
+            attempts_info = login_attempts[ip_key]
             if attempts_info['count'] >= MAX_ATTEMPTS:
                 time_since_first_attempt = (current_time - attempts_info['first_attempt']).total_seconds()
                 if time_since_first_attempt < 3600:
-                    return jsonify({'error': 'Too many attempts. Try again later.'}), 429
+                    return jsonify({'error': 'Too many login attempts from your IP. Please try again later.'}), 429
         
         # Get user from database
         user = get_user_by_username(username)
         if not user:
             # Simulate password check to prevent timing attacks
             bcrypt.checkpw(password.encode('utf-8'), bcrypt.gensalt())
-            update_login_attempts(client_ip, current_time)
-            return jsonify({'error': 'Invalid credentials'}), 401
+            update_login_attempts(ip_key, current_time)
+            log_user_activity(username, 'login_failed_nonexistent', client_ip, request.headers.get('User-Agent'))
+            return jsonify({'error': 'Invalid username or password'}), 401
         
         # Check if account is locked
         if user.get('locked_until'):
             locked_until = user['locked_until']
             if datetime.datetime.utcnow() < locked_until:
-                return jsonify({'error': 'Account temporarily locked. Try again later.'}), 423
+                time_remaining = (locked_until - datetime.datetime.utcnow()).seconds // 60
+                return jsonify({'error': f'Account temporarily locked. Try again in {time_remaining} minutes.'}), 423
             else:
                 # Unlock account
                 user['locked_until'] = None
@@ -740,35 +770,40 @@ def login():
         # Verify password
         if not verify_password(user['password_hash'], password):
             user['failed_attempts'] = user.get('failed_attempts', 0) + 1
-            update_login_attempts(client_ip, current_time)
             
+            # Lock account after too many failed attempts
             if user['failed_attempts'] >= MAX_ATTEMPTS:
                 user['locked_until'] = (datetime.datetime.utcnow() + datetime.timedelta(seconds=LOCKOUT_TIME))
                 update_user(user)
-                return jsonify({'error': 'Account locked due to too many failed attempts'}), 423
+                log_user_activity(username, 'account_locked', client_ip, request.headers.get('User-Agent'))
+                return jsonify({'error': 'Account locked due to too many failed attempts. Please try again later.'}), 423
             
             update_user(user)
-            return jsonify({'error': 'Invalid credentials'}), 401
+            update_login_attempts(ip_key, current_time)
+            log_user_activity(username, 'login_failed_invalid_password', client_ip, request.headers.get('User-Agent'))
+            return jsonify({'error': 'Invalid username or password'}), 401
         
-        # Successful login
+        # Successful login - reset counters
         user['failed_attempts'] = 0
         user['locked_until'] = None
         user['last_login'] = current_time
         update_user(user)
         
-        if client_ip in login_attempts:
-            del login_attempts[client_ip]
+        # Clear rate limiting for this IP
+        if ip_key in login_attempts:
+            del login_attempts[ip_key]
         
         # Log successful login
-        log_user_activity(username, 'login', client_ip, request.headers.get('User-Agent'))
+        log_user_activity(username, 'login_success', client_ip, request.headers.get('User-Agent'))
         
-        # Generate JWT token
+        # Generate secure JWT token
         token_payload = {
             'username': username,
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=SESSION_TIMEOUT),
             'iat': datetime.datetime.utcnow(),
             'role': user['role'],
-            'session_id': secrets.token_urlsafe(16)
+            'session_id': secrets.token_urlsafe(32),  # Longer session ID
+            'ip': client_ip  # Bind token to IP
         }
         
         token = jwt.encode(token_payload, JWT_SECRET, algorithm='HS256')
@@ -786,18 +821,7 @@ def login():
         
     except Exception as e:
         logger.error(f"Login error: {e}")
-        return jsonify({'error': 'Login failed'}), 500
-
-def update_login_attempts(client_ip, current_time):
-    if client_ip not in login_attempts:
-        login_attempts[client_ip] = {
-            'count': 1,
-            'first_attempt': current_time,
-            'last_attempt': current_time
-        }
-    else:
-        login_attempts[client_ip]['count'] += 1
-        login_attempts[client_ip]['last_attempt'] = current_time
+        return jsonify({'error': 'Login failed due to server error'}), 500
 
 @app.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
@@ -1326,5 +1350,6 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
 
