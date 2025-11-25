@@ -225,6 +225,7 @@ async function sendEmailOTP() {
     emailOtpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP to your email...</span>';
 
     try {
+        console.log(`📧 Sending OTP request for: ${email}`);
         const response = await fetch(`${API_BASE_URL}/api/send-email-otp`, {
             method: 'POST',
             headers: {
@@ -236,6 +237,7 @@ async function sendEmailOTP() {
         });
 
         const data = await response.json();
+        console.log('📨 OTP Response:', data);
 
         if (response.ok) {
             // Show OTP input field
@@ -246,14 +248,20 @@ async function sendEmailOTP() {
             // Start countdown timer
             startEmailOTPTimer();
             
-            // Show success message
-            emailOtpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent to your email! Check your inbox.</span>';
-            
-            if (data.otp) {
-                console.log(`📧 Test OTP: ${data.otp}`);
+            // Show appropriate message based on email delivery
+            if (data.email_delivered) {
+                emailOtpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent to your email! Check your inbox and spam folder.</span>';
+                showSuccess('OTP sent successfully! Check your email.');
+            } else {
+                emailOtpStatus.innerHTML = `<span style="color: #FF8A00">⚠️ Email delivery issue. Use this OTP: <strong>${data.otp}</strong></span>`;
+                showError('Email delivery failed. Use the OTP shown above.');
             }
             
-            showSuccess('OTP sent successfully! Check your email.');
+            // Always log the OTP for testing
+            if (data.otp) {
+                console.log(`📧 OTP for testing: ${data.otp}`);
+                console.log(`📧 You can use this OTP to verify: ${data.otp}`);
+            }
             
         } else {
             showError(data.error || 'Failed to send OTP');
@@ -736,3 +744,4 @@ if (typeof module !== 'undefined' && module.exports) {
         validateFormData
     };
 }
+
