@@ -112,24 +112,29 @@ def check_environment_variables():
 check_environment_variables()
 
 # Email OTP Functions
+# Email OTP Functions - UPDATED VERSION
 def send_otp_email(email, otp):
-    """Send OTP to user's email"""
+    """Send OTP to user's email with better debugging"""
     try:
         if not EMAIL_USER or not EMAIL_PASSWORD:
             logger.error("Email configuration not set - cannot send OTP email")
             print("❌ Email configuration missing - check environment variables")
+            print(f"   EMAIL_USER: {'✅ Set' if EMAIL_USER else '❌ Missing'}")
+            print(f"   EMAIL_PASSWORD: {'✅ Set' if EMAIL_PASSWORD else '❌ Missing'}")
             return False
         
-        print(f"🚀 Sending OTP email to: {email}")
+        print(f"🚀 Starting OTP email send to: {email}")
+        print(f"🔑 OTP to send: {otp}")
         
-        # Create message
-        msg = MIMEMultipart('alternative')
-        msg['From'] = f"Architect Johan <{EMAIL_USER}>"
+        # Create message with simpler format
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_USER
         msg['To'] = email
         msg['Subject'] = "Architect Johan - Email Verification OTP"
         
-        # Text version
-        text = f"""Architect Johan - Email Verification OTP
+        # Simple text version only
+        body = f"""
+Architect Johan - Email Verification
 
 Your OTP for email verification is: {otp}
 
@@ -140,44 +145,23 @@ If you didn't request this OTP, please ignore this email.
 --
 Architect Johan Security Team
 """
+        msg.attach(MIMEText(body, 'plain'))
         
-        # HTML version
-        html = f"""<html>
-<body>
-<h2>Architect Johan - Email Verification</h2>
-<p>Your OTP for email verification is:</p>
-<h1 style="color: #00FFB3; font-size: 32px; letter-spacing: 5px;">{otp}</h1>
-<p><strong>Valid for 5 minutes</strong></p>
-<hr>
-<p><em>If you didn't request this OTP, please ignore this email.</em></p>
-<p><em>Architect Johan Security Team</em></p>
-</body>
-</html>"""
+        print(f"📧 Email message prepared for: {email}")
         
-        # Attach both versions
-        part1 = MIMEText(text, 'plain')
-        part2 = MIMEText(html, 'html')
-        msg.attach(part1)
-        msg.attach(part2)
-        
-        print(f"📧 OTP Email configured for: {email}")
-        print(f"🔑 OTP: {otp}")
-        
-        # Send email
+        # Send email with better error handling
         server = None
         try:
+            print(f"🔗 Connecting to {EMAIL_HOST}:{EMAIL_PORT}...")
             server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30)
-            server.set_debuglevel(1)
             
             print("🔧 Starting TLS...")
-            server.ehlo()
             server.starttls()
-            server.ehlo()
             
-            print("🔑 Logging in...")
+            print(f"🔑 Logging in as {EMAIL_USER}...")
             server.login(EMAIL_USER, EMAIL_PASSWORD)
             
-            print("📤 Sending OTP email...")
+            print("📤 Sending email...")
             server.sendmail(EMAIL_USER, email, msg.as_string())
             print("✅ OTP email sent successfully!")
             
@@ -189,6 +173,7 @@ Architect Johan Security Team
         except smtplib.SMTPAuthenticationError as e:
             logger.error(f"SMTP Authentication failed: {e}")
             print(f"❌ SMTP Authentication failed - check email credentials")
+            print(f"   Make sure you're using an App Password, not your regular Gmail password")
             return False
         except smtplib.SMTPException as e:
             logger.error(f"SMTP error: {e}")
@@ -197,6 +182,8 @@ Architect Johan Security Team
         except Exception as e:
             logger.error(f"Email sending failed: {e}")
             print(f"❌ Email sending failed: {e}")
+            import traceback
+            print(f"💥 Detailed error: {traceback.format_exc()}")
             return False
         finally:
             if server:
@@ -208,6 +195,8 @@ Architect Johan Security Team
     except Exception as e:
         logger.error(f"Email configuration error: {e}")
         print(f"❌ Email configuration error: {e}")
+        import traceback
+        print(f"💥 Detailed configuration error: {traceback.format_exc()}")
         return False
 
 def get_db_connection():
@@ -765,20 +754,23 @@ def send_email_otp():
         data = request.get_json()
         email = data.get('email', '').strip().lower()
         
-        print(f"🔍 EMAIL OTP REQUEST: {email}")
+        print(f"🔍 EMAIL OTP REQUEST RECEIVED: {email}")
         
         # Validate email format
         if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            print(f"❌ Invalid email format: {email}")
             return jsonify({'error': 'Invalid email format'}), 400
         
         # Enhanced Gmail validation
         gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
         if not re.match(gmail_regex, email):
+            print(f"❌ Not a Gmail address: {email}")
             return jsonify({'error': 'Only Gmail accounts are allowed. Please use a valid Gmail address ending with @gmail.com'}), 400
         
         # Check if email already exists
         existing_user = get_user_by_email(email)
         if existing_user:
+            print(f"❌ Email already registered: {email}")
             return jsonify({'error': 'Email address is already registered. Please use a different email or try logging in.'}), 400
         
         # Generate 6-digit OTP
@@ -793,8 +785,10 @@ def send_email_otp():
         }
         
         print(f"🔐 Generated Email OTP for {email}: {otp}")
+        print(f"📦 OTP stored in memory storage")
         
         # Send OTP via email
+        print(f"📧 Attempting to send OTP email...")
         email_sent = send_otp_email(email, otp)
         
         response_data = {
@@ -802,16 +796,27 @@ def send_email_otp():
             'message': 'OTP sent to your email successfully!',
             'otp': otp,  # Include for testing/demo
             'email': email,
-            'email_delivered': email_sent
+            'email_delivered': email_sent,
+            'debug_info': {
+                'email_provider': 'Gmail SMTP',
+                'otp_length': len(otp),
+                'timestamp': datetime.datetime.now(timezone.utc).isoformat()
+            }
         }
         
         if not email_sent:
-            response_data['note'] = 'Email delivery might be delayed. Use the OTP shown below for testing.'
+            response_data['note'] = 'Email delivery failed. Please check your email configuration or use the OTP shown below for testing.'
+            response_data['debug_otp'] = otp  # Always include OTP in response for debugging
+        
+        print(f"✅ OTP process completed for {email}. Email sent: {email_sent}")
         
         return jsonify(response_data), 200
             
     except Exception as e:
         logger.error(f"Email OTP sending error: {e}")
+        print(f"💥 OTP sending exception: {str(e)}")
+        import traceback
+        print(f"💥 OTP sending traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Failed to send OTP email'}), 500
 
 @app.route('/api/verify-email-otp', methods=['POST'])
@@ -1206,3 +1211,4 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
