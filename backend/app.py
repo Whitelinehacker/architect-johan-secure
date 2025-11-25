@@ -744,6 +744,20 @@ def admin_required(f):
     
     return decorated
 
+# ADD THE MISSING CSRF TOKEN ROUTE
+@app.route('/api/csrf-token', methods=['GET'])
+def get_csrf_token():
+    """Generate and return CSRF token for forms"""
+    try:
+        csrf_token = generate_csrf_token()
+        return jsonify({
+            'csrf_token': csrf_token,
+            'message': 'CSRF token generated successfully'
+        }), 200
+    except Exception as e:
+        logger.error(f"CSRF token generation error: {e}")
+        return jsonify({'error': 'Failed to generate CSRF token'}), 500
+
 # Email OTP Endpoints
 @app.route('/api/send-email-otp', methods=['POST'])
 def send_email_otp():
