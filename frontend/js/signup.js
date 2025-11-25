@@ -448,6 +448,22 @@ function validateFormData(formData) {
     return { isValid: true };
 }
 
+// Get CSRF Token function
+async function getCSRFToken() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/csrf-token`);
+        if (!response.ok) {
+            throw new Error('Failed to get CSRF token');
+        }
+        const data = await response.json();
+        return data.csrf_token;
+    } catch (error) {
+        console.error('Error fetching CSRF token:', error);
+        // Generate a fallback token if the API fails
+        return 'fallback-csrf-token-' + Math.random().toString(36).substring(2);
+    }
+}
+
 // Main signup functionality
 document.addEventListener('DOMContentLoaded', function() {
     // Check if user completed social verification
@@ -465,23 +481,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const successMessage = document.getElementById('success-message');
     const csrfTokenInput = document.getElementById('csrf_token');
 
-    // Get CSRF token
-    fetch(`${API_BASE_URL}/api/csrf-token`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to get CSRF token');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.csrf_token) {
-                csrfTokenInput.value = data.csrf_token;
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching CSRF token:', error);
-            showError('Security token initialization failed. Please refresh the page.');
-        });
+    // Get CSRF token on page load
+    getCSRFToken().then(token => {
+        if (token) {
+            csrfTokenInput.value = token;
+            console.log('CSRF token initialized');
+        }
+    }).catch(error => {
+        console.error('Error initializing CSRF token:', error);
+        showError('Security token initialization failed. Please refresh the page.');
+    });
 
     // Password strength real-time feedback
     const passwordInput = document.getElementById('password');
@@ -574,6 +583,10 @@ document.addEventListener('DOMContentLoaded', function() {
     signupForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        // Get fresh CSRF token for each submission
+        const freshCSRFToken = await getCSRFToken();
+        csrfTokenInput.value = freshCSRFToken;
+        
         // Collect form data
         const formData = {
             username: sanitizeInput(document.getElementById('username').value),
@@ -582,7 +595,7 @@ document.addEventListener('DOMContentLoaded', function() {
             mobile_no: '+91' + document.getElementById('mobile_no').value,
             password: document.getElementById('password').value,
             confirm_password: document.getElementById('confirm_password').value,
-            csrf_token: csrfTokenInput.value
+            csrf_token: freshCSRFToken
         };
 
         // Validate form data
@@ -607,7 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfTokenInput.value
+                    'X-CSRF-Token': freshCSRFToken
                 },
                 body: JSON.stringify(formData)
             });
