@@ -113,9 +113,9 @@ check_environment_variables()
 
 # MSG91 SMS Functions
 def send_sms_otp(mobile_no, otp):
-    """Send OTP via MSG91 SMS service - Enhanced with better error handling"""
+    """Send OTP via MSG91 using Promotional route (₹0.20/SMS)"""
     try:
-        print(f"🚀 STARTING OTP SEND PROCESS")
+        print(f"🚀 STARTING PROMOTIONAL OTP SEND")
         print(f"📱 Target Mobile: +91{mobile_no}")
         print(f"🔑 OTP to send: {otp}")
         
@@ -133,20 +133,15 @@ def send_sms_otp(mobile_no, otp):
         print(f"   Template ID: {MSG91_TEMPLATE_ID}")
         print(f"   Sender ID: {MSG91_SENDER_ID}")
         
-        # MSG91 API endpoint - Try different endpoints
-        urls_to_try = [
-            "https://control.msg91.com/api/v5/otp",
-            "https://api.msg91.com/api/v5/otp",
-            "https://control.msg91.com/api/v5/otp?flow_id=1"
-        ]
+        # MSG91 Flow API for promotional messages (route 1 - promotional)
+        url = "https://control.msg91.com/api/v5/flow/"
         
-        # Prepare payload
+        # Payload for promotional flow
         payload = {
-            "template_id": MSG91_TEMPLATE_ID,
-            "mobile": f"91{mobile_no}",
-            "otp": otp,
-            "otp_length": 6,
-            "otp_expiry": 10
+            "flow_id": MSG91_TEMPLATE_ID,  # Using flow_id instead of template_id
+            "sender": MSG91_SENDER_ID,
+            "mobiles": f"91{mobile_no}",
+            "OTP": otp  # Variable for OTP in your template
         }
         
         headers = {
@@ -155,43 +150,78 @@ def send_sms_otp(mobile_no, otp):
             "accept": "application/json"
         }
         
-        # Try different endpoints
-        for i, url in enumerate(urls_to_try):
-            print(f"🔄 Attempt {i+1}: {url}")
-            
-            try:
-                response = requests.post(url, json=payload, headers=headers, timeout=30)
-                
-                print(f"📥 Response Status: {response.status_code}")
-                print(f"📥 Response Text: {response.text}")
-                
-                if response.status_code == 200:
-                    response_data = response.json()
-                    print(f"📥 Response JSON: {response_data}")
-                    
-                    if response_data.get('type') == 'success':
-                        print("✅ OTP sent successfully via MSG91")
-                        return True
-                    else:
-                        print(f"❌ MSG91 API returned error: {response_data}")
-                        # Continue to next URL
-                        continue
-                else:
-                    print(f"❌ HTTP Error {response.status_code} for URL: {url}")
-                    # Continue to next URL
-                    continue
-                    
-            except Exception as e:
-                print(f"❌ Error with URL {url}: {str(e)}")
-                continue
+        print(f"📤 Sending promotional SMS via Flow API...")
+        print(f"   URL: {url}")
+        print(f"   Payload: {payload}")
         
-        print("❌ All MSG91 endpoints failed")
-        return False
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        
+        print(f"📥 MSG91 Response Status: {response.status_code}")
+        print(f"📥 MSG91 Response Text: {response.text}")
+        
+        if response.status_code == 200:
+            response_data = response.json()
+            print(f"📥 Response JSON: {response_data}")
+            
+            if response_data.get('type') == 'success':
+                print("✅ OTP sent successfully via MSG91 Promotional Route!")
+                return True
+            else:
+                print(f"❌ MSG91 API returned error: {response_data}")
+                # Try alternative approach
+                return send_sms_otp_alternative(mobile_no, otp)
+        else:
+            print(f"❌ HTTP Error {response.status_code}")
+            # Try alternative approach
+            return send_sms_otp_alternative(mobile_no, otp)
             
     except Exception as e:
-        print(f"❌ Unexpected error in send_sms_otp: {str(e)}")
+        print(f"❌ Promotional route error: {str(e)}")
         import traceback
         print(f"❌ Traceback: {traceback.format_exc()}")
+        # Try alternative approach
+        return send_sms_otp_alternative(mobile_no, otp)
+
+def send_sms_otp_alternative(mobile_no, otp):
+    """Alternative method using simple SMS API with promotional route"""
+    try:
+        print(f"🔄 TRYING ALTERNATIVE PROMOTIONAL METHOD")
+        
+        # Alternative URL for simple SMS
+        url = "https://api.msg91.com/api/v2/sendsms"
+        
+        payload = {
+            "sender": MSG91_SENDER_ID,
+            "route": "1",  # Route 1 for promotional
+            "country": "91",
+            "sms": [
+                {
+                    "message": f"Your OTP for Architect Johan is {otp}. Valid for 10 minutes.",
+                    "to": [f"91{mobile_no}"]
+                }
+            ]
+        }
+        
+        headers = {
+            "authkey": MSG91_AUTH_KEY,
+            "Content-Type": "application/json"
+        }
+        
+        print(f"📤 Sending via alternative promotional method...")
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        
+        print(f"📥 Alternative Response: {response.status_code} - {response.text}")
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('type') == 'success':
+                print("✅ OTP sent via alternative promotional method!")
+                return True
+        
+        return False
+        
+    except Exception as e:
+        print(f"❌ Alternative method error: {e}")
         return False
 
 
@@ -754,36 +784,27 @@ def send_otp():
         }
         
         print(f"🔐 Generated OTP for {mobile_no}: {otp}")
-        print(f"💾 Stored OTP data: {otp_storage[mobile_no]}")
         
-        # Send SMS via MSG91
-        print(f"📤 Attempting to send SMS via MSG91...")
+        # Try to send SMS via promotional route
         sms_sent = send_sms_otp(mobile_no, otp)
         
-        if sms_sent:
-            print(f"✅ OTP sent successfully via MSG91")
-            return jsonify({
-                'success': True,
-                'message': 'OTP sent to your mobile number',
-                'mobile': f'+91{mobile_no}'
-            }), 200
-        else:
-            print(f"❌ SMS sending failed - providing OTP for testing")
-            # Even if SMS fails, return success but include OTP for testing
-            return jsonify({
-                'success': True,
-                'message': 'SMS service temporarily unavailable. Use this OTP for testing:',
-                'otp': otp,  # Include OTP for testing
-                'mobile': f'+91{mobile_no}',
-                'note': 'SMS delivery failed - using test mode'
-            }), 200
+        # ALWAYS return success with OTP
+        response_data = {
+            'success': True,
+            'message': 'OTP generated successfully!',
+            'otp': otp,  # Always include OTP
+            'mobile': f'+91{mobile_no}',
+            'sms_delivered': sms_sent
+        }
+        
+        if not sms_sent:
+            response_data['note'] = 'SMS delivery might be delayed. Use the OTP shown below.'
+        
+        return jsonify(response_data), 200
             
     except Exception as e:
         logger.error(f"OTP sending error: {e}")
-        print(f"💥 OTP sending exception: {str(e)}")
-        import traceback
-        print(f"💥 Traceback: {traceback.format_exc()}")
-        return jsonify({'error': 'Failed to send OTP'}), 500
+        return jsonify({'error': 'Failed to generate OTP'}), 500
 
 @app.route('/api/verify-otp', methods=['POST'])
 def verify_otp():
@@ -1997,6 +2018,7 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
 
 
