@@ -753,6 +753,9 @@
                 <button onclick="clearOTPStorage()" class="otp-btn" style="background: #FF004C; margin: 5px;">
                     Clear OTP Data
                 </button>
+                <button onclick="debugMSG91Detailed()" class="otp-btn" style="background: #8A2BE2; margin: 5px;">
+    Detailed MSG91 Debug
+</button>
             </div>
         </div>
     </div>
@@ -1540,6 +1543,39 @@
             });
         });
 
+
+        async function debugMSG91Detailed() {
+    const mobileNo = document.getElementById('mobile_no').value || '910000000000';
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/debug-msg91-detailed`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                mobile_no: '+91' + mobileNo
+            })
+        });
+        
+        const data = await response.json();
+        
+        let message = `Detailed MSG91 Debug:\n\n`;
+        message += `Balance Check: ${data.balance_check_status}\n`;
+        message += `Balance: ${data.balance_response}\n`;
+        message += `Template Check: ${data.template_check_status}\n`;
+        message += `Templates Found: ${data.template_count}\n`;
+        message += `SMS Test Result: ${data.sms_test_result ? '✅ Success' : '❌ Failed'}\n`;
+        message += `Test Mobile: ${data.test_mobile}\n`;
+        message += `Test OTP: ${data.test_otp}`;
+        
+        alert(message);
+        console.log('Detailed MSG91 Debug:', data);
+    } catch (error) {
+        alert('Error in detailed debug: ' + error.message);
+    }
+}
+
         // Prevent form resubmission on page refresh
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
@@ -1547,3 +1583,4 @@
     </script>
 </body>
 </html>
+
