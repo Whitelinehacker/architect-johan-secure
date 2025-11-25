@@ -1,4 +1,4 @@
-// signup.js - Enhanced with Gmail validation and OTP verification
+// signup.js - Enhanced with Gmail validation and Email OTP verification
 const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
 
 // Password strength checker
@@ -172,59 +172,60 @@ function showSuccess(message) {
     errorMessage.classList.remove('show');
 }
 
-// OTP Management
-let otpCountdown = 0;
-let otpTimer = null;
+// Email OTP Management
+let emailOtpCountdown = 0;
+let emailOtpTimer = null;
 
-function startOTPTimer() {
-    const sendOtpBtn = document.getElementById('send-otp-btn');
-    const otpStatus = document.getElementById('otp-status');
+function startEmailOTPTimer() {
+    const sendEmailOtpBtn = document.getElementById('send-email-otp-btn');
+    const emailOtpStatus = document.getElementById('email-otp-status');
     
-    otpCountdown = 60;
-    sendOtpBtn.disabled = true;
+    emailOtpCountdown = 60;
+    sendEmailOtpBtn.disabled = true;
     
-    otpTimer = setInterval(() => {
-        otpCountdown--;
-        sendOtpBtn.textContent = `Resend OTP (${otpCountdown}s)`;
-        otpStatus.innerHTML = `<span style="color: #FF8A00">OTP sent! Valid for 10 minutes. Resend in ${otpCountdown}s</span>`;
+    emailOtpTimer = setInterval(() => {
+        emailOtpCountdown--;
+        sendEmailOtpBtn.textContent = `Resend OTP (${emailOtpCountdown}s)`;
+        emailOtpStatus.innerHTML = `<span style="color: #FF8A00">OTP sent! Valid for 5 minutes. Resend in ${emailOtpCountdown}s</span>`;
         
-        if (otpCountdown <= 0) {
-            clearInterval(otpTimer);
-            sendOtpBtn.disabled = false;
-            sendOtpBtn.textContent = 'Resend OTP';
-            otpStatus.innerHTML = '<span style="color: #FF004C">OTP expired. Click to resend.</span>';
+        if (emailOtpCountdown <= 0) {
+            clearInterval(emailOtpTimer);
+            sendEmailOtpBtn.disabled = false;
+            sendEmailOtpBtn.textContent = 'Resend OTP';
+            emailOtpStatus.innerHTML = '<span style="color: #FF004C">OTP expired. Click to resend.</span>';
         }
     }, 1000);
 }
 
-async function sendOTP() {
-    const mobileInput = document.getElementById('mobile_no');
-    const mobileNo = mobileInput.value;
-    const sendOtpBtn = document.getElementById('send-otp-btn');
-    const otpInput = document.getElementById('otp');
-    const verifyOtpBtn = document.getElementById('verify-otp-btn');
-    const otpStatus = document.getElementById('otp-status');
+async function sendEmailOTP() {
+    const emailInput = document.getElementById('email');
+    const email = emailInput.value.trim().toLowerCase();
+    const sendEmailOtpBtn = document.getElementById('send-email-otp-btn');
+    const emailOtpInput = document.getElementById('email_otp');
+    const verifyEmailOtpBtn = document.getElementById('verify-email-otp-btn');
+    const emailOtpStatus = document.getElementById('email-otp-status');
 
-    // Validate mobile number first
-    if (!mobileNo || mobileNo.length !== 10 || !/^[6-9]\d{9}$/.test(mobileNo)) {
-        showError('Please enter a valid 10-digit Indian mobile number starting with 6-9');
-        mobileInput.focus();
+    // Validate email first
+    const emailValidation = validateEmailEnhanced(email);
+    if (!emailValidation.isValid) {
+        showError(emailValidation.error);
+        emailInput.focus();
         return;
     }
 
     // Update UI for loading
-    sendOtpBtn.disabled = true;
-    sendOtpBtn.textContent = 'Sending OTP...';
-    otpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP via SMS...</span>';
+    sendEmailOtpBtn.disabled = true;
+    sendEmailOtpBtn.textContent = 'Sending OTP...';
+    emailOtpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP to your email...</span>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/send-otp`, {
+        const response = await fetch(`${API_BASE_URL}/api/send-email-otp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                mobile_no: '+91' + mobileNo
+                email: email
             })
         });
 
@@ -232,62 +233,63 @@ async function sendOTP() {
 
         if (response.ok) {
             // Show OTP input field
-            otpInput.style.display = 'block';
-            verifyOtpBtn.style.display = 'block';
-            otpInput.value = ''; // Clear previous OTP
+            emailOtpInput.style.display = 'block';
+            verifyEmailOtpBtn.style.display = 'block';
+            emailOtpInput.value = ''; // Clear previous OTP
             
             // Start countdown timer
-            startOTPTimer();
+            startEmailOTPTimer();
             
             // Show success message
+            emailOtpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent to your email! Check your inbox.</span>';
+            
             if (data.otp) {
-                // SMS failed, but OTP generated for testing
-                otpStatus.innerHTML = `<span style="color: #FF8A00">SMS service issue. Use OTP: ${data.otp}</span>`;
-                console.log(`📱 Test OTP (SMS failed): ${data.otp}`);
-            } else {
-                otpStatus.innerHTML = '<span style="color: #00FFB3">OTP sent via SMS! Check your phone.</span>';
+                console.log(`📧 Test OTP: ${data.otp}`);
             }
+            
+            showSuccess('OTP sent successfully! Check your email.');
             
         } else {
             showError(data.error || 'Failed to send OTP');
-            sendOtpBtn.disabled = false;
-            sendOtpBtn.textContent = 'Send OTP';
+            sendEmailOtpBtn.disabled = false;
+            sendEmailOtpBtn.textContent = 'Send Email OTP';
+            emailOtpStatus.innerHTML = '<span style="color: #FF004C">Failed to send OTP</span>';
         }
     } catch (error) {
-        console.error('OTP sending error:', error);
+        console.error('Email OTP sending error:', error);
         showError('Network error. Please check your connection and try again.');
-        sendOtpBtn.disabled = false;
-        sendOtpBtn.textContent = 'Send OTP';
-        otpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
+        sendEmailOtpBtn.disabled = false;
+        sendEmailOtpBtn.textContent = 'Send Email OTP';
+        emailOtpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
     }
 }
 
-async function verifyOTP() {
-    const mobileNo = document.getElementById('mobile_no').value;
-    const otpInput = document.getElementById('otp');
-    const otpValue = otpInput.value;
-    const verifyOtpBtn = document.getElementById('verify-otp-btn');
-    const otpStatus = document.getElementById('otp-status');
+async function verifyEmailOTP() {
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const emailOtpInput = document.getElementById('email_otp');
+    const otpValue = emailOtpInput.value;
+    const verifyEmailOtpBtn = document.getElementById('verify-email-otp-btn');
+    const emailOtpStatus = document.getElementById('email-otp-status');
 
     if (!otpValue || otpValue.length !== 6 || !/^\d+$/.test(otpValue)) {
         showError('Please enter a valid 6-digit OTP');
-        otpInput.focus();
+        emailOtpInput.focus();
         return;
     }
 
     // Update UI for loading
-    verifyOtpBtn.disabled = true;
-    verifyOtpBtn.textContent = 'Verifying...';
-    otpStatus.innerHTML = '<span style="color: #2EC6FF">Verifying OTP...</span>';
+    verifyEmailOtpBtn.disabled = true;
+    verifyEmailOtpBtn.textContent = 'Verifying...';
+    emailOtpStatus.innerHTML = '<span style="color: #2EC6FF">Verifying OTP...</span>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/verify-otp`, {
+        const response = await fetch(`${API_BASE_URL}/api/verify-email-otp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                mobile_no: '+91' + mobileNo,
+                email: email,
                 otp: otpValue
             })
         });
@@ -296,80 +298,96 @@ async function verifyOTP() {
 
         if (response.ok) {
             // OTP verified successfully
-            otpStatus.innerHTML = '<span style="color: #00FFB3">✅ Mobile number verified via SMS!</span>';
-            verifyOtpBtn.textContent = 'Verified';
-            verifyOtpBtn.disabled = true;
-            verifyOtpBtn.style.background = '#00FFB3';
-            verifyOtpBtn.style.color = '#02040A';
+            emailOtpStatus.innerHTML = '<span style="color: #00FFB3">✅ Email verified successfully!</span>';
+            verifyEmailOtpBtn.textContent = 'Verified';
+            verifyEmailOtpBtn.disabled = true;
+            verifyEmailOtpBtn.style.background = '#00FFB3';
+            verifyEmailOtpBtn.style.color = '#02040A';
             
-            // Store mobile verification status
-            sessionStorage.setItem('mobile_verified', 'true');
-            sessionStorage.setItem('verified_mobile', '+91' + mobileNo);
-            sessionStorage.setItem('verified_at', new Date().toISOString());
+            // Store email verification status
+            sessionStorage.setItem('email_verified', 'true');
+            sessionStorage.setItem('verified_email', email);
+            sessionStorage.setItem('email_verified_at', new Date().toISOString());
             
-            showSuccess('Mobile number verified successfully!');
+            showSuccess('Email verified successfully!');
             
             // Clear OTP timer
-            if (otpTimer) {
-                clearInterval(otpTimer);
+            if (emailOtpTimer) {
+                clearInterval(emailOtpTimer);
             }
         } else {
             showError(data.error || 'Invalid OTP');
-            verifyOtpBtn.disabled = false;
-            verifyOtpBtn.textContent = 'Verify OTP';
+            verifyEmailOtpBtn.disabled = false;
+            verifyEmailOtpBtn.textContent = 'Verify OTP';
             
             if (data.attempts_remaining) {
-                otpStatus.innerHTML = `<span style="color: #FF004C">${data.error}</span>`;
+                emailOtpStatus.innerHTML = `<span style="color: #FF004C">${data.error}</span>`;
+            } else {
+                emailOtpStatus.innerHTML = '<span style="color: #FF004C">Invalid OTP</span>';
             }
         }
     } catch (error) {
-        console.error('OTP verification error:', error);
+        console.error('Email OTP verification error:', error);
         showError('Network error during OTP verification');
-        verifyOtpBtn.disabled = false;
-        verifyOtpBtn.textContent = 'Verify OTP';
-        otpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
+        verifyEmailOtpBtn.disabled = false;
+        verifyEmailOtpBtn.textContent = 'Verify OTP';
+        emailOtpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
     }
 }
 
-// Check if mobile is already verified
-function isMobileVerified() {
-    return sessionStorage.getItem('mobile_verified') === 'true';
+// Check if email is already verified
+function isEmailVerified() {
+    return sessionStorage.getItem('email_verified') === 'true';
+}
+
+// Reset email OTP verification when email changes
+function resetEmailOTPVerification() {
+    const emailOtpInput = document.getElementById('email_otp');
+    const verifyEmailOtpBtn = document.getElementById('verify-email-otp-btn');
+    const emailOtpStatus = document.getElementById('email-otp-status');
+    const sendEmailOtpBtn = document.getElementById('send-email-otp-btn');
+    
+    if (emailOtpTimer) {
+        clearInterval(emailOtpTimer);
+    }
+    
+    emailOtpInput.style.display = 'none';
+    verifyEmailOtpBtn.style.display = 'none';
+    verifyEmailOtpBtn.disabled = false;
+    verifyEmailOtpBtn.textContent = 'Verify OTP';
+    verifyEmailOtpBtn.style.background = '';
+    verifyEmailOtpBtn.style.color = '';
+    sendEmailOtpBtn.disabled = false;
+    sendEmailOtpBtn.textContent = 'Send Email OTP';
+    emailOtpStatus.innerHTML = '';
+    
+    sessionStorage.removeItem('email_verified');
+    sessionStorage.removeItem('verified_email');
 }
 
 // Check social media verification
-document.addEventListener('DOMContentLoaded', function() {
-    // Enhanced social verification check
-    function checkSocialVerification() {
-        const sessionVerified = sessionStorage.getItem('social_verification') === 'completed';
-        const localVerified = localStorage.getItem('social_verification');
-        
-        if (localVerified) {
-            try {
-                const status = JSON.parse(localVerified);
-                if (status.youtube && status.telegram && status.instagram) {
-                    return true;
-                }
-            } catch (e) {
-                console.error('Error parsing social verification:', e);
+function checkSocialVerification() {
+    const sessionVerified = sessionStorage.getItem('social_verification') === 'completed';
+    const localVerified = localStorage.getItem('social_verification');
+    
+    if (localVerified) {
+        try {
+            const status = JSON.parse(localVerified);
+            if (status.youtube && status.telegram && status.instagram) {
+                return true;
             }
+        } catch (e) {
+            console.error('Error parsing social verification:', e);
         }
-        
-        return sessionVerified;
     }
-
-    // Check if user completed social verification
-    if (!checkSocialVerification()) {
-        showError('Please complete social media verification first. Redirecting to gateway...');
-        setTimeout(() => {
-            window.location.href = 'gateway.html';
-        }, 3000);
-        return;
-    }
+    
+    return sessionVerified;
+}
 
 // Validate form data
 function validateFormData(formData) {
     // Check required fields
-    if (!formData.username || !formData.full_name || !formData.email || !formData.mobile_no || !formData.password) {
+    if (!formData.username || !formData.full_name || !formData.email || !formData.password) {
         return { isValid: false, error: 'Please fill in all required fields' };
     }
 
@@ -393,21 +411,15 @@ function validateFormData(formData) {
         return { isValid: false, error: emailValidation.error, field: 'email' };
     }
 
-    // Validate mobile number
-    const mobileDigits = formData.mobile_no.replace('+91', '');
-    if (mobileDigits.length !== 10 || !/^[6-9]\d{9}$/.test(mobileDigits)) {
-        return { isValid: false, error: 'Please enter a valid 10-digit Indian mobile number starting with 6-9', field: 'mobile_no' };
+    // Check email verification
+    if (!isEmailVerified()) {
+        return { isValid: false, error: 'Please verify your email with OTP before signing up', field: 'email' };
     }
 
-    // Check mobile verification
-    if (!isMobileVerified()) {
-        return { isValid: false, error: 'Please verify your mobile number with OTP before signing up', field: 'mobile_no' };
-    }
-
-    // Check if mobile number matches verified number
-    const verifiedMobile = sessionStorage.getItem('verified_mobile');
-    if (verifiedMobile !== formData.mobile_no) {
-        return { isValid: false, error: 'Mobile number does not match verified number. Please verify the correct number.', field: 'mobile_no' };
+    // Check if email matches verified email
+    const verifiedEmail = sessionStorage.getItem('verified_email');
+    if (verifiedEmail !== formData.email.toLowerCase()) {
+        return { isValid: false, error: 'Email does not match verified email. Please verify the correct email.', field: 'email' };
     }
 
     // Validate password strength
@@ -482,23 +494,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Mobile number validation (only numbers)
-    const mobileInput = document.getElementById('mobile_no');
-    if (mobileInput) {
-        mobileInput.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-            if (this.value.length > 10) {
-                this.value = this.value.slice(0, 10);
-            }
-            
-            // Reset OTP verification if mobile number changes
-            const verifiedMobile = sessionStorage.getItem('verified_mobile');
-            if (verifiedMobile && verifiedMobile !== '+91' + this.value) {
-                resetOTPVerification();
-            }
-        });
-    }
-
     // Username validation
     const usernameInput = document.getElementById('username');
     if (usernameInput) {
@@ -507,9 +502,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Real-time email validation with Gmail check
+    // Real-time email validation with Gmail check and OTP reset
     const emailInput = document.getElementById('email');
     if (emailInput) {
+        emailInput.addEventListener('input', function() {
+            // Reset OTP verification if email changes
+            const verifiedEmail = sessionStorage.getItem('verified_email');
+            if (verifiedEmail && verifiedEmail !== this.value.toLowerCase()) {
+                resetEmailOTPVerification();
+            }
+            
+            // Real-time Gmail validation
+            if (this.value && !this.value.endsWith('@gmail.com')) {
+                this.style.borderColor = '#FF8A00';
+            } else if (this.value) {
+                this.style.borderColor = '#00FFB3';
+            }
+        });
+        
         emailInput.addEventListener('blur', function() {
             if (this.value) {
                 const emailValidation = validateEmailEnhanced(this.value);
@@ -524,21 +534,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
-        
-        // Real-time Gmail validation
-        emailInput.addEventListener('input', function() {
-            if (this.value && !this.value.endsWith('@gmail.com')) {
-                this.style.borderColor = '#FF8A00';
-            } else if (this.value) {
-                this.style.borderColor = '#00FFB3';
-            }
-        });
     }
 
-    // OTP input validation
-    const otpInput = document.getElementById('otp');
-    if (otpInput) {
-        otpInput.addEventListener('input', function() {
+    // Email OTP input validation
+    const emailOtpInput = document.getElementById('email_otp');
+    if (emailOtpInput) {
+        emailOtpInput.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '');
             if (this.value.length > 6) {
                 this.value = this.value.slice(0, 6);
@@ -555,7 +556,6 @@ document.addEventListener('DOMContentLoaded', function() {
             username: sanitizeInput(document.getElementById('username').value),
             full_name: sanitizeInput(document.getElementById('full_name').value),
             email: sanitizeInput(document.getElementById('email').value).toLowerCase(),
-            mobile_no: '+91' + document.getElementById('mobile_no').value,
             password: document.getElementById('password').value,
             confirm_password: document.getElementById('confirm_password').value,
             csrf_token: csrfTokenInput.value
@@ -594,8 +594,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 showSuccess(data.message || 'Account created successfully!');
                 
                 // Clear verification status
-                sessionStorage.removeItem('mobile_verified');
-                sessionStorage.removeItem('verified_mobile');
+                sessionStorage.removeItem('email_verified');
+                sessionStorage.removeItem('verified_email');
                 sessionStorage.removeItem('social_verification');
                 
                 // Log successful signup attempt
@@ -618,8 +618,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('email').focus();
                 } else if (errorMessage.includes('password')) {
                     document.getElementById('password').focus();
-                } else if (errorMessage.includes('mobile')) {
-                    document.getElementById('mobile_no').focus();
                 }
                 
                 showError(errorMessage);
@@ -672,28 +670,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Secure signup page initialized:', new Date().toISOString());
 });
 
-// Reset OTP verification when mobile number changes
-function resetOTPVerification() {
-    const otpInput = document.getElementById('otp');
-    const verifyOtpBtn = document.getElementById('verify-otp-btn');
-    const otpStatus = document.getElementById('otp-status');
-    
-    if (otpTimer) {
-        clearInterval(otpTimer);
-    }
-    
-    otpInput.style.display = 'none';
-    verifyOtpBtn.style.display = 'none';
-    verifyOtpBtn.disabled = false;
-    verifyOtpBtn.textContent = 'Verify OTP';
-    verifyOtpBtn.style.background = '';
-    verifyOtpBtn.style.color = '';
-    otpStatus.innerHTML = '';
-    
-    sessionStorage.removeItem('mobile_verified');
-    sessionStorage.removeItem('verified_mobile');
-}
-
 // Additional security features
 window.addEventListener('beforeunload', function() {
     // Clear sensitive data from memory
@@ -706,33 +682,6 @@ window.addEventListener('beforeunload', function() {
 // Prevent form resubmission on page refresh
 if (window.history.replaceState) {
     window.history.replaceState(null, null, window.location.href);
-}
-
-// Password visibility toggle (optional enhancement)
-function togglePasswordVisibility(inputId) {
-    const input = document.getElementById(inputId);
-    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-    input.setAttribute('type', type);
-}
-
-// Test MSG91 integration
-async function testMSG91() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/test-msg91`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                mobile_no: '9999999999'
-            })
-        });
-        const result = await response.json();
-        console.log('MSG91 Test Result:', result);
-        return result;
-    } catch (error) {
-        console.error('MSG91 Test Error:', error);
-    }
 }
 
 // Export functions for testing (if needed)
@@ -748,4 +697,3 @@ if (typeof module !== 'undefined' && module.exports) {
         validateFormData
     };
 }
-});
