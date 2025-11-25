@@ -2002,6 +2002,339 @@ def debug_msg91_detailed():
         print(f"❌ Detailed debug error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+
+# Add this to your existing app.py file
+
+# Email OTP storage
+email_otp_storage = {}
+
+@app.route('/api/send-email-otp', methods=['POST'])
+def send_email_otp():
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        print(f"🔍 EMAIL OTP REQUEST: {email}")
+        
+        # Validate email format
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            return jsonify({'error': 'Invalid email format'}), 400
+        
+        # Enhanced Gmail validation
+        gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
+        if not re.match(gmail_regex, email):
+            return jsonify({'error': 'Only Gmail accounts are allowed. Please use a valid Gmail address ending with @gmail.com'}), 400
+        
+        # Check if email already exists
+        existing_user = get_user_by_email(email)
+        if existing_user:
+            return jsonify({'error': 'Email address is already registered. Please use a different email or try logging in.'}), 400
+        
+        # Generate 6-digit OTP
+        otp = str(random.randint(100000, 999999))
+        
+        # Store OTP with expiry (5 minutes)
+        email_otp_storage[email] = {
+            'otp': otp,
+            'expiry': datetime.datetime.now(timezone.utc) + datetime.timedelta(minutes=5),
+            'attempts': 0,
+            'verified': False
+        }
+        
+        print(f"🔐 Generated Email OTP for {email}: {otp}")
+        
+        # Send OTP via email
+        email_sent = send_otp_email(email, otp)
+        
+        response_data = {
+            'success': True,
+            'message': 'OTP sent to your email successfully!',
+            'otp': otp,  # Include for testing/demo
+            'email': email,
+            'email_delivered': email_sent
+        }
+        
+        if not email_sent:
+            response_data['note'] = 'Email delivery might be delayed. Use the OTP shown below for testing.'
+        
+        return jsonify(response_data), 200
+            
+    except Exception as e:
+        logger.error(f"Email OTP sending error: {e}")
+        return jsonify({'error': 'Failed to send OTP email'}), 500
+
+@app.route('/api/verify-email-otp', methods=['POST'])
+def verify_email_otp():
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        otp_attempt = data.get('otp', '').strip()
+        
+        print(f"🔍 EMAIL OTP VERIFICATION: {email}")
+        print(f"🔑 Attempted OTP: {otp_attempt}")
+        
+        # Check if OTP exists
+        if email not in email_otp_storage:
+            print(f"❌ OTP not found for email: {email}")
+            return jsonify({'error': 'OTP not found or expired. Please request a new OTP.'}), 400
+        
+        otp_data = email_otp_storage[email]
+        print(f"📋 Stored OTP data: {otp_data}")
+        
+        # Check expiry
+        if datetime.datetime.now(timezone.utc) > otp_data['expiry']:
+            del email_otp_storage[email]
+            print(f"❌ OTP expired for: {email}")
+            return jsonify({'error': 'OTP has expired. Please request a new OTP.'}), 400
+        
+        # Check attempts
+        if otp_data['attempts'] >= 3:
+            del email_otp_storage[email]
+            print(f"❌ Too many attempts for: {email}")
+            return jsonify({'error': 'Too many failed attempts. Please request a new OTP.'}), 400
+        
+        # Verify OTP
+        if otp_attempt == otp_data['otp']:
+            # Mark email as verified
+            email_otp_storage[email]['verified'] = True
+            email_otp_storage[email]['verified_at'] = datetime.datetime.now(timezone.utc)
+            
+            print(f"✅ Email OTP verified successfully for: {email}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Email verified successfully',
+                'email': email
+            }), 200
+        else:
+            email_otp_storage[email]['attempts'] += 1
+            remaining_attempts = 3 - otp_data['attempts']
+            print(f"❌ Invalid OTP for: {email}. Attempts: {otp_data['attempts']}")
+            
+            return jsonify({
+                'error': f'Invalid OTP. {remaining_attempts} attempts remaining',
+                'attempts_remaining': remaining_attempts
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Email OTP verification error: {e}")
+        print(f"💥 Email OTP verification exception: {str(e)}")
+        return jsonify({'error': 'Email OTP verification failed'}), 500
+
+def send_otp_email(email, otp):
+    """Send OTP to user's email"""
+    try:
+        if not EMAIL_USER or not EMAIL_PASSWORD:
+            logger.error("Email configuration not set - cannot send OTP email")
+            print("❌ Email configuration missing - check environment variables")
+            return False
+        
+        print(f"🚀 Sending OTP email to: {email}")
+        
+        # Create message
+        msg = MIMEMultipart('alternative')
+        msg['From'] = f"Architect Johan <{EMAIL_USER}>"
+        msg['To'] = email
+        msg['Subject'] = "Architect Johan - Email Verification OTP"
+        
+        # Text version
+        text = f"""Architect Johan - Email Verification OTP
+
+Your OTP for email verification is: {otp}
+
+This OTP is valid for 5 minutes.
+
+If you didn't request this OTP, please ignore this email.
+
+--
+Architect Johan Security Team
+"""
+        
+        # HTML version
+        html = f"""<html>
+<body>
+<h2>Architect Johan - Email Verification</h2>
+<p>Your OTP for email verification is:</p>
+<h1 style="color: #00FFB3; font-size: 32px; letter-spacing: 5px;">{otp}</h1>
+<p><strong>Valid for 5 minutes</strong></p>
+<hr>
+<p><em>If you didn't request this OTP, please ignore this email.</em></p>
+<p><em>Architect Johan Security Team</em></p>
+</body>
+</html>"""
+        
+        # Attach both versions
+        part1 = MIMEText(text, 'plain')
+        part2 = MIMEText(html, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
+        
+        print(f"📧 OTP Email configured for: {email}")
+        print(f"🔑 OTP: {otp}")
+        
+        # Send email
+        server = None
+        try:
+            server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30)
+            server.set_debuglevel(1)
+            
+            print("🔧 Starting TLS...")
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            
+            print("🔑 Logging in...")
+            server.login(EMAIL_USER, EMAIL_PASSWORD)
+            
+            print("📤 Sending OTP email...")
+            server.sendmail(EMAIL_USER, email, msg.as_string())
+            print("✅ OTP email sent successfully!")
+            
+            server.quit()
+            
+            logger.info(f"OTP email sent to {email}")
+            return True
+            
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error(f"SMTP Authentication failed: {e}")
+            print(f"❌ SMTP Authentication failed - check email credentials")
+            return False
+        except smtplib.SMTPException as e:
+            logger.error(f"SMTP error: {e}")
+            print(f"❌ SMTP error: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Email sending failed: {e}")
+            print(f"❌ Email sending failed: {e}")
+            return False
+        finally:
+            if server:
+                try:
+                    server.quit()
+                except:
+                    pass
+        
+    except Exception as e:
+        logger.error(f"Email configuration error: {e}")
+        print(f"❌ Email configuration error: {e}")
+        return False
+
+# Update the signup endpoint to check email OTP verification
+@app.route('/api/signup', methods=['POST'])
+def signup():
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['username', 'full_name', 'email', 'password', 'confirm_password']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        # Validate password
+        password = data['password']
+        confirm_password = data['confirm_password']
+        
+        if password != confirm_password:
+            return jsonify({'error': 'Passwords do not match'}), 400
+        
+        if len(password) < 8:
+            return jsonify({'error': 'Password must be at least 8 characters long'}), 400
+        
+        # Enhanced password strength validation
+        if not any(char.isupper() for char in password):
+            return jsonify({'error': 'Password must contain at least one uppercase letter'}), 400
+        
+        if not any(char.islower() for char in password):
+            return jsonify({'error': 'Password must contain at least one lowercase letter'}), 400
+        
+        if not any(char.isdigit() for char in password):
+            return jsonify({'error': 'Password must contain at least one number'}), 400
+        
+        if not any(char in '!@#$%^&*()_+-=[]{}|;:,.<>?`~' for char in password):
+            return jsonify({'error': 'Password must contain at least one special character'}), 400
+        
+        # Validate email - Gmail only
+        email = data['email'].strip().lower()
+        
+        # Gmail validation
+        gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
+        if not re.match(gmail_regex, email):
+            return jsonify({'error': 'Only Gmail accounts are allowed. Please use a valid Gmail address ending with @gmail.com'}), 400
+        
+        # Disposable email check
+        disposable_domains = [
+            'tempmail.com', 'guerrillamail.com', 'mailinator.com', '10minutemail.com',
+            'throwawaymail.com', 'fakeinbox.com', 'yopmail.com', 'trashmail.com',
+            'temp-mail.org', 'sharklasers.com', 'guerrillamail.biz', 'grr.la'
+        ]
+        email_domain = email.split('@')[1].lower()
+        if email_domain in disposable_domains:
+            return jsonify({'error': 'Temporary/disposable email addresses are not allowed. Please use your personal Gmail account.'}), 400
+        
+        # Check email verification
+        if email not in email_otp_storage or not email_otp_storage[email].get('verified'):
+            return jsonify({'error': 'Email not verified. Please complete OTP verification.'}), 400
+        
+        # Validate username
+        username = data['username'].strip()
+        if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
+            return jsonify({'error': 'Username must be 3-30 characters long and contain only letters, numbers, and underscores'}), 400
+        
+        # Check if username or email already exists with separate error messages
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        with conn.cursor() as cursor:
+            # Check username
+            cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
+            existing_username = cursor.fetchone()
+            
+            # Check email
+            cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
+            existing_email = cursor.fetchone()
+        
+        conn.close()
+        
+        if existing_username:
+            return jsonify({'error': 'Username already taken. Please choose a different username.'}), 400
+        
+        if existing_email:
+            return jsonify({'error': 'Email address is already registered. Please use a different email or try logging in.'}), 400
+        
+        # Hash password with stronger salt rounds
+        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=12))
+        
+        # Create user
+        user_data = {
+            'username': username,
+            'full_name': data['full_name'].strip(),
+            'email': email,
+            'password_hash': password_hash.decode('utf-8'),
+            'mobile_no': '0000000000',  # Default value since mobile is removed
+            'role': 'user'
+        }
+        
+        if create_user(user_data):
+            # Clear OTP verification after successful signup
+            if email in email_otp_storage:
+                del email_otp_storage[email]
+            
+            # Log signup activity
+            log_user_activity(username, 'signup', request.remote_addr, request.headers.get('User-Agent'))
+            
+            return jsonify({
+                'success': True,
+                'message': 'Account created successfully! You can now login.'
+            }), 201
+        else:
+            return jsonify({'error': 'Failed to create user account'}), 500
+            
+    except Exception as e:
+        logger.error(f"Signup error: {e}")
+        return jsonify({'error': 'Registration failed due to server error'}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -2018,6 +2351,7 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
 
 
