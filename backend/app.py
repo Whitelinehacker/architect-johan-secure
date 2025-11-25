@@ -49,7 +49,7 @@ EMAIL_USER = os.getenv('EMAIL_USER', 'your-email@gmail.com')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', 'your-app-password')
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'your-email@gmail.com')
 
-# MSG91 Configuration
+# MSG91 Configuration (keeping for reference, but not used for signup)
 MSG91_AUTH_KEY = os.getenv('MSG91_AUTH_KEY')
 MSG91_TEMPLATE_ID = os.getenv('MSG91_TEMPLATE_ID')
 MSG91_SENDER_ID = os.getenv('MSG91_SENDER_ID', 'ARCHJT')
@@ -84,8 +84,8 @@ login_attempts = {}
 MAX_ATTEMPTS = 5
 LOCKOUT_TIME = 900  # 15 minutes
 
-# OTP storage (in production, use Redis)
-otp_storage = {}
+# Email OTP storage (replaces mobile OTP)
+email_otp_storage = {}
 
 # Validate required environment variables
 def check_environment_variables():
@@ -111,119 +111,104 @@ def check_environment_variables():
 # Call this during startup
 check_environment_variables()
 
-# MSG91 SMS Functions
-def send_sms_otp(mobile_no, otp):
-    """Send OTP via MSG91 using Promotional route (₹0.20/SMS)"""
+# Email OTP Functions
+def send_otp_email(email, otp):
+    """Send OTP to user's email"""
     try:
-        print(f"🚀 STARTING PROMOTIONAL OTP SEND")
-        print(f"📱 Target Mobile: +91{mobile_no}")
-        print(f"🔑 OTP to send: {otp}")
-        
-        # Check configuration
-        if not MSG91_AUTH_KEY:
-            print("❌ CRITICAL: MSG91_AUTH_KEY is not set!")
-            return False
-            
-        if not MSG91_TEMPLATE_ID:
-            print("❌ CRITICAL: MSG91_TEMPLATE_ID is not set!")
+        if not EMAIL_USER or not EMAIL_PASSWORD:
+            logger.error("Email configuration not set - cannot send OTP email")
+            print("❌ Email configuration missing - check environment variables")
             return False
         
-        print(f"✅ Configuration check passed")
-        print(f"   Auth Key: {MSG91_AUTH_KEY[:10]}...{MSG91_AUTH_KEY[-4:]}")
-        print(f"   Template ID: {MSG91_TEMPLATE_ID}")
-        print(f"   Sender ID: {MSG91_SENDER_ID}")
+        print(f"🚀 Sending OTP email to: {email}")
         
-        # MSG91 Flow API for promotional messages (route 1 - promotional)
-        url = "https://control.msg91.com/api/v5/flow/"
+        # Create message
+        msg = MIMEMultipart('alternative')
+        msg['From'] = f"Architect Johan <{EMAIL_USER}>"
+        msg['To'] = email
+        msg['Subject'] = "Architect Johan - Email Verification OTP"
         
-        # Payload for promotional flow
-        payload = {
-            "flow_id": MSG91_TEMPLATE_ID,  # Using flow_id instead of template_id
-            "sender": MSG91_SENDER_ID,
-            "mobiles": f"91{mobile_no}",
-            "OTP": otp  # Variable for OTP in your template
-        }
-        
-        headers = {
-            "authkey": MSG91_AUTH_KEY,
-            "Content-Type": "application/json",
-            "accept": "application/json"
-        }
-        
-        print(f"📤 Sending promotional SMS via Flow API...")
-        print(f"   URL: {url}")
-        print(f"   Payload: {payload}")
-        
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
-        
-        print(f"📥 MSG91 Response Status: {response.status_code}")
-        print(f"📥 MSG91 Response Text: {response.text}")
-        
-        if response.status_code == 200:
-            response_data = response.json()
-            print(f"📥 Response JSON: {response_data}")
-            
-            if response_data.get('type') == 'success':
-                print("✅ OTP sent successfully via MSG91 Promotional Route!")
-                return True
-            else:
-                print(f"❌ MSG91 API returned error: {response_data}")
-                # Try alternative approach
-                return send_sms_otp_alternative(mobile_no, otp)
-        else:
-            print(f"❌ HTTP Error {response.status_code}")
-            # Try alternative approach
-            return send_sms_otp_alternative(mobile_no, otp)
-            
-    except Exception as e:
-        print(f"❌ Promotional route error: {str(e)}")
-        import traceback
-        print(f"❌ Traceback: {traceback.format_exc()}")
-        # Try alternative approach
-        return send_sms_otp_alternative(mobile_no, otp)
+        # Text version
+        text = f"""Architect Johan - Email Verification OTP
 
-def send_sms_otp_alternative(mobile_no, otp):
-    """Alternative method using simple SMS API with promotional route"""
-    try:
-        print(f"🔄 TRYING ALTERNATIVE PROMOTIONAL METHOD")
+Your OTP for email verification is: {otp}
+
+This OTP is valid for 5 minutes.
+
+If you didn't request this OTP, please ignore this email.
+
+--
+Architect Johan Security Team
+"""
         
-        # Alternative URL for simple SMS
-        url = "https://api.msg91.com/api/v2/sendsms"
+        # HTML version
+        html = f"""<html>
+<body>
+<h2>Architect Johan - Email Verification</h2>
+<p>Your OTP for email verification is:</p>
+<h1 style="color: #00FFB3; font-size: 32px; letter-spacing: 5px;">{otp}</h1>
+<p><strong>Valid for 5 minutes</strong></p>
+<hr>
+<p><em>If you didn't request this OTP, please ignore this email.</em></p>
+<p><em>Architect Johan Security Team</em></p>
+</body>
+</html>"""
         
-        payload = {
-            "sender": MSG91_SENDER_ID,
-            "route": "1",  # Route 1 for promotional
-            "country": "91",
-            "sms": [
-                {
-                    "message": f"Your OTP for Architect Johan is {otp}. Valid for 10 minutes.",
-                    "to": [f"91{mobile_no}"]
-                }
-            ]
-        }
+        # Attach both versions
+        part1 = MIMEText(text, 'plain')
+        part2 = MIMEText(html, 'html')
+        msg.attach(part1)
+        msg.attach(part2)
         
-        headers = {
-            "authkey": MSG91_AUTH_KEY,
-            "Content-Type": "application/json"
-        }
+        print(f"📧 OTP Email configured for: {email}")
+        print(f"🔑 OTP: {otp}")
         
-        print(f"📤 Sending via alternative promotional method...")
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
-        
-        print(f"📥 Alternative Response: {response.status_code} - {response.text}")
-        
-        if response.status_code == 200:
-            result = response.json()
-            if result.get('type') == 'success':
-                print("✅ OTP sent via alternative promotional method!")
-                return True
-        
-        return False
+        # Send email
+        server = None
+        try:
+            server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30)
+            server.set_debuglevel(1)
+            
+            print("🔧 Starting TLS...")
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            
+            print("🔑 Logging in...")
+            server.login(EMAIL_USER, EMAIL_PASSWORD)
+            
+            print("📤 Sending OTP email...")
+            server.sendmail(EMAIL_USER, email, msg.as_string())
+            print("✅ OTP email sent successfully!")
+            
+            server.quit()
+            
+            logger.info(f"OTP email sent to {email}")
+            return True
+            
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error(f"SMTP Authentication failed: {e}")
+            print(f"❌ SMTP Authentication failed - check email credentials")
+            return False
+        except smtplib.SMTPException as e:
+            logger.error(f"SMTP error: {e}")
+            print(f"❌ SMTP error: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Email sending failed: {e}")
+            print(f"❌ Email sending failed: {e}")
+            return False
+        finally:
+            if server:
+                try:
+                    server.quit()
+                except:
+                    pass
         
     except Exception as e:
-        print(f"❌ Alternative method error: {e}")
+        logger.error(f"Email configuration error: {e}")
+        print(f"❌ Email configuration error: {e}")
         return False
-
 
 def get_db_connection():
     """Get PostgreSQL database connection using psycopg3"""
@@ -759,100 +744,109 @@ def admin_required(f):
     
     return decorated
 
-# OTP Endpoints
-@app.route('/api/send-otp', methods=['POST'])
-def send_otp():
+# Email OTP Endpoints
+@app.route('/api/send-email-otp', methods=['POST'])
+def send_email_otp():
     try:
         data = request.get_json()
-        mobile_no = data.get('mobile_no', '').replace('+91', '')
+        email = data.get('email', '').strip().lower()
         
-        print(f"🔍 OTP Request for: {mobile_no}")
+        print(f"🔍 EMAIL OTP REQUEST: {email}")
         
-        # Validate Indian mobile number
-        if not re.match(r'^[6-9]\d{9}$', mobile_no):
-            return jsonify({'error': 'Invalid Indian mobile number. Must start with 6-9 and be 10 digits.'}), 400
+        # Validate email format
+        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            return jsonify({'error': 'Invalid email format'}), 400
+        
+        # Enhanced Gmail validation
+        gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
+        if not re.match(gmail_regex, email):
+            return jsonify({'error': 'Only Gmail accounts are allowed. Please use a valid Gmail address ending with @gmail.com'}), 400
+        
+        # Check if email already exists
+        existing_user = get_user_by_email(email)
+        if existing_user:
+            return jsonify({'error': 'Email address is already registered. Please use a different email or try logging in.'}), 400
         
         # Generate 6-digit OTP
         otp = str(random.randint(100000, 999999))
         
-        # Store OTP with expiry (10 minutes)
-        otp_storage[mobile_no] = {
+        # Store OTP with expiry (5 minutes)
+        email_otp_storage[email] = {
             'otp': otp,
-            'expiry': datetime.datetime.now(timezone.utc) + datetime.timedelta(minutes=10),
+            'expiry': datetime.datetime.now(timezone.utc) + datetime.timedelta(minutes=5),
             'attempts': 0,
             'verified': False
         }
         
-        print(f"🔐 Generated OTP for {mobile_no}: {otp}")
+        print(f"🔐 Generated Email OTP for {email}: {otp}")
         
-        # Try to send SMS via promotional route
-        sms_sent = send_sms_otp(mobile_no, otp)
+        # Send OTP via email
+        email_sent = send_otp_email(email, otp)
         
-        # ALWAYS return success with OTP
         response_data = {
             'success': True,
-            'message': 'OTP generated successfully!',
-            'otp': otp,  # Always include OTP
-            'mobile': f'+91{mobile_no}',
-            'sms_delivered': sms_sent
+            'message': 'OTP sent to your email successfully!',
+            'otp': otp,  # Include for testing/demo
+            'email': email,
+            'email_delivered': email_sent
         }
         
-        if not sms_sent:
-            response_data['note'] = 'SMS delivery might be delayed. Use the OTP shown below.'
+        if not email_sent:
+            response_data['note'] = 'Email delivery might be delayed. Use the OTP shown below for testing.'
         
         return jsonify(response_data), 200
             
     except Exception as e:
-        logger.error(f"OTP sending error: {e}")
-        return jsonify({'error': 'Failed to generate OTP'}), 500
+        logger.error(f"Email OTP sending error: {e}")
+        return jsonify({'error': 'Failed to send OTP email'}), 500
 
-@app.route('/api/verify-otp', methods=['POST'])
-def verify_otp():
+@app.route('/api/verify-email-otp', methods=['POST'])
+def verify_email_otp():
     try:
         data = request.get_json()
-        mobile_no = data.get('mobile_no', '').replace('+91', '')
+        email = data.get('email', '').strip().lower()
         otp_attempt = data.get('otp', '').strip()
         
-        print(f"🔍 OTP Verification for: {mobile_no}")
+        print(f"🔍 EMAIL OTP VERIFICATION: {email}")
         print(f"🔑 Attempted OTP: {otp_attempt}")
         
         # Check if OTP exists
-        if mobile_no not in otp_storage:
-            print(f"❌ OTP not found for mobile: {mobile_no}")
+        if email not in email_otp_storage:
+            print(f"❌ OTP not found for email: {email}")
             return jsonify({'error': 'OTP not found or expired. Please request a new OTP.'}), 400
         
-        otp_data = otp_storage[mobile_no]
+        otp_data = email_otp_storage[email]
         print(f"📋 Stored OTP data: {otp_data}")
         
-        # Check expiry - FIXED LINE
+        # Check expiry
         if datetime.datetime.now(timezone.utc) > otp_data['expiry']:
-            del otp_storage[mobile_no]
-            print(f"❌ OTP expired for: {mobile_no}")
+            del email_otp_storage[email]
+            print(f"❌ OTP expired for: {email}")
             return jsonify({'error': 'OTP has expired. Please request a new OTP.'}), 400
         
         # Check attempts
         if otp_data['attempts'] >= 3:
-            del otp_storage[mobile_no]
-            print(f"❌ Too many attempts for: {mobile_no}")
+            del email_otp_storage[email]
+            print(f"❌ Too many attempts for: {email}")
             return jsonify({'error': 'Too many failed attempts. Please request a new OTP.'}), 400
         
         # Verify OTP
         if otp_attempt == otp_data['otp']:
-            # Mark mobile as verified
-            otp_storage[mobile_no]['verified'] = True
-            otp_storage[mobile_no]['verified_at'] = datetime.datetime.now(timezone.utc)  # FIXED LINE
+            # Mark email as verified
+            email_otp_storage[email]['verified'] = True
+            email_otp_storage[email]['verified_at'] = datetime.datetime.now(timezone.utc)
             
-            print(f"✅ OTP verified successfully for: {mobile_no}")
+            print(f"✅ Email OTP verified successfully for: {email}")
             
             return jsonify({
                 'success': True,
-                'message': 'Mobile number verified successfully',
-                'mobile': f'+91{mobile_no}'
+                'message': 'Email verified successfully',
+                'email': email
             }), 200
         else:
-            otp_storage[mobile_no]['attempts'] += 1
+            email_otp_storage[email]['attempts'] += 1
             remaining_attempts = 3 - otp_data['attempts']
-            print(f"❌ Invalid OTP for: {mobile_no}. Attempts: {otp_data['attempts']}")
+            print(f"❌ Invalid OTP for: {email}. Attempts: {otp_data['attempts']}")
             
             return jsonify({
                 'error': f'Invalid OTP. {remaining_attempts} attempts remaining',
@@ -860,134 +854,31 @@ def verify_otp():
             }), 400
             
     except Exception as e:
-        logger.error(f"OTP verification error: {e}")
-        print(f"💥 OTP verification exception: {str(e)}")
-        return jsonify({'error': 'OTP verification failed'}), 500
+        logger.error(f"Email OTP verification error: {e}")
+        print(f"💥 Email OTP verification exception: {str(e)}")
+        return jsonify({'error': 'Email OTP verification failed'}), 500
 
-@app.route('/api/check-otp-status', methods=['POST'])
-def check_otp_status():
-    """Check if mobile number is verified"""
+@app.route('/api/check-email-otp-status', methods=['POST'])
+def check_email_otp_status():
+    """Check if email is verified"""
     try:
         data = request.get_json()
-        mobile_no = data.get('mobile_no', '').replace('+91', '')
+        email = data.get('email', '').strip().lower()
         
-        if mobile_no in otp_storage and otp_storage[mobile_no].get('verified'):
+        if email in email_otp_storage and email_otp_storage[email].get('verified'):
             return jsonify({
                 'verified': True,
-                'mobile': f'+91{mobile_no}'
+                'email': email
             }), 200
         else:
             return jsonify({
                 'verified': False,
-                'mobile': f'+91{mobile_no}'
+                'email': email
             }), 200
             
     except Exception as e:
-        logger.error(f"OTP status check error: {e}")
+        logger.error(f"Email OTP status check error: {e}")
         return jsonify({'error': 'Status check failed'}), 500
-
-# Debug endpoints
-@app.route('/api/debug-login', methods=['POST'])
-def debug_login():
-    try:
-        data = request.get_json()
-        print("🔍 DEBUG LOGIN REQUEST:")
-        print(f"   Username: {data.get('username')}")
-        print(f"   Password Length: {len(data.get('password', ''))}")
-        
-        # Test database connection
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({'error': 'Database connection failed'}), 500
-            
-        with conn.cursor() as cursor:
-            # Check database info
-            cursor.execute("SELECT current_database(), current_user")
-            db_info = cursor.fetchone()
-            print(f"   Database Info: {db_info}")
-            
-            # Check if user exists
-            username = data.get('username')
-            cursor.execute('SELECT username, email, role, failed_attempts, locked_until FROM users WHERE username = %s', (username,))
-            user = cursor.fetchone()
-            print(f"   User Found: {bool(user)}")
-            
-            user_data = None
-            if user:
-                user_data = dict(user)
-                print(f"   User Details: {user_data}")
-                
-                # Check password hash format
-                cursor.execute('SELECT password_hash FROM users WHERE username = %s', (username,))
-                pwd_result = cursor.fetchone()
-                if pwd_result:
-                    pwd_hash = pwd_result['password_hash']
-                    print(f"   Password Hash: {pwd_hash[:50]}...")
-                    print(f"   Hash Length: {len(pwd_hash)}")
-                    print(f"   Is BCrypt: {pwd_hash.startswith('$2b$')}")
-        
-        conn.close()
-        
-        return jsonify({
-            'database_connected': True,
-            'db_info': db_info,
-            'user_exists': bool(user),
-            'user_data': user_data,
-            'server_time': datetime.datetime.utcnow().isoformat()
-        }), 200
-        
-    except Exception as e:
-        print(f"❌ DEBUG LOGIN ERROR: {e}")
-        import traceback
-        print(f"❌ TRACEBACK: {traceback.format_exc()}")
-        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
-
-@app.route('/api/test-user/<username>', methods=['GET'])
-def test_user(username):
-    """Test if a user exists in the database"""
-    try:
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({'error': 'No database connection'}), 500
-            
-        with conn.cursor() as cursor:
-            cursor.execute('SELECT username, email, role, created_at FROM users WHERE username = %s', (username,))
-            user = cursor.fetchone()
-        
-        conn.close()
-        
-        return jsonify({
-            'user_exists': bool(user),
-            'user_data': dict(user) if user else None
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# Database Initialization Route
-@app.route('/create-db')
-def create_db_route():
-    """Initialize database tables"""
-    try:
-        success = init_db()
-        
-        if success:
-            return jsonify({
-                'success': True,
-                'message': 'Database tables created successfully! Admin user created.'
-            }), 200
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Failed to create database tables'
-            }), 500
-            
-    except Exception as e:
-        logger.error(f"Database creation error: {e}")
-        return jsonify({
-            'success': False,
-            'error': f'Database creation failed: {str(e)}'
-        }), 500
 
 # Authentication Routes
 @app.route('/api/signup', methods=['POST'])
@@ -996,7 +887,7 @@ def signup():
         data = request.get_json()
         
         # Validate required fields
-        required_fields = ['username', 'full_name', 'email', 'password', 'confirm_password', 'mobile_no']
+        required_fields = ['username', 'full_name', 'email', 'password', 'confirm_password']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'Missing required field: {field}'}), 400
@@ -1025,7 +916,7 @@ def signup():
             return jsonify({'error': 'Password must contain at least one special character'}), 400
         
         # Validate email - Gmail only
-        email = data['email'].strip().lower()  # Normalize email
+        email = data['email'].strip().lower()
         
         # Gmail validation
         gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
@@ -1042,15 +933,9 @@ def signup():
         if email_domain in disposable_domains:
             return jsonify({'error': 'Temporary/disposable email addresses are not allowed. Please use your personal Gmail account.'}), 400
         
-        # Validate mobile number
-        mobile_no = data['mobile_no']
-        mobile_digits = mobile_no.replace('+91', '')
-        if not re.match(r'^[6-9]\d{9}$', mobile_digits):
-            return jsonify({'error': 'Invalid Indian mobile number. Must start with 6-9 and be 10 digits.'}), 400
-        
-        # Check mobile verification
-        if mobile_digits not in otp_storage or not otp_storage[mobile_digits].get('verified'):
-            return jsonify({'error': 'Mobile number not verified. Please complete OTP verification.'}), 400
+        # Check email verification
+        if email not in email_otp_storage or not email_otp_storage[email].get('verified'):
+            return jsonify({'error': 'Email not verified. Please complete OTP verification.'}), 400
         
         # Validate username
         username = data['username'].strip()
@@ -1088,14 +973,14 @@ def signup():
             'full_name': data['full_name'].strip(),
             'email': email,
             'password_hash': password_hash.decode('utf-8'),
-            'mobile_no': mobile_no,
+            'mobile_no': '0000000000',  # Default value since mobile is removed
             'role': 'user'
         }
         
         if create_user(user_data):
             # Clear OTP verification after successful signup
-            if mobile_digits in otp_storage:
-                del otp_storage[mobile_digits]
+            if email in email_otp_storage:
+                del email_otp_storage[email]
             
             # Log signup activity
             log_user_activity(username, 'signup', request.remote_addr, request.headers.get('User-Agent'))
@@ -1731,276 +1616,6 @@ def debug_db():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
-# Test exam passwords endpoint
-@app.route('/api/test-exam-passwords', methods=['GET'])
-def test_exam_passwords():
-    """Test endpoint to check exam passwords"""
-    exam_passwords = {
-        'exam_level_1': 'Arch1t3ch_Joh@N!X#Exam1_2025',
-        'exam_level_2': 'Arch1t3ch_Joh@N!X#Exam2_2025',
-        'exam_level_3': 'Arch1t3ch_Joh@N!X#Exam3_2025',
-        'exam_level_4': 'Arch1t3ch_Joh@N!X#Exam4_2025',
-        'exam_level_5': 'Arch1t3ch_Joh@N!X#Exam5_2025',
-        'exam_level_6': 'Arch1t3ch_Joh@N!X#Exam6_2025'
-    }
-    return jsonify({
-        'exam_passwords': exam_passwords,
-        'status': 'active',
-        'endpoint': '/api/verify-exam-level-password'
-    }), 200
-
-@app.route('/api/debug-password', methods=['POST'])
-def debug_password():
-    """Debug password verification specifically"""
-    try:
-        data = request.get_json()
-        username = data.get('username', '')
-        provided_password = data.get('password', '')
-        
-        print(f"🔍 DEBUG PASSWORD VERIFICATION:")
-        print(f"   Username: {username}")
-        print(f"   Provided Password: {provided_password}")
-        
-        # Get user from database
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({'error': 'Database connection failed'}), 500
-            
-        with conn.cursor() as cursor:
-            cursor.execute('SELECT password_hash FROM users WHERE username = %s', (username,))
-            user = cursor.fetchone()
-        
-        conn.close()
-        
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        stored_hash = user['password_hash']
-        print(f"   Stored Hash: {stored_hash}")
-        print(f"   Hash Length: {len(stored_hash)}")
-        print(f"   Is BCrypt: {stored_hash.startswith('$2b$')}")
-        
-        # Test password verification step by step
-        try:
-            if isinstance(stored_hash, str):
-                stored_hash_bytes = stored_hash.encode('utf-8')
-            else:
-                stored_hash_bytes = stored_hash
-                
-            provided_password_bytes = provided_password.encode('utf-8')
-            
-            print(f"   Stored Hash Bytes: {stored_hash_bytes[:50]}...")
-            print(f"   Provided Password Bytes: {provided_password_bytes}")
-            
-            # Test the actual bcrypt verification
-            result = bcrypt.checkpw(provided_password_bytes, stored_hash_bytes)
-            print(f"   BCrypt Result: {result}")
-            
-            return jsonify({
-                'password_match': result,
-                'hash_info': {
-                    'length': len(stored_hash),
-                    'is_bcrypt': stored_hash.startswith('$2b$'),
-                    'prefix': stored_hash[:4]
-                },
-                'verification_result': result
-            }), 200
-            
-        except Exception as bcrypt_error:
-            print(f"❌ BCrypt Error: {bcrypt_error}")
-            import traceback
-            print(f"❌ BCrypt Traceback: {traceback.format_exc()}")
-            return jsonify({
-                'bcrypt_error': str(bcrypt_error),
-                'traceback': traceback.format_exc()
-            }), 500
-        
-    except Exception as e:
-        print(f"❌ DEBUG PASSWORD ERROR: {e}")
-        import traceback
-        print(f"❌ TRACEBACK: {traceback.format_exc()}")
-        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
-
-@app.route('/api/reset-user-password', methods=['POST'])
-def reset_user_password():
-    """Temporary endpoint to reset user password for testing"""
-    try:
-        data = request.get_json()
-        username = data.get('username', '')
-        new_password = data.get('new_password', 'Arch1t3ch_Joh@N!X#2025')
-        
-        print(f"🔄 RESETTING PASSWORD FOR: {username}")
-        
-        # Hash new password
-        new_password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
-        
-        # Update user password
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({'error': 'Database connection failed'}), 500
-            
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                UPDATE users SET 
-                    password_hash = %s, 
-                    failed_attempts = 0,
-                    locked_until = NULL
-                WHERE username = %s
-            ''', (new_password_hash.decode('utf-8'), username))
-        
-        conn.commit()
-        conn.close()
-        
-        print(f"✅ Password reset for {username} to: {new_password}")
-        
-        return jsonify({
-            'success': True,
-            'message': f'Password reset to: {new_password}',
-            'new_password': new_password
-        }), 200
-        
-    except Exception as e:
-        print(f"❌ Password reset error: {e}")
-        return jsonify({'error': str(e)}), 500
-
-# Test MSG91 endpoint
-@app.route('/api/test-msg91', methods=['POST'])
-def test_msg91():
-    """Test MSG91 configuration"""
-    try:
-        data = request.get_json()
-        test_mobile = data.get('mobile_no', '9999999999').replace('+91', '')
-        
-        print(f"🧪 Testing MSG91 configuration...")
-        print(f"🔑 Auth Key: {MSG91_AUTH_KEY[:10]}...")
-        print(f"📋 Template ID: {MSG91_TEMPLATE_ID}")
-        print(f"📱 Test Mobile: {test_mobile}")
-        
-        # Test OTP sending
-        test_otp = '123456'
-        sms_sent = send_sms_otp(test_mobile, test_otp)
-        
-        return jsonify({
-            'msg91_configured': bool(MSG91_AUTH_KEY and MSG91_TEMPLATE_ID),
-            'sms_sent': sms_sent,
-            'auth_key_prefix': MSG91_AUTH_KEY[:10] + '...' if MSG91_AUTH_KEY else None,
-            'template_id': MSG91_TEMPLATE_ID,
-            'test_mobile': test_mobile
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
-
-@app.route('/api/check-msg91-status', methods=['GET'])
-def check_msg91_status():
-    """Check MSG91 configuration and test connection"""
-    try:
-        return jsonify({
-            'msg91_configured': bool(MSG91_AUTH_KEY and MSG91_TEMPLATE_ID),
-            'auth_key_exists': bool(MSG91_AUTH_KEY),
-            'template_id_exists': bool(MSG91_TEMPLATE_ID),
-            'auth_key_prefix': MSG91_AUTH_KEY[:10] + '...' if MSG91_AUTH_KEY else None,
-            'template_id': MSG91_TEMPLATE_ID,
-            'sender_id': MSG91_SENDER_ID
-        }), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    
-
-@app.route('/api/debug-msg91', methods=['GET'])
-def debug_msg91():
-    """Debug MSG91 configuration in detail"""
-    try:
-        print("🔍 DEBUGGING MSG91 CONFIGURATION")
-        print(f"📱 MSG91_AUTH_KEY: {'✅ SET' if MSG91_AUTH_KEY else '❌ NOT SET'}")
-        if MSG91_AUTH_KEY:
-            print(f"   Key: {MSG91_AUTH_KEY[:10]}...{MSG91_AUTH_KEY[-4:]}")
-            print(f"   Length: {len(MSG91_AUTH_KEY)}")
-        
-        print(f"📋 MSG91_TEMPLATE_ID: {'✅ SET' if MSG91_TEMPLATE_ID else '❌ NOT SET'}")
-        if MSG91_TEMPLATE_ID:
-            print(f"   Template: {MSG91_TEMPLATE_ID}")
-        
-        print(f"📧 MSG91_SENDER_ID: {'✅ SET' if MSG91_SENDER_ID else '❌ NOT SET'}")
-        if MSG91_SENDER_ID:
-            print(f"   Sender: {MSG91_SENDER_ID}")
-        
-        # Test MSG91 API directly
-        import requests
-        test_url = "https://control.msg91.com/api/v5/otp"
-        test_headers = {
-            "authkey": MSG91_AUTH_KEY,
-            "Content-Type": "application/json"
-        }
-        
-        print(f"🧪 Testing MSG91 API connectivity...")
-        
-        response = requests.post(test_url, json={}, headers=test_headers, timeout=10)
-        print(f"📡 MSG91 API Response: {response.status_code}")
-        
-        return jsonify({
-            'msg91_auth_key_set': bool(MSG91_AUTH_KEY),
-            'msg91_template_id_set': bool(MSG91_TEMPLATE_ID),
-            'msg91_sender_id_set': bool(MSG91_SENDER_ID),
-            'api_test_status': response.status_code,
-            'auth_key_length': len(MSG91_AUTH_KEY) if MSG91_AUTH_KEY else 0,
-            'template_id': MSG91_TEMPLATE_ID,
-            'sender_id': MSG91_SENDER_ID
-        })
-        
-    except Exception as e:
-        print(f"❌ Debug error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/debug-msg91-detailed', methods=['POST'])
-def debug_msg91_detailed():
-    """Detailed MSG91 debugging with actual SMS test"""
-    try:
-        data = request.get_json()
-        test_mobile = data.get('mobile_no', '910000000000')
-        
-        print("🔍 DETAILED MSG91 DEBUG")
-        print(f"📱 Testing with mobile: {test_mobile}")
-        
-        # Test 1: Check MSG91 balance and account status
-        balance_url = f"https://control.msg91.com/api/balance.php?authkey={MSG91_AUTH_KEY}&type=4"
-        balance_response = requests.get(balance_url)
-        
-        print(f"💰 Balance Check: {balance_response.status_code}")
-        print(f"💰 Balance Response: {balance_response.text}")
-        
-        # Test 2: Check template status
-        template_url = f"https://control.msg91.com/api/get_templates.php?authkey={MSG91_AUTH_KEY}"
-        template_response = requests.get(template_url)
-        
-        print(f"📋 Template Check: {template_response.status_code}")
-        if template_response.status_code == 200:
-            templates = template_response.json()
-            print(f"📋 Available Templates: {len(templates)}")
-            for template in templates:
-                if template.get('id') == MSG91_TEMPLATE_ID:
-                    print(f"✅ Current Template: {template}")
-        
-        # Test 3: Send actual test OTP
-        test_otp = "123456"
-        sms_result = send_sms_otp(test_mobile.replace('+91', ''), test_otp)
-        
-        return jsonify({
-            'balance_check_status': balance_response.status_code,
-            'balance_response': balance_response.text,
-            'template_check_status': template_response.status_code,
-            'template_count': len(templates) if template_response.status_code == 200 else 0,
-            'sms_test_result': sms_result,
-            'test_mobile': test_mobile,
-            'test_otp': test_otp
-        })
-        
-    except Exception as e:
-        print(f"❌ Detailed debug error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
 
 
 # Add this to your existing app.py file
@@ -2219,14 +1834,14 @@ Architect Johan Security Team
         print(f"❌ Email configuration error: {e}")
         return False
 
-# Update the signup endpoint to check email OTP verification
+# Update the signup endpoint to include mobile number and check email OTP verification
 @app.route('/api/signup', methods=['POST'])
 def signup():
     try:
         data = request.get_json()
         
         # Validate required fields
-        required_fields = ['username', 'full_name', 'email', 'password', 'confirm_password']
+        required_fields = ['username', 'full_name', 'email', 'password', 'confirm_password', 'mobile_no']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'Missing required field: {field}'}), 400
@@ -2272,6 +1887,12 @@ def signup():
         if email_domain in disposable_domains:
             return jsonify({'error': 'Temporary/disposable email addresses are not allowed. Please use your personal Gmail account.'}), 400
         
+        # Validate mobile number
+        mobile_no = data['mobile_no']
+        mobile_digits = mobile_no.replace('+91', '')
+        if not re.match(r'^[6-9]\d{9}$', mobile_digits):
+            return jsonify({'error': 'Invalid Indian mobile number. Must start with 6-9 and be 10 digits.'}), 400
+        
         # Check email verification
         if email not in email_otp_storage or not email_otp_storage[email].get('verified'):
             return jsonify({'error': 'Email not verified. Please complete OTP verification.'}), 400
@@ -2281,7 +1902,7 @@ def signup():
         if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
             return jsonify({'error': 'Username must be 3-30 characters long and contain only letters, numbers, and underscores'}), 400
         
-        # Check if username or email already exists with separate error messages
+        # Check if username, email or mobile already exists with separate error messages
         conn = get_db_connection()
         if not conn:
             return jsonify({'error': 'Database connection failed'}), 500
@@ -2294,6 +1915,10 @@ def signup():
             # Check email
             cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
             existing_email = cursor.fetchone()
+            
+            # Check mobile number
+            cursor.execute('SELECT * FROM users WHERE mobile_no = %s', (mobile_no,))
+            existing_mobile = cursor.fetchone()
         
         conn.close()
         
@@ -2302,6 +1927,9 @@ def signup():
         
         if existing_email:
             return jsonify({'error': 'Email address is already registered. Please use a different email or try logging in.'}), 400
+        
+        if existing_mobile:
+            return jsonify({'error': 'Mobile number is already registered. Please use a different mobile number.'}), 400
         
         # Hash password with stronger salt rounds
         password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=12))
@@ -2312,7 +1940,7 @@ def signup():
             'full_name': data['full_name'].strip(),
             'email': email,
             'password_hash': password_hash.decode('utf-8'),
-            'mobile_no': '0000000000',  # Default value since mobile is removed
+            'mobile_no': mobile_no,
             'role': 'user'
         }
         
@@ -2351,9 +1979,3 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
-
-
-
-
-
