@@ -143,6 +143,12 @@ function validateUsername(username) {
     return usernameRegex.test(username);
 }
 
+// Validate mobile number
+function validateMobileNumber(mobileNo) {
+    const mobileRegex = /^[6-9]\d{9}$/;
+    return mobileRegex.test(mobileNo);
+}
+
 // Show error message with animation
 function showError(message) {
     const errorMessage = document.getElementById('error-message');
@@ -387,7 +393,7 @@ function checkSocialVerification() {
 // Validate form data
 function validateFormData(formData) {
     // Check required fields
-    if (!formData.username || !formData.full_name || !formData.email || !formData.password) {
+    if (!formData.username || !formData.full_name || !formData.email || !formData.mobile_no || !formData.password) {
         return { isValid: false, error: 'Please fill in all required fields' };
     }
 
@@ -420,6 +426,12 @@ function validateFormData(formData) {
     const verifiedEmail = sessionStorage.getItem('verified_email');
     if (verifiedEmail !== formData.email.toLowerCase()) {
         return { isValid: false, error: 'Email does not match verified email. Please verify the correct email.', field: 'email' };
+    }
+
+    // Validate mobile number
+    const mobileDigits = formData.mobile_no.replace('+91', '');
+    if (mobileDigits.length !== 10 || !validateMobileNumber(mobileDigits)) {
+        return { isValid: false, error: 'Please enter a valid 10-digit Indian mobile number starting with 6-9', field: 'mobile_no' };
     }
 
     // Validate password strength
@@ -494,6 +506,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Mobile number validation (only numbers)
+    const mobileInput = document.getElementById('mobile_no');
+    if (mobileInput) {
+        mobileInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            if (this.value.length > 10) {
+                this.value = this.value.slice(0, 10);
+            }
+        });
+    }
+
     // Username validation
     const usernameInput = document.getElementById('username');
     if (usernameInput) {
@@ -556,6 +579,7 @@ document.addEventListener('DOMContentLoaded', function() {
             username: sanitizeInput(document.getElementById('username').value),
             full_name: sanitizeInput(document.getElementById('full_name').value),
             email: sanitizeInput(document.getElementById('email').value).toLowerCase(),
+            mobile_no: '+91' + document.getElementById('mobile_no').value,
             password: document.getElementById('password').value,
             confirm_password: document.getElementById('confirm_password').value,
             csrf_token: csrfTokenInput.value
@@ -618,6 +642,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('email').focus();
                 } else if (errorMessage.includes('password')) {
                     document.getElementById('password').focus();
+                } else if (errorMessage.includes('mobile')) {
+                    document.getElementById('mobile_no').focus();
                 }
                 
                 showError(errorMessage);
