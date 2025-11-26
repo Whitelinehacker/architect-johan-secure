@@ -1,7 +1,237 @@
-// signup.js - Simplified without OTP verification
+// signup.js - Enhanced with real-time validation
 const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
 
-// Password strength checker
+// Validation state management
+const validationState = {
+    username: { isValid: false, message: '', checking: false },
+    email: { isValid: false, message: '', checking: false },
+    mobile: { isValid: false, message: '', checking: false }
+};
+
+// Debounce function to limit API calls
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Show validation message under input
+function showValidationMessage(inputId, message, type = 'error') {
+    // Remove existing message
+    const existingMessage = document.getElementById(`${inputId}-message`);
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+    if (!message) return;
+
+    const input = document.getElementById(inputId);
+    const formGroup = input.closest('.form-group');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.id = `${inputId}-message`;
+    messageDiv.className = `validation-message ${type}`;
+    messageDiv.textContent = message;
+    messageDiv.style.cssText = `
+        font-size: 12px;
+        margin-top: 5px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        animation: fadeIn 0.3s ease;
+    `;
+
+    if (type === 'error') {
+        messageDiv.style.cssText += `
+            color: #FF004C;
+            background: rgba(255, 0, 76, 0.1);
+            border: 1px solid rgba(255, 0, 76, 0.3);
+        `;
+        input.style.borderColor = '#FF004C';
+    } else if (type === 'success') {
+        messageDiv.style.cssText += `
+            color: #00FFB3;
+            background: rgba(0, 255, 179, 0.1);
+            border: 1px solid rgba(0, 255, 179, 0.3);
+        `;
+        input.style.borderColor = '#00FFB3';
+    } else if (type === 'loading') {
+        messageDiv.style.cssText += `
+            color: #2EC6FF;
+            background: rgba(46, 198, 255, 0.1);
+            border: 1px solid rgba(46, 198, 255, 0.3);
+        `;
+        input.style.borderColor = '#2EC6FF';
+    }
+
+    formGroup.appendChild(messageDiv);
+}
+
+// Clear validation message
+function clearValidationMessage(inputId) {
+    const messageDiv = document.getElementById(`${inputId}-message`);
+    if (messageDiv) {
+        messageDiv.remove();
+    }
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.style.borderColor = '';
+    }
+}
+
+// Check username availability
+const checkUsernameAvailability = debounce(async function(username) {
+    if (!username || username.length < 3) {
+        clearValidationMessage('username');
+        validationState.username = { isValid: false, message: '', checking: false };
+        return;
+    }
+
+    validationState.username.checking = true;
+    showValidationMessage('username', 'Checking username availability...', 'loading');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/check-username`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username })
+        });
+
+        const data = await response.json();
+
+        if (data.exists) {
+            showValidationMessage('username', 'Username already taken. Please choose another.', 'error');
+            validationState.username = { isValid: false, message: 'Username taken', checking: false };
+        } else {
+            showValidationMessage('username', '✓ Username available', 'success');
+            validationState.username = { isValid: true, message: 'Available', checking: false };
+        }
+    } catch (error) {
+        console.error('Username check error:', error);
+        showValidationMessage('username', 'Unable to verify username. Please try again.', 'error');
+        validationState.username = { isValid: false, message: 'Check failed', checking: false };
+    }
+}, 500);
+
+// Check email availability
+const checkEmailAvailability = debounce(async function(email) {
+    if (!email) {
+        clearValidationMessage('email');
+        validationState.email = { isValid: false, message: '', checking: false };
+        return;
+    }
+
+    // Enhanced Gmail validation
+    const gmailRegex = /^[a-zA-Z0-9.]+@gmail\.com$/;
+    if (!gmailRegex.test(email)) {
+        showValidationMessage('email', 'Only Gmail accounts are allowed (@gmail.com)', 'error');
+        validationState.email = { isValid: false, message: 'Invalid email', checking: false };
+        return;
+    }
+
+    validationState.email.checking = true;
+    showValidationMessage('email', 'Checking email availability...', 'loading');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/check-email`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email })
+        });
+
+        const data = await response.json();
+
+        if (data.exists) {
+            showValidationMessage('email', 'Email already registered. Please use a different email.', 'error');
+            validationState.email = { isValid: false, message: 'Email taken', checking: false };
+        } else {
+            showValidationMessage('email', '✓ Email available', 'success');
+            validationState.email = { isValid: true, message: 'Available', checking: false };
+        }
+    } catch (error) {
+        console.error('Email check error:', error);
+        showValidationMessage('email', 'Unable to verify email. Please try again.', 'error');
+        validationState.email = { isValid: false, message: 'Check failed', checking: false };
+    }
+}, 500);
+
+// Check mobile availability
+const checkMobileAvailability = debounce(async function(mobileNo) {
+    if (!mobileNo || mobileNo.length !== 10) {
+        clearValidationMessage('mobile_no');
+        validationState.mobile = { isValid: false, message: '', checking: false };
+        return;
+    }
+
+    // Validate Indian mobile format
+    const mobileRegex = /^[6-9]\d{9}$/;
+    if (!mobileRegex.test(mobileNo)) {
+        showValidationMessage('mobile_no', 'Please enter a valid 10-digit Indian mobile number', 'error');
+        validationState.mobile = { isValid: false, message: 'Invalid format', checking: false };
+        return;
+    }
+
+    validationState.mobile.checking = true;
+    showValidationMessage('mobile_no', 'Checking mobile number...', 'loading');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/check-mobile`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ mobile_no: mobileNo })
+        });
+
+        const data = await response.json();
+
+        if (data.exists) {
+            showValidationMessage('mobile_no', 'Mobile number already registered. Please use a different number.', 'error');
+            validationState.mobile = { isValid: false, message: 'Mobile taken', checking: false };
+        } else {
+            showValidationMessage('mobile_no', '✓ Mobile number available', 'success');
+            validationState.mobile = { isValid: true, message: 'Available', checking: false };
+        }
+    } catch (error) {
+        console.error('Mobile check error:', error);
+        showValidationMessage('mobile_no', 'Unable to verify mobile number. Please try again.', 'error');
+        validationState.mobile = { isValid: false, message: 'Check failed', checking: false };
+    }
+}, 500);
+
+// Check if form is valid for submission
+function isFormValid() {
+    return validationState.username.isValid && 
+           validationState.email.isValid && 
+           validationState.mobile.isValid;
+}
+
+// Update submit button state
+function updateSubmitButton() {
+    const signupBtn = document.getElementById('signup-btn');
+    if (signupBtn) {
+        if (isFormValid()) {
+            signupBtn.disabled = false;
+            signupBtn.style.opacity = '1';
+            signupBtn.style.cursor = 'pointer';
+        } else {
+            signupBtn.disabled = true;
+            signupBtn.style.opacity = '0.6';
+            signupBtn.style.cursor = 'not-allowed';
+        }
+    }
+}
+
+// Password strength checker (existing function - keep as is)
 function checkPasswordStrength(password) {
     let strength = 0;
     const requirements = {
@@ -19,7 +249,7 @@ function checkPasswordStrength(password) {
     return { strength, requirements };
 }
 
-// Update password strength indicator
+// Update password strength indicator (existing function - keep as is)
 function updatePasswordStrength(password) {
     const strengthFill = document.getElementById('strength-fill');
     const requirements = document.getElementById('password-requirements');
@@ -78,78 +308,12 @@ function updatePasswordStrength(password) {
     requirements.innerHTML = reqText;
 }
 
-// Input sanitization function
+// Input sanitization function (existing function - keep as is)
 function sanitizeInput(input) {
     return input.replace(/[<>"'`]/g, '').trim();
 }
 
-// Gmail validation function
-function validateGmail(email) {
-    const gmailRegex = /^[a-zA-Z0-9.]+@gmail\.com$/;
-    return gmailRegex.test(email);
-}
-
-// Disposable email domain check
-function isDisposableEmail(email) {
-    const disposableDomains = [
-        'tempmail.com', 'guerrillamail.com', 'mailinator.com',
-        '10minutemail.com', 'throwawaymail.com', 'fakeinbox.com',
-        'yopmail.com', 'trashmail.com', 'temp-mail.org',
-        'sharklasers.com', 'guerrillamail.biz', 'grr.la',
-        'guerrillamail.org', 'guerrillamail.net', 'guerrillamail.de',
-        'spam4.me', 'fake-mail.com', 'dispostable.com',
-        'mailnesia.com', 'getairmail.com', 'maildrop.cc'
-    ];
-    
-    const domain = email.split('@')[1].toLowerCase();
-    return disposableDomains.includes(domain);
-}
-
-// Enhanced email validation
-function validateEmailEnhanced(email) {
-    if (!email) {
-        return {
-            isValid: false,
-            error: 'Email is required'
-        };
-    }
-
-    if (!validateGmail(email)) {
-        return {
-            isValid: false,
-            error: 'Only Gmail accounts are allowed. Please use a valid Gmail address ending with @gmail.com'
-        };
-    }
-    
-    if (isDisposableEmail(email)) {
-        return {
-            isValid: false,
-            error: 'Temporary/disposable email addresses are not allowed. Please use your personal Gmail account.'
-        };
-    }
-    
-    return { isValid: true };
-}
-
-// Validate email format
-function validateEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-// Validate username format
-function validateUsername(username) {
-    const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
-    return usernameRegex.test(username);
-}
-
-// Validate mobile number
-function validateMobileNumber(mobileNo) {
-    const mobileRegex = /^[6-9]\d{9}$/;
-    return mobileRegex.test(mobileNo);
-}
-
-// Show error message with animation
+// Show error message with animation (existing function - keep as is)
 function showError(message) {
     const errorMessage = document.getElementById('error-message');
     const successMessage = document.getElementById('success-message');
@@ -162,13 +326,12 @@ function showError(message) {
     card.classList.add('shake');
     setTimeout(() => card.classList.remove('shake'), 500);
     
-    // Auto-hide error after 5 seconds
     setTimeout(() => {
         errorMessage.classList.remove('show');
     }, 5000);
 }
 
-// Show success message
+// Show success message (existing function - keep as is)
 function showSuccess(message) {
     const errorMessage = document.getElementById('error-message');
     const successMessage = document.getElementById('success-message');
@@ -178,73 +341,7 @@ function showSuccess(message) {
     errorMessage.classList.remove('show');
 }
 
-// Check social media verification
-function checkSocialVerification() {
-    const sessionVerified = sessionStorage.getItem('social_verification') === 'completed';
-    const localVerified = localStorage.getItem('social_verification');
-    
-    if (localVerified) {
-        try {
-            const status = JSON.parse(localVerified);
-            if (status.youtube && status.telegram && status.instagram) {
-                return true;
-            }
-        } catch (e) {
-            console.error('Error parsing social verification:', e);
-        }
-    }
-    
-    return sessionVerified;
-}
-
-// Validate form data
-function validateFormData(formData) {
-    // Check required fields
-    if (!formData.username || !formData.full_name || !formData.email || !formData.mobile_no || !formData.password) {
-        return { isValid: false, error: 'Please fill in all required fields' };
-    }
-
-    // Validate username
-    if (formData.username.length < 3 || formData.username.length > 30) {
-        return { isValid: false, error: 'Username must be between 3 and 30 characters long', field: 'username' };
-    }
-
-    if (!validateUsername(formData.username)) {
-        return { isValid: false, error: 'Username can only contain letters, numbers, and underscores', field: 'username' };
-    }
-
-    // Validate full name
-    if (formData.full_name.length < 2 || formData.full_name.length > 100) {
-        return { isValid: false, error: 'Full name must be between 2 and 100 characters long', field: 'full_name' };
-    }
-
-    // Enhanced Gmail validation
-    const emailValidation = validateEmailEnhanced(formData.email);
-    if (!emailValidation.isValid) {
-        return { isValid: false, error: emailValidation.error, field: 'email' };
-    }
-
-    // Validate mobile number
-    const mobileDigits = formData.mobile_no.replace('+91', '');
-    if (mobileDigits.length !== 10 || !validateMobileNumber(mobileDigits)) {
-        return { isValid: false, error: 'Please enter a valid 10-digit Indian mobile number starting with 6-9', field: 'mobile_no' };
-    }
-
-    // Validate password strength
-    const passwordStrength = checkPasswordStrength(formData.password);
-    if (passwordStrength.strength < 3) {
-        return { isValid: false, error: 'Password is too weak. Please include uppercase letters, lowercase letters, numbers, and special characters', field: 'password' };
-    }
-
-    // Check password confirmation
-    if (formData.password !== formData.confirm_password) {
-        return { isValid: false, error: 'Passwords do not match', field: 'confirm_password' };
-    }
-
-    return { isValid: true };
-}
-
-// Get CSRF Token function
+// Get CSRF Token function (existing function - keep as is)
 async function getCSRFToken() {
     try {
         const response = await fetch(`${API_BASE_URL}/api/csrf-token`);
@@ -255,15 +352,29 @@ async function getCSRFToken() {
         return data.csrf_token;
     } catch (error) {
         console.error('Error fetching CSRF token:', error);
-        // Generate a fallback token if the API fails
         return 'fallback-csrf-token-' + Math.random().toString(36).substring(2);
     }
 }
 
 // Main signup functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if user completed social verification
-    if (!checkSocialVerification()) {
+    // Check social verification (existing code - keep as is)
+    const sessionVerified = sessionStorage.getItem('social_verification') === 'completed';
+    const localVerified = localStorage.getItem('social_verification');
+    
+    let socialVerified = sessionVerified;
+    if (localVerified) {
+        try {
+            const status = JSON.parse(localVerified);
+            if (status.youtube && status.telegram && status.instagram) {
+                socialVerified = true;
+            }
+        } catch (e) {
+            console.error('Error parsing social verification:', e);
+        }
+    }
+    
+    if (!socialVerified) {
         showError('Please complete social media verification first. Redirecting to gateway...');
         setTimeout(() => {
             window.location.href = 'gateway.html';
@@ -273,8 +384,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const signupForm = document.getElementById('signup-form');
     const signupBtn = document.getElementById('signup-btn');
-    const errorMessage = document.getElementById('error-message');
-    const successMessage = document.getElementById('success-message');
     const csrfTokenInput = document.getElementById('csrf_token');
 
     // Get CSRF token on page load
@@ -288,16 +397,74 @@ document.addEventListener('DOMContentLoaded', function() {
         showError('Security token initialization failed. Please refresh the page.');
     });
 
-    // Password strength real-time feedback
+    // Real-time validation event listeners
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    const mobileInput = document.getElementById('mobile_no');
     const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirm_password');
+
+    // Username validation
+    if (usernameInput) {
+        usernameInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^a-zA-Z0-9_]/g, '');
+            const username = this.value.trim();
+            checkUsernameAvailability(username);
+            updateSubmitButton();
+        });
+
+        usernameInput.addEventListener('blur', function() {
+            const username = this.value.trim();
+            if (username && !validationState.username.checking) {
+                checkUsernameAvailability(username);
+            }
+        });
+    }
+
+    // Email validation
+    if (emailInput) {
+        emailInput.addEventListener('input', function() {
+            const email = this.value.trim().toLowerCase();
+            checkEmailAvailability(email);
+            updateSubmitButton();
+        });
+
+        emailInput.addEventListener('blur', function() {
+            const email = this.value.trim().toLowerCase();
+            if (email && !validationState.email.checking) {
+                checkEmailAvailability(email);
+            }
+        });
+    }
+
+    // Mobile validation
+    if (mobileInput) {
+        mobileInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            if (this.value.length > 10) {
+                this.value = this.value.slice(0, 10);
+            }
+            const mobileNo = this.value;
+            checkMobileAvailability(mobileNo);
+            updateSubmitButton();
+        });
+
+        mobileInput.addEventListener('blur', function() {
+            const mobileNo = this.value;
+            if (mobileNo && mobileNo.length === 10 && !validationState.mobile.checking) {
+                checkMobileAvailability(mobileNo);
+            }
+        });
+    }
+
+    // Password strength (existing code - keep as is)
     if (passwordInput) {
         passwordInput.addEventListener('input', function() {
             updatePasswordStrength(this.value);
         });
     }
 
-    // Password confirmation validation
-    const confirmPasswordInput = document.getElementById('confirm_password');
+    // Password confirmation (existing code - keep as is)
     if (confirmPasswordInput) {
         confirmPasswordInput.addEventListener('input', function() {
             const password = document.getElementById('password').value;
@@ -308,53 +475,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.style.borderColor = '#00FFB3';
                 this.setCustomValidity('');
             }
-        });
-    }
-
-    // Mobile number validation (only numbers)
-    const mobileInput = document.getElementById('mobile_no');
-    if (mobileInput) {
-        mobileInput.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-            if (this.value.length > 10) {
-                this.value = this.value.slice(0, 10);
-            }
-        });
-    }
-
-    // Username validation
-    const usernameInput = document.getElementById('username');
-    if (usernameInput) {
-        usernameInput.addEventListener('input', function() {
-            this.value = this.value.replace(/[^a-zA-Z0-9_]/g, '');
-        });
-    }
-
-    // Real-time email validation with Gmail check
-    const emailInput = document.getElementById('email');
-    if (emailInput) {
-        emailInput.addEventListener('input', function() {
-            // Real-time Gmail validation
-            if (this.value && !this.value.endsWith('@gmail.com')) {
-                this.style.borderColor = '#FF8A00';
-            } else if (this.value) {
-                this.style.borderColor = '#00FFB3';
-            }
-        });
-        
-        emailInput.addEventListener('blur', function() {
-            if (this.value) {
-                const emailValidation = validateEmailEnhanced(this.value);
-                if (!emailValidation.isValid) {
-                    this.style.borderColor = '#FF004C';
-                    showError(emailValidation.error);
-                } else if (!validateEmail(this.value)) {
-                    this.style.borderColor = '#FF004C';
-                    showError('Please enter a valid email address');
-                } else {
-                    this.style.borderColor = '#00FFB3';
-                }
-            }
+            updateSubmitButton();
         });
     }
 
@@ -362,7 +483,13 @@ document.addEventListener('DOMContentLoaded', function() {
     signupForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        // Get fresh CSRF token for each submission
+        // Final validation check
+        if (!isFormValid()) {
+            showError('Please fix validation errors before submitting.');
+            return;
+        }
+
+        // Get fresh CSRF token
         const freshCSRFToken = await getCSRFToken();
         csrfTokenInput.value = freshCSRFToken;
         
@@ -377,21 +504,9 @@ document.addEventListener('DOMContentLoaded', function() {
             csrf_token: freshCSRFToken
         };
 
-        // Validate form data
-        const validation = validateFormData(formData);
-        if (!validation.isValid) {
-            showError(validation.error);
-            if (validation.field) {
-                document.getElementById(validation.field).focus();
-            }
-            return;
-        }
-
         // Update UI for loading state
         signupBtn.disabled = true;
         signupBtn.innerHTML = '<span class="btn-text">Creating Secure Account...</span>';
-        
-        // Add loading animation to button
         signupBtn.classList.add('loading');
 
         try {
@@ -412,47 +527,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Clear social verification status
                 sessionStorage.removeItem('social_verification');
                 
-                // Log successful signup attempt
                 console.log('User registration successful:', formData.username);
                 
-                // Redirect to login page after delay
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 2000);
             } else {
-                // Handle specific error messages
                 let errorMessage = data.error || 'Registration failed';
-                
-                // Provide specific guidance based on error type
-                if (errorMessage.includes('username') || errorMessage.includes('Username')) {
-                    errorMessage += ' Please choose a different username.';
-                    document.getElementById('username').focus();
-                } else if (errorMessage.includes('email') || errorMessage.includes('Email')) {
-                    errorMessage += ' Please use a different Gmail or try logging in.';
-                    document.getElementById('email').focus();
-                } else if (errorMessage.includes('password')) {
-                    document.getElementById('password').focus();
-                } else if (errorMessage.includes('mobile')) {
-                    document.getElementById('mobile_no').focus();
-                }
-                
                 showError(errorMessage);
-                
-                // Log failed signup attempt
                 console.warn('User registration failed:', errorMessage);
             }
         } catch (error) {
             console.error('Signup network error:', error);
             showError('Network error. Please check your internet connection and try again.');
         } finally {
-            // Reset UI state
             signupBtn.disabled = false;
             signupBtn.innerHTML = '<span class="btn-text">Create Secure Account</span>';
             signupBtn.classList.remove('loading');
+            updateSubmitButton();
         }
     });
 
-    // Auto-advance to next field on Enter key
+    // Initialize submit button state
+    updateSubmitButton();
+
+    // Auto-advance to next field on Enter key (existing code - keep as is)
     const inputs = document.querySelectorAll('input');
     inputs.forEach((input, index) => {
         input.addEventListener('keypress', function(e) {
@@ -461,14 +560,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (index < inputs.length - 1) {
                     inputs[index + 1].focus();
                 } else {
-                    // If last input, submit form
                     signupForm.dispatchEvent(new Event('submit'));
                 }
             }
         });
     });
 
-    // Input focus effects
+    // Input focus effects (existing code - keep as is)
     inputs.forEach(input => {
         input.addEventListener('focus', function() {
             this.parentElement.classList.add('focused');
@@ -482,34 +580,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-focus on first input
     document.getElementById('username').focus();
 
-    // Add security logging
-    console.log('Secure signup page initialized:', new Date().toISOString());
+    console.log('Secure signup page with real-time validation initialized:', new Date().toISOString());
 });
 
-// Additional security features
+// Additional security features (existing code - keep as is)
 window.addEventListener('beforeunload', function() {
-    // Clear sensitive data from memory
     const passwordInputs = document.querySelectorAll('input[type="password"]');
     passwordInputs.forEach(input => {
         input.value = '';
     });
 });
 
-// Prevent form resubmission on page refresh
 if (window.history.replaceState) {
     window.history.replaceState(null, null, window.location.href);
-}
-
-// Export functions for testing (if needed)
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        checkPasswordStrength,
-        validateEmail,
-        validateUsername,
-        validateEmailEnhanced,
-        validateGmail,
-        isDisposableEmail,
-        sanitizeInput,
-        validateFormData
-    };
 }
