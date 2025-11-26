@@ -644,6 +644,48 @@ def get_csrf_token():
         logger.error(f"CSRF token generation error: {e}")
         return jsonify({'error': 'Failed to generate CSRF token'}), 500
 
+# VALIDATE TOKEN ROUTE - ADD THIS ENDPOINT
+@app.route('/api/validate-token', methods=['POST'])
+def validate_token():
+    """Validate JWT token"""
+    try:
+        token = request.headers.get('Authorization')
+        
+        if not token:
+            return jsonify({'error': 'Token is missing'}), 401
+        
+        if token.startswith('Bearer '):
+            token = token[7:]
+        
+        # Decode and verify the token
+        data = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        username = data['username']
+        
+        # Check if user exists and is active
+        user = get_user_by_username(username)
+        if not user:
+            return jsonify({'error': 'User not found'}), 401
+        
+        if user.get('locked_until'):
+            locked_until = user['locked_until']
+            if datetime.datetime.utcnow() < locked_until:
+                return jsonify({'error': 'Account temporarily locked'}), 423
+        
+        return jsonify({
+            'valid': True,
+            'username': username,
+            'role': user['role'],
+            'message': 'Token is valid'
+        }), 200
+        
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token has expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+    except Exception as e:
+        logger.error(f"Token validation error: {e}")
+        return jsonify({'error': 'Token validation failed'}), 500
+
 # Authentication Routes
 @app.route('/api/signup', methods=['POST'])
 def signup():
@@ -897,9 +939,181 @@ def login():
         logger.error(f"Login error: {e}")
         return jsonify({'error': 'Login failed due to server error'}), 500
 
-# ... (keep all other existing routes like forgot-password, reset-password, etc.)
+# PRACTICE SET PASSWORD VERIFICATION
+@app.route('/api/verify-practice-password', methods=['POST'])
+@token_required
+def verify_practice_password(current_user):
+    """Verify password for practice set access"""
+    try:
+        data = request.get_json()
+        password = data.get('password')
+        practice_set = data.get('practice_set')
+        
+        if not password or not practice_set:
+            return jsonify({'error': 'Password and practice set are required'}), 400
+        
+        # Check if practice set exists
+        if practice_set in PRACTICE_PASSWORDS:
+            expected_password = PRACTICE_PASSWORDS[practice_set]
+            
+            if password == expected_password:
+                # Log successful access
+                log_practice_access(current_user, practice_set, request.remote_addr, 'success')
+                
+                # Determine redirect URL based on practice set
+                if practice_set == 'practice_set_1':
+                    redirect_url = 'practic_set.html'
+                else:
+                    redirect_url = f'{practice_set}.html'
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Password verified successfully',
+                    'redirect_url': redirect_url
+                }), 200
+            else:
+                # Log failed attempt
+                log_practice_access(current_user, practice_set, request.remote_addr, 'failed')
+                return jsonify({'error': 'Incorrect password'}), 401
+        else:
+            return jsonify({'error': 'Invalid practice set'}), 404
+            
+    except Exception as e:
+        logger.error(f"Practice password verification error: {e}")
+        return jsonify({'error': 'Password verification failed'}), 500
 
-# File serving routes and other existing routes remain the same
+# FORGOT PASSWORD ROUTES
+@app.route('/api/forgot-password', methods=['POST'])
+def forgot_password():
+    """Send password reset email"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        
+        # Find user by email
+        user = get_user_by_email(email)
+        if not user:
+            # Don't reveal whether email exists
+            return jsonify({
+                'message': 'If the email exists, a password reset link has been sent.'
+            }), 200
+        
+        # Generate reset token
+        reset_token = secrets.token_urlsafe(32)
+        reset_token_expiry = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        
+        # Update user with reset token
+        user['reset_token'] = reset_token
+        user['reset_token_expiry'] = reset_token_expiry
+        update_user(user)
+        
+        # Send reset email
+        email_sent = send_password_reset_email(email, reset_token)
+        
+        if email_sent:
+            log_user_activity(user['username'], 'password_reset_requested', request.remote_addr, request.headers.get('User-Agent'))
+            return jsonify({
+                'message': 'If the email exists, a password reset link has been sent.'
+            }), 200
+        else:
+            return jsonify({'error': 'Failed to send reset email. Please try again later.'}), 500
+            
+    except Exception as e:
+        logger.error(f"Forgot password error: {e}")
+        return jsonify({'error': 'Password reset request failed'}), 500
+
+@app.route('/api/reset-password', methods=['POST'])
+def reset_password():
+    """Reset password using reset token"""
+    try:
+        data = request.get_json()
+        reset_token = data.get('reset_token')
+        new_password = data.get('new_password')
+        confirm_password = data.get('confirm_password')
+        
+        if not all([reset_token, new_password, confirm_password]):
+            return jsonify({'error': 'All fields are required'}), 400
+        
+        if new_password != confirm_password:
+            return jsonify({'error': 'Passwords do not match'}), 400
+        
+        # Validate password strength
+        if len(new_password) < 8:
+            return jsonify({'error': 'Password must be at least 8 characters long'}), 400
+        
+        # Find user by reset token
+        user = get_user_by_reset_token(reset_token)
+        if not user:
+            return jsonify({'error': 'Invalid or expired reset token'}), 400
+        
+        # Check if token is expired
+        if user['reset_token_expiry'] < datetime.datetime.utcnow():
+            return jsonify({'error': 'Reset token has expired'}), 400
+        
+        # Hash new password
+        new_password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+        
+        # Update user password and clear reset token
+        user['password_hash'] = new_password_hash.decode('utf-8')
+        user['reset_token'] = None
+        user['reset_token_expiry'] = None
+        user['failed_attempts'] = 0
+        user['locked_until'] = None
+        
+        if update_user(user):
+            log_user_activity(user['username'], 'password_reset_success', request.remote_addr, request.headers.get('User-Agent'))
+            return jsonify({
+                'message': 'Password reset successfully. You can now login with your new password.'
+            }), 200
+        else:
+            return jsonify({'error': 'Failed to reset password'}), 500
+            
+    except Exception as e:
+        logger.error(f"Reset password error: {e}")
+        return jsonify({'error': 'Password reset failed'}), 500
+
+# TRACK ACCESS ROUTE
+@app.route('/api/track-access', methods=['POST'])
+@token_required
+def track_access(current_user):
+    """Track user access to different sections"""
+    try:
+        data = request.get_json()
+        section = data.get('section')
+        course = data.get('course')
+        
+        log_user_activity(current_user, f'accessed_{section}', request.remote_addr, request.headers.get('User-Agent'))
+        
+        return jsonify({
+            'success': True,
+            'message': 'Access tracked successfully'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Access tracking error: {e}")
+        return jsonify({'error': 'Access tracking failed'}), 500
+
+# LOGOUT ROUTE
+@app.route('/api/logout', methods=['POST'])
+@token_required
+def logout(current_user):
+    """Logout user and invalidate token"""
+    try:
+        log_user_activity(current_user, 'logout', request.remote_addr, request.headers.get('User-Agent'))
+        
+        return jsonify({
+            'success': True,
+            'message': 'Logged out successfully'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Logout error: {e}")
+        return jsonify({'error': 'Logout failed'}), 500
+
+# FILE SERVING ROUTES
 @app.route('/')
 def serve_index():
     return send_from_directory('../frontend', 'index.html')
@@ -930,7 +1144,76 @@ def serve_downloads(filename):
 def serve_reset_password():
     return send_from_directory('../frontend', 'reset-password.html')
 
-# ... (all other existing practice and exam routes remain the same)
+# HEALTH CHECK ENDPOINT
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.datetime.utcnow().isoformat(),
+        'database': 'connected' if get_db_connection() else 'disconnected'
+    }), 200
+
+# DEBUG ENDPOINTS (Remove in production)
+@app.route('/api/debug-login', methods=['POST'])
+def debug_login():
+    """Debug endpoint for login analysis"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        user = get_user_by_username(username)
+        
+        return jsonify({
+            'user_exists': user is not None,
+            'username': username,
+            'stored_hash_prefix': user['password_hash'][:20] + '...' if user else None,
+            'password_length': len(password) if password else 0,
+            'server_time': datetime.datetime.utcnow().isoformat()
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/debug-password', methods=['POST'])
+def debug_password():
+    """Debug endpoint for password verification"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        user = get_user_by_username(username)
+        
+        if not user:
+            return jsonify({
+                'user_exists': False,
+                'password_match': False
+            }), 200
+        
+        password_match = verify_password(user['password_hash'], password)
+        
+        return jsonify({
+            'user_exists': True,
+            'password_match': password_match,
+            'username': username,
+            'stored_hash_type': type(user['password_hash']),
+            'stored_hash_length': len(user['password_hash']),
+            'provided_password_length': len(password)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/test-user/<username>', methods=['GET'])
+def test_user(username):
+    """Test if user exists"""
+    user = get_user_by_username(username)
+    return jsonify({
+        'user_exists': user is not None,
+        'username': username
+    }), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
