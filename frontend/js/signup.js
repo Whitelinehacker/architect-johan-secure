@@ -1,4 +1,4 @@
-// signup.js - Enhanced with Gmail validation and Email OTP verification
+// signup.js - Simplified without OTP verification
 const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
 
 // Password strength checker
@@ -178,207 +178,6 @@ function showSuccess(message) {
     errorMessage.classList.remove('show');
 }
 
-// Email OTP Management
-let emailOtpCountdown = 0;
-let emailOtpTimer = null;
-
-function startEmailOTPTimer() {
-    const sendEmailOtpBtn = document.getElementById('send-email-otp-btn');
-    const emailOtpStatus = document.getElementById('email-otp-status');
-    
-    emailOtpCountdown = 60;
-    sendEmailOtpBtn.disabled = true;
-    
-    emailOtpTimer = setInterval(() => {
-        emailOtpCountdown--;
-        sendEmailOtpBtn.textContent = `Resend OTP (${emailOtpCountdown}s)`;
-        emailOtpStatus.innerHTML = `<span style="color: #FF8A00">OTP sent! Valid for 5 minutes. Resend in ${emailOtpCountdown}s</span>`;
-        
-        if (emailOtpCountdown <= 0) {
-            clearInterval(emailOtpTimer);
-            sendEmailOtpBtn.disabled = false;
-            sendEmailOtpBtn.textContent = 'Resend OTP';
-            emailOtpStatus.innerHTML = '<span style="color: #FF004C">OTP expired. Click to resend.</span>';
-        }
-    }, 1000);
-}
-
-async function sendEmailOTP() {
-    const emailInput = document.getElementById('email');
-    const email = emailInput.value.trim().toLowerCase();
-    const sendEmailOtpBtn = document.getElementById('send-email-otp-btn');
-    const emailOtpInput = document.getElementById('email_otp');
-    const verifyEmailOtpBtn = document.getElementById('verify-email-otp-btn');
-    const emailOtpStatus = document.getElementById('email-otp-status');
-
-    // Validate email first
-    const emailValidation = validateEmailEnhanced(email);
-    if (!emailValidation.isValid) {
-        showError(emailValidation.error);
-        emailInput.focus();
-        return;
-    }
-
-    // Update UI for loading
-    sendEmailOtpBtn.disabled = true;
-    sendEmailOtpBtn.textContent = 'Sending OTP...';
-    emailOtpStatus.innerHTML = '<span style="color: #2EC6FF">Sending OTP to your email...</span>';
-
-    try {
-        console.log(`📧 Sending OTP request for: ${email}`);
-        const response = await fetch(`${API_BASE_URL}/api/send-email-otp`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: email
-            })
-        });
-
-        const data = await response.json();
-        console.log('📨 OTP Response:', data);
-
-        if (response.ok) {
-            // Show OTP input field
-            emailOtpInput.style.display = 'block';
-            verifyEmailOtpBtn.style.display = 'block';
-            emailOtpInput.value = ''; // Clear previous OTP
-            
-            // Start countdown timer
-            startEmailOTPTimer();
-            
-            // Show appropriate message based on email delivery
-            if (data.email_delivered) {
-                emailOtpStatus.innerHTML = '<span style="color: #00FFB3">✅ OTP sent to your email! Check your inbox and spam folder.</span>';
-                showSuccess('OTP sent successfully! Check your email.');
-            } else {
-                emailOtpStatus.innerHTML = `<span style="color: #FF8A00">⚠️ Email delivery issue. Use this OTP: <strong>${data.otp}</strong></span>`;
-                showError('Email delivery failed. Use the OTP shown above.');
-            }
-            
-            // Always log the OTP for testing
-            if (data.otp) {
-                console.log(`📧 OTP for testing: ${data.otp}`);
-                console.log(`📧 You can use this OTP to verify: ${data.otp}`);
-            }
-            
-        } else {
-            showError(data.error || 'Failed to send OTP');
-            sendEmailOtpBtn.disabled = false;
-            sendEmailOtpBtn.textContent = 'Send Email OTP';
-            emailOtpStatus.innerHTML = '<span style="color: #FF004C">Failed to send OTP</span>';
-        }
-    } catch (error) {
-        console.error('Email OTP sending error:', error);
-        showError('Network error. Please check your connection and try again.');
-        sendEmailOtpBtn.disabled = false;
-        sendEmailOtpBtn.textContent = 'Send Email OTP';
-        emailOtpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
-    }
-}
-
-async function verifyEmailOTP() {
-    const email = document.getElementById('email').value.trim().toLowerCase();
-    const emailOtpInput = document.getElementById('email_otp');
-    const otpValue = emailOtpInput.value;
-    const verifyEmailOtpBtn = document.getElementById('verify-email-otp-btn');
-    const emailOtpStatus = document.getElementById('email-otp-status');
-
-    if (!otpValue || otpValue.length !== 6 || !/^\d+$/.test(otpValue)) {
-        showError('Please enter a valid 6-digit OTP');
-        emailOtpInput.focus();
-        return;
-    }
-
-    // Update UI for loading
-    verifyEmailOtpBtn.disabled = true;
-    verifyEmailOtpBtn.textContent = 'Verifying...';
-    emailOtpStatus.innerHTML = '<span style="color: #2EC6FF">Verifying OTP...</span>';
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/verify-email-otp`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: email,
-                otp: otpValue
-            })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            // OTP verified successfully
-            emailOtpStatus.innerHTML = '<span style="color: #00FFB3">✅ Email verified successfully!</span>';
-            verifyEmailOtpBtn.textContent = 'Verified';
-            verifyEmailOtpBtn.disabled = true;
-            verifyEmailOtpBtn.style.background = '#00FFB3';
-            verifyEmailOtpBtn.style.color = '#02040A';
-            
-            // Store email verification status
-            sessionStorage.setItem('email_verified', 'true');
-            sessionStorage.setItem('verified_email', email);
-            sessionStorage.setItem('email_verified_at', new Date().toISOString());
-            
-            showSuccess('Email verified successfully!');
-            
-            // Clear OTP timer
-            if (emailOtpTimer) {
-                clearInterval(emailOtpTimer);
-            }
-        } else {
-            showError(data.error || 'Invalid OTP');
-            verifyEmailOtpBtn.disabled = false;
-            verifyEmailOtpBtn.textContent = 'Verify OTP';
-            
-            if (data.attempts_remaining) {
-                emailOtpStatus.innerHTML = `<span style="color: #FF004C">${data.error}</span>`;
-            } else {
-                emailOtpStatus.innerHTML = '<span style="color: #FF004C">Invalid OTP</span>';
-            }
-        }
-    } catch (error) {
-        console.error('Email OTP verification error:', error);
-        showError('Network error during OTP verification');
-        verifyEmailOtpBtn.disabled = false;
-        verifyEmailOtpBtn.textContent = 'Verify OTP';
-        emailOtpStatus.innerHTML = '<span style="color: #FF004C">Network error</span>';
-    }
-}
-
-// Check if email is already verified
-function isEmailVerified() {
-    return sessionStorage.getItem('email_verified') === 'true';
-}
-
-// Reset email OTP verification when email changes
-function resetEmailOTPVerification() {
-    const emailOtpInput = document.getElementById('email_otp');
-    const verifyEmailOtpBtn = document.getElementById('verify-email-otp-btn');
-    const emailOtpStatus = document.getElementById('email-otp-status');
-    const sendEmailOtpBtn = document.getElementById('send-email-otp-btn');
-    
-    if (emailOtpTimer) {
-        clearInterval(emailOtpTimer);
-    }
-    
-    emailOtpInput.style.display = 'none';
-    verifyEmailOtpBtn.style.display = 'none';
-    verifyEmailOtpBtn.disabled = false;
-    verifyEmailOtpBtn.textContent = 'Verify OTP';
-    verifyEmailOtpBtn.style.background = '';
-    verifyEmailOtpBtn.style.color = '';
-    sendEmailOtpBtn.disabled = false;
-    sendEmailOtpBtn.textContent = 'Send Email OTP';
-    emailOtpStatus.innerHTML = '';
-    
-    sessionStorage.removeItem('email_verified');
-    sessionStorage.removeItem('verified_email');
-}
-
 // Check social media verification
 function checkSocialVerification() {
     const sessionVerified = sessionStorage.getItem('social_verification') === 'completed';
@@ -423,17 +222,6 @@ function validateFormData(formData) {
     const emailValidation = validateEmailEnhanced(formData.email);
     if (!emailValidation.isValid) {
         return { isValid: false, error: emailValidation.error, field: 'email' };
-    }
-
-    // Check email verification
-    if (!isEmailVerified()) {
-        return { isValid: false, error: 'Please verify your email with OTP before signing up', field: 'email' };
-    }
-
-    // Check if email matches verified email
-    const verifiedEmail = sessionStorage.getItem('verified_email');
-    if (verifiedEmail !== formData.email.toLowerCase()) {
-        return { isValid: false, error: 'Email does not match verified email. Please verify the correct email.', field: 'email' };
     }
 
     // Validate mobile number
@@ -542,16 +330,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Real-time email validation with Gmail check and OTP reset
+    // Real-time email validation with Gmail check
     const emailInput = document.getElementById('email');
     if (emailInput) {
         emailInput.addEventListener('input', function() {
-            // Reset OTP verification if email changes
-            const verifiedEmail = sessionStorage.getItem('verified_email');
-            if (verifiedEmail && verifiedEmail !== this.value.toLowerCase()) {
-                resetEmailOTPVerification();
-            }
-            
             // Real-time Gmail validation
             if (this.value && !this.value.endsWith('@gmail.com')) {
                 this.style.borderColor = '#FF8A00';
@@ -572,17 +354,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     this.style.borderColor = '#00FFB3';
                 }
-            }
-        });
-    }
-
-    // Email OTP input validation
-    const emailOtpInput = document.getElementById('email_otp');
-    if (emailOtpInput) {
-        emailOtpInput.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-            if (this.value.length > 6) {
-                this.value = this.value.slice(0, 6);
             }
         });
     }
@@ -638,9 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 showSuccess(data.message || 'Account created successfully!');
                 
-                // Clear verification status
-                sessionStorage.removeItem('email_verified');
-                sessionStorage.removeItem('verified_email');
+                // Clear social verification status
                 sessionStorage.removeItem('social_verification');
                 
                 // Log successful signup attempt
@@ -744,4 +513,3 @@ if (typeof module !== 'undefined' && module.exports) {
         validateFormData
     };
 }
-
