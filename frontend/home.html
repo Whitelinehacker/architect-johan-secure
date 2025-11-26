@@ -34,7 +34,6 @@
             height: 100%;
             z-index: 1;
             opacity: 0.3;
-            filter: blur(0px); /* Ensure no blur on the canvas itself */
         }
 
         /* Navbar */
@@ -111,40 +110,6 @@
             width: 80%;
         }
 
-        /* Profile icon in navbar */
-        .profile-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid #00FFB3;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 255, 179, 0.1);
-            filter: none !important; /* Ensure no blur on profile icon */
-        }
-
-        .profile-icon:hover {
-            border-color: #2EC6FF;
-            box-shadow: 0 0 15px rgba(46, 198, 255, 0.7);
-            transform: scale(1.1);
-        }
-
-        .profile-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: none !important; /* Ensure no blur on profile image */
-        }
-
-        .profile-icon .initials {
-            font-weight: bold;
-            color: #00FFB3;
-            filter: none !important; /* Ensure no blur on initials */
-        }
-
         /* Logout button specific styles */
         .logout-btn {
             color: #FF6B6B !important;
@@ -192,7 +157,6 @@
             letter-spacing: 2px;
             color: #2EC6FF;
             text-align: center;
-            filter: none !important; /* Ensure no blur */
         }
 
         .progress-bar-container {
@@ -238,20 +202,17 @@
             font-weight: bold;
             color: #2EC6FF;
             text-shadow: 0 0 10px rgba(46, 198, 255, 0.8);
-            filter: none !important; /* Ensure no blur */
         }
 
         /* Content area */
         .content-area {
             flex: 1;
-            filter: none !important; /* Ensure no blur on content area */
         }
 
         .hero {
             text-align: center;
             margin-bottom: 80px;
             animation: float 6s ease-in-out infinite;
-            filter: none !important; /* Ensure no blur on hero section */
         }
 
         @keyframes float {
@@ -272,7 +233,6 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             animation: fadeInUp 1s ease-out;
-            filter: none !important; /* CRITICAL: Remove blur from username */
         }
 
         @keyframes fadeInUp {
@@ -289,7 +249,6 @@
         .welcome-emoji {
             display: inline-block;
             animation: wave 2s infinite;
-            filter: none !important; /* Ensure no blur on emoji */
         }
 
         @keyframes wave {
@@ -301,7 +260,6 @@
         .typing-container {
             display: inline-block;
             text-align: center;
-            filter: none !important; /* Ensure no blur on typing container */
         }
 
         .typing-text {
@@ -313,7 +271,6 @@
             border-right: 3px solid #00FFB3;
             white-space: nowrap;
             overflow: hidden;
-            filter: none !important; /* Ensure no blur on typing text */
         }
 
         /* Dashboard grid */
@@ -321,7 +278,6 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 30px;
-            filter: none !important; /* Ensure no blur on dashboard */
         }
 
         .dashboard-card {
@@ -386,7 +342,6 @@
             background: rgba(0, 255, 179, 0.1);
             box-shadow: 0 0 30px rgba(0, 255, 179, 0.5);
             transition: all 0.4s ease;
-            filter: none !important; /* Ensure no blur on icons */
         }
 
         .dashboard-card:hover .card-icon {
@@ -400,7 +355,6 @@
             margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 2px;
-            filter: none !important; /* Ensure no blur on headings */
         }
 
         .dashboard-card p {
@@ -408,7 +362,6 @@
             font-size: 14px;
             margin-bottom: 25px;
             line-height: 1.6;
-            filter: none !important; /* Ensure no blur on text */
         }
 
         .card-btn {
@@ -426,7 +379,6 @@
             overflow: hidden;
             border: none;
             cursor: pointer;
-            filter: none !important; /* Ensure no blur on buttons */
         }
 
         .card-btn::before {
@@ -463,7 +415,6 @@
             color: #2EC6FF;
             font-size: 14px;
             letter-spacing: 2px;
-            filter: none !important; /* Ensure no blur on footer */
         }
 
         /* Responsive */
@@ -554,10 +505,11 @@
             <a href="home.html" class="active">Home</a>
             <a href="announcements.html">Announcements</a>
             <a href="trending.html">Trending Videos</a>
-            <a href="profile.html" class="profile-icon" id="profileIcon">
-                <!-- Profile image will be loaded here -->
-                <div class="initials">U</div>
-            </a>
+            <a href="videos.html">Videos</a>
+            <a href="notes.html">Notes</a>
+            <a href="support.html">Support</a>
+            <a href="about.html">About</a>
+            <a href="profile.html">Profile</a>
             <a href="#" id="logout-btn" class="logout-btn">Logout</a>
         </div>
     </nav>
@@ -678,7 +630,6 @@
                     const userData = await response.json();
                     updateWelcomeMessage(userData.full_name);
                     updateProgressBar(userData.today_progress || 0);
-                    updateProfileIcon(userData.profile_picture, userData.full_name);
                 } else {
                     // Fallback to username if profile fetch fails
                     const username = localStorage.getItem('username') || 'Architect Johan';
@@ -699,9 +650,6 @@
                 welcomeElement.textContent = fullName;
                 welcomeElement.style.opacity = '0';
                 welcomeElement.style.animation = 'fadeInUp 1s ease-out 0.5s forwards';
-                // Force clear any inherited blur
-                welcomeElement.style.filter = 'none';
-                welcomeElement.style.webkitFilter = 'none';
             }
         }
 
@@ -719,29 +667,6 @@
                         progressText.innerHTML = `${progress}% 🎉`;
                     }
                 }, 1000);
-            }
-        }
-
-        function updateProfileIcon(profilePictureUrl, fullName) {
-            const profileIcon = document.getElementById('profileIcon');
-            if (!profileIcon) return;
-            
-            // Clear existing content
-            profileIcon.innerHTML = '';
-            
-            if (profilePictureUrl) {
-                // If we have a profile picture URL, create an image element
-                const img = document.createElement('img');
-                img.src = profilePictureUrl;
-                img.alt = `${fullName}'s profile picture`;
-                profileIcon.appendChild(img);
-            } else {
-                // Otherwise, use initials
-                const initials = document.createElement('div');
-                initials.className = 'initials';
-                initials.textContent = fullName ? 
-                    fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
-                profileIcon.appendChild(initials);
             }
         }
 
@@ -813,15 +738,6 @@
             // Initialize animations and data
             initTypingAnimation();
             fetchUserData();
-
-            // Force clear any blur on the welcome message after load
-            setTimeout(() => {
-                const welcomeElement = document.getElementById('welcomeMessage');
-                if (welcomeElement) {
-                    welcomeElement.style.filter = 'none';
-                    welcomeElement.style.webkitFilter = 'none';
-                }
-            }, 100);
         });
     </script>
 </body>
