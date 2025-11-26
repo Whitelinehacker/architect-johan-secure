@@ -400,6 +400,48 @@
                 margin-bottom: 12px;
             }
         }
+
+
+        /* Validation message animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.validation-message {
+    font-size: 12px;
+    margin-top: 5px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    animation: fadeIn 0.3s ease;
+}
+
+.validation-message.error {
+    color: #FF004C;
+    background: rgba(255, 0, 76, 0.1);
+    border: 1px solid rgba(255, 0, 76, 0.3);
+}
+
+.validation-message.success {
+    color: #00FFB3;
+    background: rgba(0, 255, 179, 0.1);
+    border: 1px solid rgba(0, 255, 179, 0.3);
+}
+
+.validation-message.loading {
+    color: #2EC6FF;
+    background: rgba(46, 198, 255, 0.1);
+    border: 1px solid rgba(46, 198, 255, 0.3);
+}
+
+/* Input validation states */
+.input-wrapper.valid input {
+    border-color: #00FFB3 !important;
+}
+
+.input-wrapper.invalid input {
+    border-color: #FF004C !important;
+}
     </style>
 </head>
 <body class="login-page-body">
