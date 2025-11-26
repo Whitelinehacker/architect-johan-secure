@@ -34,6 +34,7 @@
             height: 100%;
             z-index: 1;
             opacity: 0.3;
+            filter: blur(0px); /* Ensure no blur on the canvas itself */
         }
 
         /* Navbar */
@@ -122,6 +123,7 @@
             align-items: center;
             justify-content: center;
             background: rgba(0, 255, 179, 0.1);
+            filter: none !important; /* Ensure no blur on profile icon */
         }
 
         .profile-icon:hover {
@@ -134,11 +136,13 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            filter: none !important; /* Ensure no blur on profile image */
         }
 
         .profile-icon .initials {
             font-weight: bold;
             color: #00FFB3;
+            filter: none !important; /* Ensure no blur on initials */
         }
 
         /* Logout button specific styles */
@@ -188,6 +192,7 @@
             letter-spacing: 2px;
             color: #2EC6FF;
             text-align: center;
+            filter: none !important; /* Ensure no blur */
         }
 
         .progress-bar-container {
@@ -233,17 +238,20 @@
             font-weight: bold;
             color: #2EC6FF;
             text-shadow: 0 0 10px rgba(46, 198, 255, 0.8);
+            filter: none !important; /* Ensure no blur */
         }
 
         /* Content area */
         .content-area {
             flex: 1;
+            filter: none !important; /* Ensure no blur on content area */
         }
 
         .hero {
             text-align: center;
             margin-bottom: 80px;
             animation: float 6s ease-in-out infinite;
+            filter: none !important; /* Ensure no blur on hero section */
         }
 
         @keyframes float {
@@ -264,6 +272,7 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             animation: fadeInUp 1s ease-out;
+            filter: none !important; /* CRITICAL: Remove blur from username */
         }
 
         @keyframes fadeInUp {
@@ -280,6 +289,7 @@
         .welcome-emoji {
             display: inline-block;
             animation: wave 2s infinite;
+            filter: none !important; /* Ensure no blur on emoji */
         }
 
         @keyframes wave {
@@ -291,6 +301,7 @@
         .typing-container {
             display: inline-block;
             text-align: center;
+            filter: none !important; /* Ensure no blur on typing container */
         }
 
         .typing-text {
@@ -302,6 +313,7 @@
             border-right: 3px solid #00FFB3;
             white-space: nowrap;
             overflow: hidden;
+            filter: none !important; /* Ensure no blur on typing text */
         }
 
         /* Dashboard grid */
@@ -309,6 +321,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 30px;
+            filter: none !important; /* Ensure no blur on dashboard */
         }
 
         .dashboard-card {
@@ -373,6 +386,7 @@
             background: rgba(0, 255, 179, 0.1);
             box-shadow: 0 0 30px rgba(0, 255, 179, 0.5);
             transition: all 0.4s ease;
+            filter: none !important; /* Ensure no blur on icons */
         }
 
         .dashboard-card:hover .card-icon {
@@ -386,6 +400,7 @@
             margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 2px;
+            filter: none !important; /* Ensure no blur on headings */
         }
 
         .dashboard-card p {
@@ -393,6 +408,7 @@
             font-size: 14px;
             margin-bottom: 25px;
             line-height: 1.6;
+            filter: none !important; /* Ensure no blur on text */
         }
 
         .card-btn {
@@ -410,6 +426,7 @@
             overflow: hidden;
             border: none;
             cursor: pointer;
+            filter: none !important; /* Ensure no blur on buttons */
         }
 
         .card-btn::before {
@@ -446,6 +463,7 @@
             color: #2EC6FF;
             font-size: 14px;
             letter-spacing: 2px;
+            filter: none !important; /* Ensure no blur on footer */
         }
 
         /* Responsive */
@@ -681,6 +699,9 @@
                 welcomeElement.textContent = fullName;
                 welcomeElement.style.opacity = '0';
                 welcomeElement.style.animation = 'fadeInUp 1s ease-out 0.5s forwards';
+                // Force clear any inherited blur
+                welcomeElement.style.filter = 'none';
+                welcomeElement.style.webkitFilter = 'none';
             }
         }
 
@@ -792,6 +813,15 @@
             // Initialize animations and data
             initTypingAnimation();
             fetchUserData();
+
+            // Force clear any blur on the welcome message after load
+            setTimeout(() => {
+                const welcomeElement = document.getElementById('welcomeMessage');
+                if (welcomeElement) {
+                    welcomeElement.style.filter = 'none';
+                    welcomeElement.style.webkitFilter = 'none';
+                }
+            }, 100);
         });
     </script>
 </body>
