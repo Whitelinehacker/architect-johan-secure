@@ -1311,14 +1311,15 @@ def get_user_profile(current_user):
     try:
         user = get_user_by_username(current_user)
         if user:
-            # Calculate progress (implement your own logic here)
-            progress = calculate_user_progress(current_user)
+            # Calculate today's progress
+            today_progress = calculate_today_progress(current_user)
             
             return jsonify({
                 'username': user['username'],
                 'full_name': user['full_name'],
                 'email': user['email'],
-                'progress': progress,
+                'today_progress': today_progress,
+                'profile_picture': user.get('profile_picture_url'),  # Add this field to your users table
                 'joined_date': user['created_at'].isoformat() if user['created_at'] else None
             }), 200
         else:
@@ -1327,10 +1328,11 @@ def get_user_profile(current_user):
         logger.error(f"Profile fetch error: {e}")
         return jsonify({'error': 'Failed to fetch profile'}), 500
 
-def calculate_user_progress(username):
+def calculate_today_progress(username):
     # Implement your progress calculation logic here
-    # This could be based on completed videos, practice sets, etc.
-    return random.randint(30, 80)  # Placeholder - replace with actual logic
+    # This should return a value between 0-100
+    # Example: Calculate based on today's completed activities
+    return 65  # Placeholder - replace with actual logic
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
@@ -1347,5 +1349,6 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
 
