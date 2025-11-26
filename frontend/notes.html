@@ -833,78 +833,150 @@
         © 2025 Architect Johan | All Rights Reserved.
     </footer>
 
-    <script>
-        // Matrix Digital Rain Animation
-        const canvas = document.getElementById('matrix-canvas');
-        const ctx = canvas.getContext('2d');
+ <script>
+    // Matrix Digital Rain Animation
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
+    const charArray = chars.split('');
+
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = [];
+
+    for (let i = 0; i < columns; i++) {
+        drops[i] = Math.random() * -100;
+    }
+
+    function drawMatrix() {
+        ctx.fillStyle = 'rgba(2, 4, 10, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#00FFB3';
+        ctx.font = `${fontSize}px monospace`;
+
+        for (let i = 0; i < drops.length; i++) {
+            const char = charArray[Math.floor(Math.random() * charArray.length)];
+            const x = i * fontSize;
+            const y = drops[i] * fontSize;
+
+            ctx.fillText(char, x, y);
+
+            if (y > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
         }
-        resizeCanvas();
+    }
 
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
-        const charArray = chars.split('');
+    const matrixInterval = setInterval(drawMatrix, 50);
+    window.addEventListener('resize', resizeCanvas);
 
-        const fontSize = 16;
-        const columns = canvas.width / fontSize;
-        const drops = [];
-
-        for (let i = 0; i < columns; i++) {
-            drops[i] = Math.random() * -100;
+    // Card click handlers with authentication check
+    function handleCardClick(url) {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            alert('Please login to access this content');
+            window.location.href = 'index.html';
+            return;
         }
+        window.location.href = url;
+    }
 
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(2, 4, 10, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = '#00FFB3';
-            ctx.font = `${fontSize}px monospace`;
-
-            for (let i = 0; i < drops.length; i++) {
-                const char = charArray[Math.floor(Math.random() * charArray.length)];
-                const x = i * fontSize;
-                const y = drops[i] * fontSize;
-
-                ctx.fillText(char, x, y);
-
-                if (y > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
+    // Logout functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    // Clear authentication data
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('token_timestamp');
+                    localStorage.removeItem('username');
+                    sessionStorage.clear();
+                    
+                    // Redirect to login page
+                    window.location.href = 'index.html';
                 }
-                drops[i]++;
-            }
+            });
         }
 
-        const matrixInterval = setInterval(drawMatrix, 50);
-        window.addEventListener('resize', resizeCanvas);
+        // Check if user is authenticated
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            window.location.href = 'index.html';
+            return;
+        }
 
-        // Logout functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const logoutBtn = document.getElementById('logout-btn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (confirm('Are you sure you want to logout?')) {
-                        // Clear authentication data
-                        localStorage.removeItem('auth_token');
-                        localStorage.removeItem('token_timestamp');
-                        localStorage.removeItem('username');
-                        sessionStorage.clear();
-                        
-                        // Redirect to login page
-                        window.location.href = 'index.html';
+        // Add click event listeners to all note cards
+        const noteCards = document.querySelectorAll('.note-card');
+        noteCards.forEach(card => {
+            if (!card.classList.contains('coming-soon-card')) {
+                const currentOnClick = card.getAttribute('onclick');
+                if (currentOnClick) {
+                    // Extract the URL from the onclick attribute
+                    const urlMatch = currentOnClick.match(/window\.location\.href='([^']+)'/);
+                    if (urlMatch && urlMatch[1]) {
+                        const url = urlMatch[1];
+                        card.removeAttribute('onclick');
+                        card.addEventListener('click', function() {
+                            handleCardClick(url);
+                        });
                     }
-                });
-            }
-
-            // Check if user is authenticated
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                window.location.href = 'index.html';
-                return;
+                }
             }
         });
-    </script>
+
+        // Special handler for CEHv13 card to ensure it works
+        const cehCard = document.querySelector('.note-card[onclick*="ceh-details.html"]');
+        if (cehCard) {
+            cehCard.removeAttribute('onclick');
+            cehCard.addEventListener('click', function() {
+                handleCardClick('ceh-details.html');
+            });
+        }
+    });
+
+    // Add this function to handle navigation with better error handling
+    function navigateToPage(url) {
+        try {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                throw new Error('Not authenticated');
+            }
+            
+            // Check if token is expired
+            const tokenTimestamp = localStorage.getItem('token_timestamp');
+            if (tokenTimestamp) {
+                const now = new Date().getTime();
+                const tokenTime = parseInt(tokenTimestamp);
+                const hoursSinceLogin = (now - tokenTime) / (1000 * 60 * 60);
+                
+                if (hoursSinceLogin > 24) { // 24 hours expiry
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('token_timestamp');
+                    localStorage.removeItem('username');
+                    window.location.href = 'index.html';
+                    return;
+                }
+            }
+            
+            window.location.href = url;
+        } catch (error) {
+            console.error('Navigation error:', error);
+            alert('Authentication required. Please login again.');
+            window.location.href = 'index.html';
+        }
+    }
+</script>
 </body>
+
 </html>
