@@ -42,17 +42,11 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 JWT_SECRET = os.getenv('JWT_SECRET', 'your-jwt-secret-here')
 SESSION_TIMEOUT = int(os.getenv('SESSION_TIMEOUT', 3600))
 
-# Email configuration
+# Email configuration (keeping for password reset only)
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USER = os.getenv('EMAIL_USER', 'your-email@gmail.com')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', 'your-app-password')
-ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'your-email@gmail.com')
-
-# MSG91 Configuration (keeping for reference, but not used for signup OTP)
-MSG91_AUTH_KEY = os.getenv('MSG91_AUTH_KEY')
-MSG91_TEMPLATE_ID = os.getenv('MSG91_TEMPLATE_ID')
-MSG91_SENDER_ID = os.getenv('MSG91_SENDER_ID', 'ARCHJT')
 
 # Default admin user
 default_admin_password = 'Arch1t3ch_Joh@N!X#2025'
@@ -84,9 +78,6 @@ login_attempts = {}
 MAX_ATTEMPTS = 5
 LOCKOUT_TIME = 900  # 15 minutes
 
-# Email OTP storage (replaces mobile OTP)
-email_otp_storage = {}
-
 # Validate required environment variables
 def check_environment_variables():
     required_vars = ['SECRET_KEY', 'JWT_SECRET', 'DATABASE_URL']
@@ -101,103 +92,9 @@ def check_environment_variables():
         logger.warning("Email configuration missing - password reset emails will not work")
     else:
         logger.info("Email configuration found - password reset emails are enabled")
-    
-    # Check MSG91 configuration
-    if not MSG91_AUTH_KEY or not MSG91_TEMPLATE_ID:
-        logger.warning("MSG91 configuration missing - OTP SMS will not work")
-    else:
-        logger.info("MSG91 configuration found - OTP SMS are enabled")
 
 # Call this during startup
 check_environment_variables()
-
-# Email OTP Functions
-# Email OTP Functions - UPDATED VERSION
-def send_otp_email(email, otp):
-    """Send OTP to user's email with better debugging"""
-    try:
-        if not EMAIL_USER or not EMAIL_PASSWORD:
-            logger.error("Email configuration not set - cannot send OTP email")
-            print("❌ Email configuration missing - check environment variables")
-            print(f"   EMAIL_USER: {'✅ Set' if EMAIL_USER else '❌ Missing'}")
-            print(f"   EMAIL_PASSWORD: {'✅ Set' if EMAIL_PASSWORD else '❌ Missing'}")
-            return False
-        
-        print(f"🚀 Starting OTP email send to: {email}")
-        print(f"🔑 OTP to send: {otp}")
-        
-        # Create message with simpler format
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_USER
-        msg['To'] = email
-        msg['Subject'] = "Architect Johan - Email Verification OTP"
-        
-        # Simple text version only
-        body = f"""
-Architect Johan - Email Verification
-
-Your OTP for email verification is: {otp}
-
-This OTP is valid for 5 minutes.
-
-If you didn't request this OTP, please ignore this email.
-
---
-Architect Johan Security Team
-"""
-        msg.attach(MIMEText(body, 'plain'))
-        
-        print(f"📧 Email message prepared for: {email}")
-        
-        # Send email with better error handling
-        server = None
-        try:
-            print(f"🔗 Connecting to {EMAIL_HOST}:{EMAIL_PORT}...")
-            server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30)
-            
-            print("🔧 Starting TLS...")
-            server.starttls()
-            
-            print(f"🔑 Logging in as {EMAIL_USER}...")
-            server.login(EMAIL_USER, EMAIL_PASSWORD)
-            
-            print("📤 Sending email...")
-            server.sendmail(EMAIL_USER, email, msg.as_string())
-            print("✅ OTP email sent successfully!")
-            
-            server.quit()
-            
-            logger.info(f"OTP email sent to {email}")
-            return True
-            
-        except smtplib.SMTPAuthenticationError as e:
-            logger.error(f"SMTP Authentication failed: {e}")
-            print(f"❌ SMTP Authentication failed - check email credentials")
-            print(f"   Make sure you're using an App Password, not your regular Gmail password")
-            return False
-        except smtplib.SMTPException as e:
-            logger.error(f"SMTP error: {e}")
-            print(f"❌ SMTP error: {e}")
-            return False
-        except Exception as e:
-            logger.error(f"Email sending failed: {e}")
-            print(f"❌ Email sending failed: {e}")
-            import traceback
-            print(f"💥 Detailed error: {traceback.format_exc()}")
-            return False
-        finally:
-            if server:
-                try:
-                    server.quit()
-                except:
-                    pass
-        
-    except Exception as e:
-        logger.error(f"Email configuration error: {e}")
-        print(f"❌ Email configuration error: {e}")
-        import traceback
-        print(f"💥 Detailed configuration error: {traceback.format_exc()}")
-        return False
 
 def get_db_connection():
     """Get PostgreSQL database connection using psycopg3"""
@@ -733,7 +630,7 @@ def admin_required(f):
     
     return decorated
 
-# ADD THE MISSING CSRF TOKEN ROUTE
+# CSRF TOKEN ROUTE
 @app.route('/api/csrf-token', methods=['GET'])
 def get_csrf_token():
     """Generate and return CSRF token for forms"""
@@ -746,158 +643,6 @@ def get_csrf_token():
     except Exception as e:
         logger.error(f"CSRF token generation error: {e}")
         return jsonify({'error': 'Failed to generate CSRF token'}), 500
-
-# Email OTP Endpoints
-@app.route('/api/send-email-otp', methods=['POST'])
-def send_email_otp():
-    try:
-        data = request.get_json()
-        email = data.get('email', '').strip().lower()
-        
-        print(f"🔍 EMAIL OTP REQUEST RECEIVED: {email}")
-        
-        # Validate email format
-        if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
-            print(f"❌ Invalid email format: {email}")
-            return jsonify({'error': 'Invalid email format'}), 400
-        
-        # Enhanced Gmail validation
-        gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
-        if not re.match(gmail_regex, email):
-            print(f"❌ Not a Gmail address: {email}")
-            return jsonify({'error': 'Only Gmail accounts are allowed. Please use a valid Gmail address ending with @gmail.com'}), 400
-        
-        # Check if email already exists
-        existing_user = get_user_by_email(email)
-        if existing_user:
-            print(f"❌ Email already registered: {email}")
-            return jsonify({'error': 'Email address is already registered. Please use a different email or try logging in.'}), 400
-        
-        # Generate 6-digit OTP
-        otp = str(random.randint(100000, 999999))
-        
-        # Store OTP with expiry (5 minutes)
-        email_otp_storage[email] = {
-            'otp': otp,
-            'expiry': datetime.datetime.now(timezone.utc) + datetime.timedelta(minutes=5),
-            'attempts': 0,
-            'verified': False
-        }
-        
-        print(f"🔐 Generated Email OTP for {email}: {otp}")
-        print(f"📦 OTP stored in memory storage")
-        
-        # Send OTP via email
-        print(f"📧 Attempting to send OTP email...")
-        email_sent = send_otp_email(email, otp)
-        
-        response_data = {
-            'success': True,
-            'message': 'OTP sent to your email successfully!',
-            'otp': otp,  # Include for testing/demo
-            'email': email,
-            'email_delivered': email_sent,
-            'debug_info': {
-                'email_provider': 'Gmail SMTP',
-                'otp_length': len(otp),
-                'timestamp': datetime.datetime.now(timezone.utc).isoformat()
-            }
-        }
-        
-        if not email_sent:
-            response_data['note'] = 'Email delivery failed. Please check your email configuration or use the OTP shown below for testing.'
-            response_data['debug_otp'] = otp  # Always include OTP in response for debugging
-        
-        print(f"✅ OTP process completed for {email}. Email sent: {email_sent}")
-        
-        return jsonify(response_data), 200
-            
-    except Exception as e:
-        logger.error(f"Email OTP sending error: {e}")
-        print(f"💥 OTP sending exception: {str(e)}")
-        import traceback
-        print(f"💥 OTP sending traceback: {traceback.format_exc()}")
-        return jsonify({'error': 'Failed to send OTP email'}), 500
-
-@app.route('/api/verify-email-otp', methods=['POST'])
-def verify_email_otp():
-    try:
-        data = request.get_json()
-        email = data.get('email', '').strip().lower()
-        otp_attempt = data.get('otp', '').strip()
-        
-        print(f"🔍 EMAIL OTP VERIFICATION: {email}")
-        print(f"🔑 Attempted OTP: {otp_attempt}")
-        
-        # Check if OTP exists
-        if email not in email_otp_storage:
-            print(f"❌ OTP not found for email: {email}")
-            return jsonify({'error': 'OTP not found or expired. Please request a new OTP.'}), 400
-        
-        otp_data = email_otp_storage[email]
-        print(f"📋 Stored OTP data: {otp_data}")
-        
-        # Check expiry
-        if datetime.datetime.now(timezone.utc) > otp_data['expiry']:
-            del email_otp_storage[email]
-            print(f"❌ OTP expired for: {email}")
-            return jsonify({'error': 'OTP has expired. Please request a new OTP.'}), 400
-        
-        # Check attempts
-        if otp_data['attempts'] >= 3:
-            del email_otp_storage[email]
-            print(f"❌ Too many attempts for: {email}")
-            return jsonify({'error': 'Too many failed attempts. Please request a new OTP.'}), 400
-        
-        # Verify OTP
-        if otp_attempt == otp_data['otp']:
-            # Mark email as verified
-            email_otp_storage[email]['verified'] = True
-            email_otp_storage[email]['verified_at'] = datetime.datetime.now(timezone.utc)
-            
-            print(f"✅ Email OTP verified successfully for: {email}")
-            
-            return jsonify({
-                'success': True,
-                'message': 'Email verified successfully',
-                'email': email
-            }), 200
-        else:
-            email_otp_storage[email]['attempts'] += 1
-            remaining_attempts = 3 - otp_data['attempts']
-            print(f"❌ Invalid OTP for: {email}. Attempts: {otp_data['attempts']}")
-            
-            return jsonify({
-                'error': f'Invalid OTP. {remaining_attempts} attempts remaining',
-                'attempts_remaining': remaining_attempts
-            }), 400
-            
-    except Exception as e:
-        logger.error(f"Email OTP verification error: {e}")
-        print(f"💥 Email OTP verification exception: {str(e)}")
-        return jsonify({'error': 'Email OTP verification failed'}), 500
-
-@app.route('/api/check-email-otp-status', methods=['POST'])
-def check_email_otp_status():
-    """Check if email is verified"""
-    try:
-        data = request.get_json()
-        email = data.get('email', '').strip().lower()
-        
-        if email in email_otp_storage and email_otp_storage[email].get('verified'):
-            return jsonify({
-                'verified': True,
-                'email': email
-            }), 200
-        else:
-            return jsonify({
-                'verified': False,
-                'email': email
-            }), 200
-            
-    except Exception as e:
-        logger.error(f"Email OTP status check error: {e}")
-        return jsonify({'error': 'Status check failed'}), 500
 
 # Authentication Routes
 @app.route('/api/signup', methods=['POST'])
@@ -958,10 +703,6 @@ def signup():
         if not re.match(r'^[6-9]\d{9}$', mobile_digits):
             return jsonify({'error': 'Invalid Indian mobile number. Must start with 6-9 and be 10 digits.'}), 400
         
-        # Check email verification
-        if email not in email_otp_storage or not email_otp_storage[email].get('verified'):
-            return jsonify({'error': 'Email not verified. Please complete OTP verification.'}), 400
-        
         # Validate username
         username = data['username'].strip()
         if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
@@ -1010,10 +751,6 @@ def signup():
         }
         
         if create_user(user_data):
-            # Clear OTP verification after successful signup
-            if email in email_otp_storage:
-                del email_otp_storage[email]
-            
             # Log signup activity
             log_user_activity(username, 'signup', request.remote_addr, request.headers.get('User-Agent'))
             
@@ -1205,10 +942,8 @@ if __name__ == '__main__':
     
     # Print environment status
     print(f"📧 Email Configuration: {'✅ Available' if EMAIL_USER and EMAIL_PASSWORD else '❌ Missing'}")
-    print(f"📱 MSG91 Configuration: {'✅ Available' if MSG91_AUTH_KEY and MSG91_TEMPLATE_ID else '❌ Missing'}")
     print(f"🔑 SECRET_KEY: {'✅ Set' if os.getenv('SECRET_KEY') else '❌ Missing'}")
     print(f"🔑 JWT_SECRET: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
