@@ -61,6 +61,7 @@ PRACTICE_PASSWORDS = {
     'practice_set_6': 'Arch1t3ch_Joh@N!X#Pr6_2025',
     'practice_set_7': 'Arch1t3ch_Joh@N!X#Pr7_2025',
     'practice_set_8': 'Arch1t3ch_Joh@N!X#Pr8_2025',
+    'practice_set_9': 'Arch1t3ch_Joh@N!X#Pr9_2025',
     'practice_mode': 'Arch1t3ch_Joh@N!X#P1_Pro@2025'
 }
 
@@ -373,12 +374,8 @@ def update_login_attempts(client_ip, current_time):
 def verify_password(stored_hash, provided_password):
     """Verify bcrypt encrypted password with better error handling"""
     try:
-        print(f"🔑 PASSWORD VERIFICATION:")
-        print(f"   Stored Hash: {stored_hash[:50]}...")
-        print(f"   Provided Password Length: {len(provided_password)}")
-        
+        # Removed debug prints for security
         if not stored_hash:
-            print("❌ No stored hash found")
             return False
             
         if isinstance(stored_hash, str):
@@ -386,16 +383,12 @@ def verify_password(stored_hash, provided_password):
             
         # Check if the stored hash looks like a bcrypt hash
         if not stored_hash.startswith(b'$2b$'):
-            print(f"❌ Invalid hash format: {stored_hash[:20]}...")
             return False
             
         result = bcrypt.checkpw(provided_password.encode('utf-8'), stored_hash)
-        print(f"   Verification Result: {result}")
         return result
     except Exception as e:
         print(f"❌ Password verification error: {e}")
-        import traceback
-        print(f"❌ PASSWORD VERIFICATION TRACEBACK: {traceback.format_exc()}")
         return False
 
 def generate_csrf_token():
@@ -1230,3 +1223,4 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
