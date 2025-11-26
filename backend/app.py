@@ -1304,6 +1304,34 @@ def check_mobile():
         logger.error(f"Mobile check error: {e}")
         return jsonify({'exists': False, 'error': 'Server error'}), 500
 
+
+@app.route('/api/user-profile', methods=['GET'])
+@token_required
+def get_user_profile(current_user):
+    try:
+        user = get_user_by_username(current_user)
+        if user:
+            # Calculate progress (implement your own logic here)
+            progress = calculate_user_progress(current_user)
+            
+            return jsonify({
+                'username': user['username'],
+                'full_name': user['full_name'],
+                'email': user['email'],
+                'progress': progress,
+                'joined_date': user['created_at'].isoformat() if user['created_at'] else None
+            }), 200
+        else:
+            return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        logger.error(f"Profile fetch error: {e}")
+        return jsonify({'error': 'Failed to fetch profile'}), 500
+
+def calculate_user_progress(username):
+    # Implement your progress calculation logic here
+    # This could be based on completed videos, practice sets, etc.
+    return random.randint(30, 80)  # Placeholder - replace with actual logic
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -1319,4 +1347,5 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
