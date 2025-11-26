@@ -475,48 +475,58 @@
         const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
 
         // Authentication check
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAuthentication();
+  document.addEventListener('DOMContentLoaded', function() {
+    checkAuthentication();
+});
+
+// Check if user is authenticated
+async function checkAuthentication() {
+    const token = localStorage.getItem('auth_token');
+    
+    if (!token) {
+        console.log('❌ No authentication token found');
+        window.location.href = 'index.html';
+        return;
+    }
+
+    try {
+        // Validate token with backend
+        const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
         });
 
-        // Check if user is authenticated
-        async function checkAuthentication() {
-            const token = localStorage.getItem('auth_token');
-            
-            if (!token) {
-                // Redirect to login if no token
-                window.location.href = 'index.html';
-                return;
-            }
-
-            try {
-                // Validate token with backend
-                const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    // Token is invalid, redirect to login
-                    localStorage.removeItem('auth_token');
-                    localStorage.removeItem('username');
-                    localStorage.removeItem('user_role');
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                // Token is valid, continue loading the page
-                console.log('✅ User authenticated successfully - CEH v13 Page');
-
-            } catch (error) {
-                console.error('❌ Authentication check failed:', error);
-                // Redirect to login on error
-                window.location.href = 'index.html';
-            }
+        if (!response.ok) {
+            console.log('❌ Token validation failed:', response.status);
+            // Clear invalid token and redirect
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('username');
+            localStorage.removeItem('user_role');
+            window.location.href = 'index.html';
+            return;
         }
+
+        const data = await response.json();
+        console.log('✅ User authenticated successfully:', data.username);
+        
+        // Update UI to show logged in user
+        const username = localStorage.getItem('username');
+        if (username) {
+            console.log('✅ Welcome back, ' + username);
+        }
+
+    } catch (error) {
+        console.error('❌ Authentication check failed:', error);
+        // Clear tokens and redirect to login
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('user_role');
+        window.location.href = 'index.html';
+    }
+}
 
         // Handle download section clicks with API tracking
         async function handleDownloadClick(url, sectionName) {
@@ -639,4 +649,5 @@
         });
     </script>
 </body>
+
 </html>
