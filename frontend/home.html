@@ -34,6 +34,7 @@
             height: 100%;
             z-index: 1;
             opacity: 0.3;
+            filter: blur(1px);
         }
 
         /* Navbar */
@@ -42,8 +43,8 @@
             top: 0;
             left: 0;
             width: 100%;
-            background: rgba(2, 4, 10, 0.9);
-            backdrop-filter: blur(15px);
+            background: rgba(2, 4, 10, 0.85);
+            backdrop-filter: blur(20px);
             border-bottom: 2px solid #00FFB3;
             padding: 20px 40px;
             z-index: 100;
@@ -67,7 +68,7 @@
 
         .nav-links {
             display: flex;
-            gap: 30px;
+            gap: 25px;
             align-items: center;
         }
 
@@ -77,21 +78,26 @@
             text-transform: uppercase;
             font-size: 14px;
             letter-spacing: 2px;
-            padding: 8px 16px;
-            border-radius: 5px;
+            padding: 10px 18px;
+            border-radius: 8px;
             transition: all 0.3s ease;
             position: relative;
+            background: rgba(0, 255, 179, 0.05);
+            border: 1px solid rgba(0, 255, 179, 0.1);
         }
 
         .nav-links a:hover {
             color: #2EC6FF;
             text-shadow: 0 0 10px rgba(46, 198, 255, 0.8);
+            background: rgba(46, 198, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 198, 255, 0.3);
         }
 
         .nav-links a.active {
             color: #2EC6FF;
-            background: rgba(46, 198, 255, 0.1);
-            box-shadow: 0 0 15px rgba(46, 198, 255, 0.5);
+            background: rgba(46, 198, 255, 0.15);
+            box-shadow: 0 0 20px rgba(46, 198, 255, 0.5);
         }
 
         .nav-links a::after {
@@ -108,6 +114,28 @@
 
         .nav-links a:hover::after {
             width: 80%;
+        }
+
+        /* Notification badge */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #FF6B6B;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         /* Logout button specific styles */
@@ -135,7 +163,7 @@
 
         .hero {
             text-align: center;
-            margin-bottom: 80px;
+            margin-bottom: 60px;
             animation: float 6s ease-in-out infinite;
         }
 
@@ -144,7 +172,7 @@
             50% { transform: translateY(-20px); }
         }
 
-        .hero h1 {
+        .welcome-message {
             font-size: 48px;
             font-weight: bold;
             text-transform: uppercase;
@@ -156,14 +184,119 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: fadeInUp 1s ease-out;
         }
 
-        .hero p {
-            font-size: 18px;
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .welcome-emoji {
+            display: inline-block;
+            animation: wave 2s infinite;
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+
+        .typing-container {
+            display: inline-block;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .typing-text {
+            font-size: 22px;
             color: #2EC6FF;
             text-transform: uppercase;
             letter-spacing: 3px;
             opacity: 0.9;
+            border-right: 3px solid #00FFB3;
+            white-space: nowrap;
+            overflow: hidden;
+            animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: #00FFB3; }
+        }
+
+        /* Progress Section */
+        .progress-section {
+            background: rgba(2, 4, 10, 0.7);
+            backdrop-filter: blur(15px);
+            border: 2px solid #00FFB3;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 40px auto;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 255, 179, 0.2);
+        }
+
+        .progress-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #2EC6FF;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 255, 179, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 255, 179, 0.3);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00FFB3, #2EC6FF);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 2s ease-in-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .progress-text {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #2EC6FF;
         }
 
         /* Dashboard grid */
@@ -171,11 +304,11 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 30px;
-            margin-top: 60px;
+            margin-top: 40px;
         }
 
         .dashboard-card {
-            background: rgba(2, 4, 10, 0.9);
+            background: rgba(2, 4, 10, 0.8);
             backdrop-filter: blur(15px);
             border: 2px solid #00FFB3;
             border-radius: 20px;
@@ -186,6 +319,18 @@
                         inset 0 0 30px rgba(0, 255, 179, 0.05);
             position: relative;
             overflow: hidden;
+            animation: pulse-glow 3s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 30px rgba(0, 255, 179, 0.2),
+                           inset 0 0 30px rgba(0, 255, 179, 0.05);
+            }
+            50% {
+                box-shadow: 0 0 50px rgba(0, 255, 179, 0.4),
+                           inset 0 0 40px rgba(0, 255, 179, 0.1);
+            }
         }
 
         .dashboard-card::before {
@@ -204,10 +349,11 @@
         }
 
         .dashboard-card:hover {
-            transform: translateY(-10px);
+            transform: translateY(-10px) scale(1.02);
             border-color: #2EC6FF;
-            box-shadow: 0 0 50px rgba(46, 198, 255, 0.4),
+            box-shadow: 0 0 60px rgba(46, 198, 255, 0.4),
                         inset 0 0 50px rgba(46, 198, 255, 0.1);
+            animation: none;
         }
 
         .card-icon {
@@ -254,10 +400,12 @@
             text-transform: uppercase;
             font-weight: bold;
             letter-spacing: 2px;
-            border-radius: 10px;
+            border-radius: 12px;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            border: none;
+            cursor: pointer;
         }
 
         .card-btn::before {
@@ -305,21 +453,35 @@
             }
 
             .nav-links {
-                gap: 15px;
+                gap: 10px;
                 flex-wrap: wrap;
                 justify-content: center;
+            }
+
+            .nav-links a {
+                padding: 8px 12px;
+                font-size: 12px;
             }
 
             .main-content {
                 padding: 180px 20px 80px;
             }
 
-            .hero h1 {
+            .welcome-message {
                 font-size: 36px;
+            }
+
+            .typing-text {
+                font-size: 18px;
             }
 
             .dashboard-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .progress-section {
+                margin: 20px;
+                padding: 20px;
             }
         }
 
@@ -329,12 +491,16 @@
                 justify-content: center;
             }
 
-            .hero h1 {
+            .welcome-message {
                 font-size: 28px;
             }
 
-            .hero p {
+            .typing-text {
                 font-size: 14px;
+            }
+
+            .progress-title {
+                font-size: 16px;
             }
         }
     </style>
@@ -348,10 +514,12 @@
         <div class="logo">Architect Johan</div>
         <div class="nav-links">
             <a href="home.html" class="active">Home</a>
-            <a href="videos.html">Videos</a>
-            <a href="notes.html">Notes</a>
-            <a href="support.html">Support</a>
-             <a href="about.html">About</a>
+            <a href="announcements.html">Announcements</a>
+            <a href="trending.html">Trending Videos</a>
+            <a href="profile.html" class="profile-link">
+                Profile
+                <span class="notification-badge">1</span>
+            </a>
             <a href="#" id="logout-btn" class="logout-btn">Logout</a>
         </div>
     </nav>
@@ -359,8 +527,24 @@
     <!-- Main content -->
     <div class="main-content">
         <div class="hero">
-            <h1>Welcome, Architect   Johan</h1>
-            <p>System Access Granted — Choose your module below</p>
+            <h1 class="welcome-message" id="welcomeMessage">
+                Welcome, <span id="userFullName">Loading...</span> <span class="welcome-emoji">👋</span>
+            </h1>
+            
+            <div class="typing-container">
+                <div class="typing-text" id="typingText">
+                    Access your learning resources — Stay updated, stay skilled.
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section">
+            <h3 class="progress-title">Today's Learning Progress</h3>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-text" id="progressText">Loading progress...</div>
         </div>
 
         <div class="dashboard-grid">
@@ -378,7 +562,12 @@
                 <a href="notes.html" class="card-btn">Enter Module</a>
             </div>
 
-           
+            <div class="dashboard-card">
+                <div class="card-icon">📊</div>
+                <h3>Practice Sets</h3>
+                <p>Test your knowledge with our comprehensive practice questions and mock tests.</p>
+                <a href="practice.html" class="card-btn">Enter Module</a>
+            </div>
         </div>
     </div>
 
@@ -433,6 +622,80 @@
         const matrixInterval = setInterval(drawMatrix, 50);
         window.addEventListener('resize', resizeCanvas);
 
+        // User data and progress functions
+        async function fetchUserData() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Fetch user profile data
+                const response = await fetch('/api/user-profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    updateWelcomeMessage(userData.full_name);
+                    updateProgressBar(userData.progress || 45); // Default to 45% if no data
+                } else {
+                    // Fallback to username if profile fetch fails
+                    const username = localStorage.getItem('username') || 'Architect Johan';
+                    updateWelcomeMessage(username);
+                    updateProgressBar(45);
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                const username = localStorage.getItem('username') || 'Architect Johan';
+                updateWelcomeMessage(username);
+                updateProgressBar(45);
+            }
+        }
+
+        function updateWelcomeMessage(fullName) {
+            const welcomeElement = document.getElementById('userFullName');
+            if (welcomeElement) {
+                welcomeElement.textContent = fullName;
+                welcomeElement.style.opacity = '0';
+                welcomeElement.style.animation = 'fadeInUp 1s ease-out 0.5s forwards';
+            }
+        }
+
+        function updateProgressBar(progress) {
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            if (progressBar && progressText) {
+                setTimeout(() => {
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${progress}% Completed`;
+                    
+                    // Add celebration for high progress
+                    if (progress >= 100) {
+                        progressText.innerHTML = `${progress}% Completed 🎉`;
+                    }
+                }, 1000);
+            }
+        }
+
+        // Typing animation
+        function initTypingAnimation() {
+            const typingElement = document.getElementById('typingText');
+            if (typingElement) {
+                // Reset animation
+                typingElement.style.animation = 'none';
+                setTimeout(() => {
+                    typingElement.style.animation = 'typing 3s steps(40, end), blink-caret 0.75s step-end infinite';
+                }, 100);
+            }
+        }
+
         // Logout functionality
         document.addEventListener('DOMContentLoaded', function() {
             const logoutBtn = document.getElementById('logout-btn');
@@ -459,14 +722,51 @@
                 return;
             }
 
-            // Update welcome message with username
-            const username = localStorage.getItem('username') || 'Architect Johan';
-            const welcomeElement = document.querySelector('.hero h1');
-            if (welcomeElement) {
-                welcomeElement.textContent = `Welcome, ${username}`;
-            }
+            // Initialize animations and data
+            initTypingAnimation();
+            fetchUserData();
+
+            // Add hover effects to navbar items
+            const navLinks = document.querySelectorAll('.nav-links a');
+            navLinks.forEach(link => {
+                link.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                });
+                link.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
         });
+
+        // Add Flask route for user profile (add this to your app.py)
+        /*
+        @app.route('/api/user-profile', methods=['GET'])
+        @token_required
+        def get_user_profile(current_user):
+            try:
+                user = get_user_by_username(current_user)
+                if user:
+                    # Calculate progress (you can implement your own logic here)
+                    progress = calculate_user_progress(current_user)
+                    
+                    return jsonify({
+                        'username': user['username'],
+                        'full_name': user['full_name'],
+                        'email': user['email'],
+                        'progress': progress,
+                        'joined_date': user['created_at'].isoformat() if user['created_at'] else None
+                    }), 200
+                else:
+                    return jsonify({'error': 'User not found'}), 404
+            except Exception as e:
+                logger.error(f"Profile fetch error: {e}")
+                return jsonify({'error': 'Failed to fetch profile'}), 500
+
+        def calculate_user_progress(username):
+            # Implement your progress calculation logic here
+            # This could be based on completed videos, practice sets, etc.
+            return random.randint(30, 80)  # Placeholder
+        */
     </script>
 </body>
-
 </html>
