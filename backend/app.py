@@ -1208,6 +1208,102 @@ def test_user(username):
         'username': username
     }), 200
 
+# REAL-TIME VALIDATION ROUTES
+@app.route('/api/check-username', methods=['POST'])
+def check_username():
+    """Check if username already exists"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        
+        if not username:
+            return jsonify({'exists': False, 'error': 'Username is required'}), 400
+        
+        user = get_user_by_username(username)
+        
+        return jsonify({
+            'exists': user is not None,
+            'username': username
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Username check error: {e}")
+        return jsonify({'exists': False, 'error': 'Server error'}), 500
+
+@app.route('/api/check-email', methods=['POST'])
+def check_email():
+    """Check if email already exists"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'exists': False, 'error': 'Email is required'}), 400
+        
+        # Enhanced Gmail validation
+        gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
+        if not re.match(gmail_regex, email):
+            return jsonify({
+                'exists': False, 
+                'error': 'Only Gmail accounts are allowed'
+            }), 400
+        
+        user = get_user_by_email(email)
+        
+        return jsonify({
+            'exists': user is not None,
+            'email': email
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Email check error: {e}")
+        return jsonify({'exists': False, 'error': 'Server error'}), 500
+
+@app.route('/api/check-mobile', methods=['POST'])
+def check_mobile():
+    """Check if mobile number already exists"""
+    try:
+        data = request.get_json()
+        mobile_no = data.get('mobile_no', '').strip()
+        
+        if not mobile_no:
+            return jsonify({'exists': False, 'error': 'Mobile number is required'}), 400
+        
+        # Format mobile number with +91
+        if not mobile_no.startswith('+91'):
+            mobile_no = '+91' + mobile_no
+        
+        # Validate Indian mobile number format
+        mobile_digits = mobile_no.replace('+91', '')
+        if not re.match(r'^[6-9]\d{9}$', mobile_digits):
+            return jsonify({
+                'exists': False,
+                'error': 'Invalid Indian mobile number format'
+            }), 400
+        
+        # Check if mobile exists in database
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'exists': False, 'error': 'Database connection failed'}), 500
+            
+        with conn.cursor() as cursor:
+            cursor.execute(
+                'SELECT * FROM users WHERE mobile_no = %s AND is_active = TRUE', 
+                (mobile_no,)
+            )
+            existing_mobile = cursor.fetchone()
+        
+        conn.close()
+        
+        return jsonify({
+            'exists': existing_mobile is not None,
+            'mobile_no': mobile_no
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Mobile check error: {e}")
+        return jsonify({'exists': False, 'error': 'Server error'}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -1223,5 +1319,4 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
 
