@@ -34,7 +34,6 @@
             height: 100%;
             z-index: 1;
             opacity: 0.3;
-            filter: blur(1px);
         }
 
         /* Navbar */
@@ -43,8 +42,8 @@
             top: 0;
             left: 0;
             width: 100%;
-            background: rgba(2, 4, 10, 0.85);
-            backdrop-filter: blur(20px);
+            background: rgba(2, 4, 10, 0.9);
+            backdrop-filter: blur(15px);
             border-bottom: 2px solid #00FFB3;
             padding: 20px 40px;
             z-index: 100;
@@ -68,7 +67,7 @@
 
         .nav-links {
             display: flex;
-            gap: 25px;
+            gap: 30px;
             align-items: center;
         }
 
@@ -78,26 +77,21 @@
             text-transform: uppercase;
             font-size: 14px;
             letter-spacing: 2px;
-            padding: 10px 18px;
-            border-radius: 8px;
+            padding: 8px 16px;
+            border-radius: 5px;
             transition: all 0.3s ease;
             position: relative;
-            background: rgba(0, 255, 179, 0.05);
-            border: 1px solid rgba(0, 255, 179, 0.1);
         }
 
         .nav-links a:hover {
             color: #2EC6FF;
             text-shadow: 0 0 10px rgba(46, 198, 255, 0.8);
-            background: rgba(46, 198, 255, 0.1);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(46, 198, 255, 0.3);
         }
 
         .nav-links a.active {
             color: #2EC6FF;
-            background: rgba(46, 198, 255, 0.15);
-            box-shadow: 0 0 20px rgba(46, 198, 255, 0.5);
+            background: rgba(46, 198, 255, 0.1);
+            box-shadow: 0 0 15px rgba(46, 198, 255, 0.5);
         }
 
         .nav-links a::after {
@@ -116,26 +110,35 @@
             width: 80%;
         }
 
-        /* Notification badge */
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #FF6B6B;
-            color: white;
+        /* Profile icon in navbar */
+        .profile-icon {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 10px;
+            border: 2px solid #00FFB3;
+            overflow: hidden;
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: pulse 2s infinite;
+            background: rgba(0, 255, 179, 0.1);
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+        .profile-icon:hover {
+            border-color: #2EC6FF;
+            box-shadow: 0 0 15px rgba(46, 198, 255, 0.7);
+            transform: scale(1.1);
+        }
+
+        .profile-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-icon .initials {
+            font-weight: bold;
+            color: #00FFB3;
         }
 
         /* Logout button specific styles */
@@ -159,11 +162,87 @@
             padding: 150px 40px 100px;
             max-width: 1200px;
             margin: 0 auto;
+            display: flex;
+            gap: 40px;
+        }
+
+        /* Vertical Progress Bar */
+        .progress-sidebar {
+            width: 200px;
+            flex-shrink: 0;
+            background: rgba(2, 4, 10, 0.8);
+            backdrop-filter: blur(15px);
+            border: 2px solid #00FFB3;
+            border-radius: 20px;
+            padding: 30px 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 179, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .progress-title {
+            font-size: 16px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #2EC6FF;
+            text-align: center;
+        }
+
+        .progress-bar-container {
+            width: 30px;
+            height: 300px;
+            background: rgba(0, 255, 179, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 255, 179, 0.3);
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background: linear-gradient(to top, #00FFB3, #2EC6FF);
+            border-radius: 15px;
+            height: 0%;
+            transition: height 2s ease-in-out;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        .progress-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2EC6FF;
+            text-shadow: 0 0 10px rgba(46, 198, 255, 0.8);
+        }
+
+        /* Content area */
+        .content-area {
+            flex: 1;
         }
 
         .hero {
             text-align: center;
-            margin-bottom: 60px;
+            margin-bottom: 80px;
             animation: float 6s ease-in-out infinite;
         }
 
@@ -177,7 +256,7 @@
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 4px;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             text-shadow: 0 0 25px rgba(0, 255, 179, 0.8),
                          0 0 50px rgba(0, 255, 179, 0.5);
             background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
@@ -212,7 +291,6 @@
         .typing-container {
             display: inline-block;
             text-align: center;
-            margin-bottom: 40px;
         }
 
         .typing-text {
@@ -224,79 +302,6 @@
             border-right: 3px solid #00FFB3;
             white-space: nowrap;
             overflow: hidden;
-            animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
-        }
-
-        @keyframes typing {
-            from { width: 0; }
-            to { width: 100%; }
-        }
-
-        @keyframes blink-caret {
-            from, to { border-color: transparent; }
-            50% { border-color: #00FFB3; }
-        }
-
-        /* Progress Section */
-        .progress-section {
-            background: rgba(2, 4, 10, 0.7);
-            backdrop-filter: blur(15px);
-            border: 2px solid #00FFB3;
-            border-radius: 20px;
-            padding: 30px;
-            margin: 40px auto;
-            max-width: 600px;
-            text-align: center;
-            box-shadow: 0 0 30px rgba(0, 255, 179, 0.2);
-        }
-
-        .progress-title {
-            font-size: 20px;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #2EC6FF;
-        }
-
-        .progress-bar-container {
-            width: 100%;
-            height: 20px;
-            background: rgba(0, 255, 179, 0.1);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid rgba(0, 255, 179, 0.3);
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #00FFB3, #2EC6FF);
-            border-radius: 10px;
-            width: 0%;
-            transition: width 2s ease-in-out;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .progress-bar::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-            animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-
-        .progress-text {
-            margin-top: 10px;
-            font-size: 16px;
-            color: #2EC6FF;
         }
 
         /* Dashboard grid */
@@ -304,11 +309,10 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 30px;
-            margin-top: 40px;
         }
 
         .dashboard-card {
-            background: rgba(2, 4, 10, 0.8);
+            background: rgba(2, 4, 10, 0.9);
             backdrop-filter: blur(15px);
             border: 2px solid #00FFB3;
             border-radius: 20px;
@@ -445,6 +449,32 @@
         }
 
         /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content {
+                flex-direction: column;
+                padding: 150px 20px 80px;
+            }
+            
+            .progress-sidebar {
+                width: 100%;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 30px;
+                margin-bottom: 40px;
+            }
+            
+            .progress-bar-container {
+                width: 300px;
+                height: 30px;
+            }
+            
+            .progress-bar {
+                width: 0%;
+                height: 100%;
+            }
+        }
+
         @media (max-width: 768px) {
             .navbar {
                 padding: 15px 20px;
@@ -453,14 +483,9 @@
             }
 
             .nav-links {
-                gap: 10px;
+                gap: 15px;
                 flex-wrap: wrap;
                 justify-content: center;
-            }
-
-            .nav-links a {
-                padding: 8px 12px;
-                font-size: 12px;
             }
 
             .main-content {
@@ -479,8 +504,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .progress-section {
-                margin: 20px;
+            .progress-sidebar {
                 padding: 20px;
             }
         }
@@ -498,10 +522,6 @@
             .typing-text {
                 font-size: 14px;
             }
-
-            .progress-title {
-                font-size: 16px;
-            }
         }
     </style>
 </head>
@@ -516,9 +536,9 @@
             <a href="home.html" class="active">Home</a>
             <a href="announcements.html">Announcements</a>
             <a href="trending.html">Trending Videos</a>
-            <a href="profile.html" class="profile-link">
-                Profile
-                <span class="notification-badge">1</span>
+            <a href="profile.html" class="profile-icon" id="profileIcon">
+                <!-- Profile image will be loaded here -->
+                <div class="initials">U</div>
             </a>
             <a href="#" id="logout-btn" class="logout-btn">Logout</a>
         </div>
@@ -526,47 +546,43 @@
 
     <!-- Main content -->
     <div class="main-content">
-        <div class="hero">
-            <h1 class="welcome-message" id="welcomeMessage">
-                Welcome, <span id="userFullName">Loading...</span> <span class="welcome-emoji">👋</span>
-            </h1>
-            
-            <div class="typing-container">
-                <div class="typing-text" id="typingText">
-                    Access your learning resources — Stay updated, stay skilled.
-                </div>
-            </div>
-        </div>
-
-        <!-- Progress Section -->
-        <div class="progress-section">
+        <!-- Vertical Progress Bar -->
+        <div class="progress-sidebar">
             <h3 class="progress-title">Today's Learning Progress</h3>
             <div class="progress-bar-container">
                 <div class="progress-bar" id="progressBar"></div>
             </div>
-            <div class="progress-text" id="progressText">Loading progress...</div>
+            <div class="progress-text" id="progressText">0%</div>
         </div>
 
-        <div class="dashboard-grid">
-            <div class="dashboard-card">
-                <div class="card-icon">▶</div>
-                <h3>Video Resources</h3>
-                <p>Access our collection of training videos and tutorials to enhance your skills.</p>
-                <a href="videos.html" class="card-btn">Enter Module</a>
+        <!-- Content area -->
+        <div class="content-area">
+            <div class="hero">
+                <h1 class="welcome-message" id="welcomeMessage">
+                    Welcome, <span id="userFullName">Loading...</span> <span class="welcome-emoji">👋</span>
+                </h1>
+                
+                <div class="typing-container">
+                    <div class="typing-text" id="typingText"></div>
+                </div>
             </div>
 
-            <div class="dashboard-card">
-                <div class="card-icon">📒</div>
-                <h3>Study Notes</h3>
-                <p>Browse through comprehensive notes and documentation for reference.</p>
-                <a href="notes.html" class="card-btn">Enter Module</a>
-            </div>
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <div class="card-icon">▶</div>
+                    <h3>Video Resources</h3>
+                    <p>Access our collection of training videos and tutorials to enhance your skills.</p>
+                    <a href="videos.html" class="card-btn">Enter Module</a>
+                </div>
 
-            <div class="dashboard-card">
-                <div class="card-icon">📊</div>
-                <h3>Practice Sets</h3>
-                <p>Test your knowledge with our comprehensive practice questions and mock tests.</p>
-                <a href="practice.html" class="card-btn">Enter Module</a>
+                <div class="dashboard-card">
+                    <div class="card-icon">📒</div>
+                    <h3>Study Notes</h3>
+                    <p>Browse through comprehensive notes and documentation for reference.</p>
+                    <a href="notes.html" class="card-btn">Enter Module</a>
+                </div>
+
+                <!-- Practice Set section removed as requested -->
             </div>
         </div>
     </div>
@@ -643,7 +659,8 @@
                 if (response.ok) {
                     const userData = await response.json();
                     updateWelcomeMessage(userData.full_name);
-                    updateProgressBar(userData.progress || 45); // Default to 45% if no data
+                    updateProgressBar(userData.today_progress || 0);
+                    updateProfileIcon(userData.profile_picture, userData.full_name);
                 } else {
                     // Fallback to username if profile fetch fails
                     const username = localStorage.getItem('username') || 'Architect Johan';
@@ -673,27 +690,77 @@
             
             if (progressBar && progressText) {
                 setTimeout(() => {
-                    progressBar.style.width = `${progress}%`;
-                    progressText.textContent = `${progress}% Completed`;
+                    progressBar.style.height = `${progress}%`;
+                    progressText.textContent = `${progress}%`;
                     
                     // Add celebration for high progress
                     if (progress >= 100) {
-                        progressText.innerHTML = `${progress}% Completed 🎉`;
+                        progressText.innerHTML = `${progress}% 🎉`;
                     }
                 }, 1000);
             }
         }
 
+        function updateProfileIcon(profilePictureUrl, fullName) {
+            const profileIcon = document.getElementById('profileIcon');
+            if (!profileIcon) return;
+            
+            // Clear existing content
+            profileIcon.innerHTML = '';
+            
+            if (profilePictureUrl) {
+                // If we have a profile picture URL, create an image element
+                const img = document.createElement('img');
+                img.src = profilePictureUrl;
+                img.alt = `${fullName}'s profile picture`;
+                profileIcon.appendChild(img);
+            } else {
+                // Otherwise, use initials
+                const initials = document.createElement('div');
+                initials.className = 'initials';
+                initials.textContent = fullName ? 
+                    fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
+                profileIcon.appendChild(initials);
+            }
+        }
+
         // Typing animation
         function initTypingAnimation() {
+            const text = "Access your learning resources — Stay updated, stay skilled.";
             const typingElement = document.getElementById('typingText');
-            if (typingElement) {
-                // Reset animation
-                typingElement.style.animation = 'none';
-                setTimeout(() => {
-                    typingElement.style.animation = 'typing 3s steps(40, end), blink-caret 0.75s step-end infinite';
-                }, 100);
+            let i = 0;
+            let isDeleting = false;
+            let typingSpeed = 100;
+            
+            function type() {
+                const currentText = text.substring(0, i);
+                typingElement.textContent = currentText;
+                typingElement.style.borderRight = '3px solid #00FFB3';
+                
+                if (!isDeleting && i === text.length) {
+                    // Pause at the end of typing
+                    setTimeout(() => {
+                        isDeleting = true;
+                        typingSpeed = 50;
+                    }, 1500);
+                } else if (isDeleting && i === 0) {
+                    // Start typing again after deleting
+                    isDeleting = false;
+                    typingSpeed = 100;
+                }
+                
+                // Adjust speed and increment/decrement
+                if (isDeleting) {
+                    i--;
+                } else {
+                    i++;
+                }
+                
+                setTimeout(type, typingSpeed);
             }
+            
+            // Start the typing animation
+            type();
         }
 
         // Logout functionality
@@ -725,48 +792,7 @@
             // Initialize animations and data
             initTypingAnimation();
             fetchUserData();
-
-            // Add hover effects to navbar items
-            const navLinks = document.querySelectorAll('.nav-links a');
-            navLinks.forEach(link => {
-                link.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-2px)';
-                });
-                link.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                });
-            });
         });
-
-        // Add Flask route for user profile (add this to your app.py)
-        /*
-        @app.route('/api/user-profile', methods=['GET'])
-        @token_required
-        def get_user_profile(current_user):
-            try:
-                user = get_user_by_username(current_user)
-                if user:
-                    # Calculate progress (you can implement your own logic here)
-                    progress = calculate_user_progress(current_user)
-                    
-                    return jsonify({
-                        'username': user['username'],
-                        'full_name': user['full_name'],
-                        'email': user['email'],
-                        'progress': progress,
-                        'joined_date': user['created_at'].isoformat() if user['created_at'] else None
-                    }), 200
-                else:
-                    return jsonify({'error': 'User not found'}), 404
-            except Exception as e:
-                logger.error(f"Profile fetch error: {e}")
-                return jsonify({'error': 'Failed to fetch profile'}), 500
-
-        def calculate_user_progress(username):
-            # Implement your progress calculation logic here
-            # This could be based on completed videos, practice sets, etc.
-            return random.randint(30, 80)  # Placeholder
-        */
     </script>
 </body>
 </html>
