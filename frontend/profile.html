@@ -534,6 +534,32 @@
                 font-size: 28px;
             }
         }
+
+
+        /* Error message styling */
+.error-message {
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid #FF6B6B;
+    color: #FF6B6B;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 20px 0;
+    text-align: center;
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% { 
+        box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+    }
+    50% { 
+        box-shadow: 0 0 20px rgba(255, 107, 107, 0.6);
+    }
+}
+
+.hidden {
+    display: none;
+}
     </style>
 </head>
 <body>
