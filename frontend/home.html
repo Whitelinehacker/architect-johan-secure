@@ -233,6 +233,9 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             animation: fadeInUp 1s ease-out;
+            /* CRITICAL: Ensure no blur on the welcome message */
+            filter: none !important;
+            -webkit-filter: none !important;
         }
 
         @keyframes fadeInUp {
@@ -257,9 +260,21 @@
             75% { transform: rotate(10deg); }
         }
 
+        .user-full-name {
+            display: inline-block;
+            /* Ensure the full name is crystal clear */
+            filter: none !important;
+            -webkit-filter: none !important;
+            text-shadow: 0 0 25px rgba(0, 255, 179, 0.8),
+                         0 0 50px rgba(0, 255, 179, 0.5);
+        }
+
         .typing-container {
             display: inline-block;
             text-align: center;
+            /* Ensure typing container is clear */
+            filter: none !important;
+            -webkit-filter: none !important;
         }
 
         .typing-text {
@@ -271,6 +286,9 @@
             border-right: 3px solid #00FFB3;
             white-space: nowrap;
             overflow: hidden;
+            /* Ensure typing text is clear */
+            filter: none !important;
+            -webkit-filter: none !important;
         }
 
         /* Dashboard grid */
@@ -278,6 +296,9 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 30px;
+            /* Ensure dashboard grid is clear */
+            filter: none !important;
+            -webkit-filter: none !important;
         }
 
         .dashboard-card {
@@ -529,7 +550,7 @@
         <div class="content-area">
             <div class="hero">
                 <h1 class="welcome-message" id="welcomeMessage">
-                    Welcome, <span id="userFullName">Loading...</span> <span class="welcome-emoji">👋</span>
+                    Welcome, <span id="userFullName" class="user-full-name">Loading...</span> <span class="welcome-emoji">👋</span>
                 </h1>
                 
                 <div class="typing-container">
@@ -650,6 +671,9 @@
                 welcomeElement.textContent = fullName;
                 welcomeElement.style.opacity = '0';
                 welcomeElement.style.animation = 'fadeInUp 1s ease-out 0.5s forwards';
+                // Force clear any inherited blur
+                welcomeElement.style.filter = 'none';
+                welcomeElement.style.webkitFilter = 'none';
             }
         }
 
@@ -738,6 +762,20 @@
             // Initialize animations and data
             initTypingAnimation();
             fetchUserData();
+
+            // Force clear any blur on the welcome message after load
+            setTimeout(() => {
+                const welcomeElement = document.getElementById('welcomeMessage');
+                const userFullName = document.getElementById('userFullName');
+                if (welcomeElement) {
+                    welcomeElement.style.filter = 'none';
+                    welcomeElement.style.webkitFilter = 'none';
+                }
+                if (userFullName) {
+                    userFullName.style.filter = 'none';
+                    userFullName.style.webkitFilter = 'none';
+                }
+            }, 100);
         });
     </script>
 </body>
