@@ -110,6 +110,41 @@
             width: 80%;
         }
 
+        /* Profile section in navbar */
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: 20px;
+        }
+
+        .profile-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #00FFB3;
+            object-fit: cover;
+            background: linear-gradient(135deg, #00FFB3, #2EC6FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #02040A;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .announcement-badge {
+            background: linear-gradient(135deg, #FF6B6B, #FF5252);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: pulse 2s infinite;
+        }
+
         /* Logout button specific styles */
         .logout-btn {
             color: #FF6B6B !important;
@@ -158,12 +193,27 @@
             background-clip: text;
         }
 
-        .hero p {
+        .typing-container {
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .typing-text {
             font-size: 18px;
             color: #2EC6FF;
             text-transform: uppercase;
             letter-spacing: 3px;
             opacity: 0.9;
+            border-right: 2px solid #2EC6FF;
+            padding-right: 5px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { border-color: #2EC6FF; }
+            50% { border-color: transparent; }
         }
 
         /* Dashboard grid */
@@ -186,6 +236,18 @@
                         inset 0 0 30px rgba(0, 255, 179, 0.05);
             position: relative;
             overflow: hidden;
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { 
+                box-shadow: 0 0 30px rgba(0, 255, 179, 0.2),
+                           inset 0 0 30px rgba(0, 255, 179, 0.05);
+            }
+            50% { 
+                box-shadow: 0 0 50px rgba(0, 255, 179, 0.4),
+                           inset 0 0 40px rgba(0, 255, 179, 0.1);
+            }
         }
 
         .dashboard-card::before {
@@ -206,7 +268,8 @@
         .dashboard-card:hover {
             transform: translateY(-10px);
             border-color: #2EC6FF;
-            box-shadow: 0 0 50px rgba(46, 198, 255, 0.4),
+            animation: none;
+            box-shadow: 0 0 60px rgba(46, 198, 255, 0.6),
                         inset 0 0 50px rgba(46, 198, 255, 0.1);
         }
 
@@ -223,12 +286,23 @@
             background: rgba(0, 255, 179, 0.1);
             box-shadow: 0 0 30px rgba(0, 255, 179, 0.5);
             transition: all 0.4s ease;
+            animation: iconPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { 
+                box-shadow: 0 0 30px rgba(0, 255, 179, 0.5);
+            }
+            50% { 
+                box-shadow: 0 0 40px rgba(0, 255, 179, 0.8);
+            }
         }
 
         .dashboard-card:hover .card-icon {
             border-color: #2EC6FF;
-            box-shadow: 0 0 40px rgba(46, 198, 255, 0.7);
+            box-shadow: 0 0 50px rgba(46, 198, 255, 0.9);
             transform: rotate(360deg);
+            animation: none;
         }
 
         .dashboard-card h3 {
@@ -258,6 +332,16 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            animation: btnGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes btnGlow {
+            0%, 100% { 
+                box-shadow: 0 5px 15px rgba(0, 255, 179, 0.3);
+            }
+            50% { 
+                box-shadow: 0 5px 25px rgba(0, 255, 179, 0.6);
+            }
         }
 
         .card-btn::before {
@@ -280,7 +364,8 @@
 
         .card-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0, 255, 179, 0.6);
+            box-shadow: 0 10px 30px rgba(0, 255, 179, 0.8);
+            animation: none;
         }
 
         /* Footer */
@@ -310,6 +395,11 @@
                 justify-content: center;
             }
 
+            .profile-section {
+                margin-left: 0;
+                gap: 10px;
+            }
+
             .main-content {
                 padding: 180px 20px 80px;
             }
@@ -320,6 +410,10 @@
 
             .dashboard-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .typing-text {
+                font-size: 16px;
             }
         }
 
@@ -333,8 +427,9 @@
                 font-size: 28px;
             }
 
-            .hero p {
+            .typing-text {
                 font-size: 14px;
+                letter-spacing: 2px;
             }
         }
     </style>
@@ -350,8 +445,17 @@
             <a href="home.html" class="active">Home</a>
             <a href="videos.html">Videos</a>
             <a href="notes.html">Notes</a>
+            <a href="trending.html">Trending Videos</a>
+            <a href="announcements.html">Announcements</a>
             <a href="support.html">Support</a>
-             <a href="about.html">About</a>
+            <a href="about.html">About</a>
+            
+            <!-- Profile Section -->
+            <div class="profile-section">
+                <div class="announcement-badge">New</div>
+                <div class="profile-image">AJ</div>
+            </div>
+            
             <a href="#" id="logout-btn" class="logout-btn">Logout</a>
         </div>
     </nav>
@@ -359,8 +463,10 @@
     <!-- Main content -->
     <div class="main-content">
         <div class="hero">
-            <h1>Welcome, Architect   Johan</h1>
-            <p>System Access Granted — Choose your module below</p>
+            <h1>Welcome, Architect Johan</h1>
+            <div class="typing-container">
+                <div class="typing-text" id="typing-text"></div>
+            </div>
         </div>
 
         <div class="dashboard-grid">
@@ -378,7 +484,8 @@
                 <a href="notes.html" class="card-btn">Enter Module</a>
             </div>
 
-           
+        
+            
         </div>
     </div>
 
@@ -433,6 +540,52 @@
         const matrixInterval = setInterval(drawMatrix, 50);
         window.addEventListener('resize', resizeCanvas);
 
+        // Typing Animation
+        const typingText = document.getElementById('typing-text');
+        const messages = [
+            "Access your learning resources. Stay updated Stay skilled",
+            "Master new skills with our comprehensive courses",
+            "Join thousands of architects advancing their careers",
+            "Your journey to excellence starts here"
+        ];
+        
+        let messageIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        let typingSpeed = 100;
+
+        function typeWriter() {
+            const currentMessage = messages[messageIndex];
+            
+            if (isDeleting) {
+                // Deleting text
+                typingText.textContent = currentMessage.substring(0, charIndex - 1);
+                charIndex--;
+                typingSpeed = 50;
+            } else {
+                // Typing text
+                typingText.textContent = currentMessage.substring(0, charIndex + 1);
+                charIndex++;
+                typingSpeed = 100;
+            }
+
+            if (!isDeleting && charIndex === currentMessage.length) {
+                // Pause at end of message
+                isDeleting = true;
+                typingSpeed = 1500;
+            } else if (isDeleting && charIndex === 0) {
+                // Move to next message
+                isDeleting = false;
+                messageIndex = (messageIndex + 1) % messages.length;
+                typingSpeed = 500;
+            }
+
+            setTimeout(typeWriter, typingSpeed);
+        }
+
+        // Start typing animation after page load
+        setTimeout(typeWriter, 1000);
+
         // Logout functionality
         document.addEventListener('DOMContentLoaded', function() {
             const logoutBtn = document.getElementById('logout-btn');
@@ -465,8 +618,14 @@
             if (welcomeElement) {
                 welcomeElement.textContent = `Welcome, ${username}`;
             }
+
+            // Update profile initials
+            const profileImage = document.querySelector('.profile-image');
+            if (profileImage && username) {
+                const initials = username.split(' ').map(name => name[0]).join('').toUpperCase();
+                profileImage.textContent = initials || 'AJ';
+            }
         });
     </script>
 </body>
-
 </html>
