@@ -801,17 +801,19 @@
         }
 
         // Password Modal Functions
-        function openPasswordModal() {
-            currentTargetUrl = 'cehv13_notes.html';
-            const modal = document.getElementById('passwordModal');
-            const passwordInput = document.getElementById('passwordInput');
-            const errorMessage = document.getElementById('passwordError');
-            
-            modal.style.display = 'flex';
-            passwordInput.value = '';
-            errorMessage.style.display = 'none';
-            passwordInput.focus();
-        }
+       function openPasswordModal() {
+    currentTargetUrl = 'cehv13_notes.html'; // Make sure this file exists!
+    const modal = document.getElementById('passwordModal');
+    const passwordInput = document.getElementById('passwordInput');
+    const errorMessage = document.getElementById('passwordError');
+    
+    console.log('Opening password modal for:', currentTargetUrl);
+    
+    modal.style.display = 'flex';
+    passwordInput.value = '';
+    errorMessage.style.display = 'none';
+    passwordInput.focus();
+}
 
         function closePasswordModal() {
             const modal = document.getElementById('passwordModal');
@@ -819,7 +821,7 @@
             currentTargetUrl = '';
         }
 
-        async function verifyPassword() {
+  async function verifyPassword() {
     const password = document.getElementById('passwordInput').value;
     const errorMessage = document.getElementById('passwordError');
     const token = localStorage.getItem('auth_token');
@@ -837,6 +839,8 @@
     }
 
     try {
+        console.log('Verifying password for CEH Study Notes...');
+        
         // Verify password with backend - using ceh_study_notes
         const response = await fetch(`${API_BASE_URL}/api/verify-practice-password`, {
             method: 'POST',
@@ -846,32 +850,43 @@
             },
             body: JSON.stringify({
                 password: password,
-                practice_set: 'ceh_study_notes'  // This matches your backend
+                practice_set: 'ceh_study_notes'
             })
         });
 
+        console.log('Response status:', response.status);
+
         if (response.ok) {
             const result = await response.json();
+            console.log('Response data:', result);
             
             if (result.success) {
                 // Password verified successfully
+                console.log('Password verified! Redirecting to:', currentTargetUrl);
                 closePasswordModal();
                 
                 // Track access and navigate
                 await trackAccess('CEH Study Notes', 'CEH v13');
-                window.location.href = currentTargetUrl;
+                
+                // Force redirect after a short delay to ensure modal is closed
+                setTimeout(() => {
+                    window.location.href = currentTargetUrl;
+                }, 100);
+                
             } else {
-                errorMessage.textContent = 'Incorrect password. Hint: Use the CEH-specific password';
+                errorMessage.textContent = result.error || 'Incorrect password. Please try again.';
                 errorMessage.style.display = 'block';
+                console.log('Password incorrect');
             }
         } else {
-            const errorData = await response.json();
-            errorMessage.textContent = errorData.error || 'Password verification failed';
+            const errorText = await response.text();
+            console.error('Server error:', errorText);
+            errorMessage.textContent = 'Server error. Please try again.';
             errorMessage.style.display = 'block';
         }
     } catch (error) {
         console.error('Password verification error:', error);
-        errorMessage.textContent = 'Network error. Please try again.';
+        errorMessage.textContent = 'Network error. Please check your connection.';
         errorMessage.style.display = 'block';
     }
 }
@@ -1026,4 +1041,5 @@
     </script>
 </body>
 </html>
+
 
