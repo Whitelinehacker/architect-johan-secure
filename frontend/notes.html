@@ -110,6 +110,42 @@
             width: 80%;
         }
 
+        /* Profile section in navbar */
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section:hover {
+            transform: translateY(-2px);
+        }
+
+        .profile-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #00FFB3;
+            object-fit: cover;
+            background: linear-gradient(135deg, #00FFB3, #2EC6FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #02040A;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section:hover .profile-image {
+            border-color: #2EC6FF;
+            box-shadow: 0 0 20px rgba(46, 198, 255, 0.6);
+            transform: scale(1.1);
+        }
+
         /* Logout button specific styles */
         .logout-btn {
             color: #FF6B6B !important;
@@ -289,76 +325,6 @@
             border-color: #2EC6FF;
         }
 
-        .note-topics {
-            margin: 15px 0;
-            background: rgba(0, 255, 179, 0.05);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 255, 179, 0.2);
-        }
-
-        .note-topics h4 {
-            color: #00FFB3;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-size: 16px;
-            text-shadow: 0 0 10px rgba(0, 255, 179, 0.5);
-            text-align: center;
-        }
-
-        .note-topics ul {
-            list-style: none;
-            padding-left: 0;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 8px;
-        }
-
-        .note-topics li {
-            color: #2EC6FF;
-            margin-bottom: 5px;
-            padding-left: 20px;
-            position: relative;
-            font-size: 13px;
-        }
-
-        .note-topics li::before {
-            content: '▶';
-            position: absolute;
-            left: 0;
-            color: #00FFB3;
-            font-size: 10px;
-            text-shadow: 0 0 8px rgba(0, 255, 179, 0.5);
-        }
-
-        .note-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 15px;
-            justify-content: center;
-        }
-
-        .tag {
-            padding: 6px 12px;
-            background: rgba(0, 255, 179, 0.1);
-            border: 1px solid rgba(0, 255, 179, 0.3);
-            border-radius: 20px;
-            font-size: 11px;
-            color: #00FFB3;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-
-        .tag:hover {
-            background: rgba(0, 255, 179, 0.2);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 10px rgba(0, 255, 179, 0.3);
-        }
-
         /* Coming soon card */
         .coming-soon-card {
             background: rgba(2, 4, 10, 0.7);
@@ -464,6 +430,11 @@
                 justify-content: center;
             }
 
+            .profile-section {
+                margin-left: 0;
+                gap: 10px;
+            }
+
             .main-content {
                 padding: 180px 20px 80px;
             }
@@ -489,10 +460,6 @@
 
             .note-icon {
                 margin-right: 0;
-            }
-
-            .note-topics ul {
-                grid-template-columns: 1fr;
             }
 
             .note-image {
@@ -537,8 +504,16 @@
             <a href="home.html">Home</a>
             <a href="videos.html">Videos</a>
             <a href="notes.html" class="active">Notes</a>
+            <a href="trending.html">Trending Videos</a>
+            <a href="announcements.html">Announcements</a>
             <a href="support.html">Support</a>
-             <a href="about.html">About</a>
+            <a href="about.html">About</a>
+            
+            <!-- Profile Section -->
+            <div class="profile-section" id="profile-section">
+                <div class="profile-image" id="nav-profile-image">AJ</div>
+            </div>
+            
             <a href="#" id="logout-btn" class="logout-btn">Logout</a>
         </div>
     </nav>
@@ -552,19 +527,21 @@
 
         <div class="notes-grid">
             <!-- CEH v13 Card -->
-          <!-- CEH v13 Card -->
-<div class="note-card" onclick="navigateToPage('ceh-details.html')">
-    <div class="note-header">
-        <div class="note-icon">CEH</div>
-        <h2 class="note-title">CEHv13</h2>
-    </div>
-    
-    <div class="note-image-container">
-        <img src="assets/images/IMG_0860.JPEG.jpg" alt="CEH v13 Certification" class="note-image" 
-             onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=color:#00FFB3;font-size:18px;padding:40px;text-align:center;border:2px solid #00FFB3;border-radius:12px;>CEH v13 Image</div>';">
-    </div>
-    
-   
+            <div class="note-card" onclick="navigateToPage('ceh-details.html')">
+                <div class="note-header">
+                    <div class="note-icon">CEH</div>
+                    <h2 class="note-title">CEHv13</h2>
+                </div>
+                
+                <div class="note-image-container">
+                    <img src="assets/images/IMG_0860.JPEG.jpg" alt="CEH v13 Certification" class="note-image" 
+                         onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=color:#00FFB3;font-size:18px;padding:40px;text-align:center;border:2px solid #00FFB3;border-radius:12px;>CEH v13 Image</div>';">
+                </div>
+                
+                <div class="note-content">
+                    <p><strong>This package includes CEHv13 Practice Sets, eLearning Materials, Premium Study Guides, and Essential Hacking Tools</strong> - everything you need to master ethical hacking and pass the CEHv13 exam with confidence.</p>
+                </div>
+            </div>
 
             <!-- CCNA Card -->
             <div class="note-card" onclick="window.location.href='ccna.html'">
@@ -579,26 +556,6 @@
                 
                 <div class="note-content">
                     <p><strong>Complete CCNA study materials including network fundamentals, IP connectivity, security fundamentals, and automation.</strong> Master the skills needed for Cisco Certified Network Associate certification.</p>
-                    
-                    <div class="note-topics">
-                        <h4>Key Topics</h4>
-                        <ul>
-                            <li>Network Fundamentals</li>
-                            <li>IP Connectivity</li>
-                            <li>IP Services</li>
-                            <li>Security Fundamentals</li>
-                            <li>Automation and Programmability</li>
-                            <li>Routing and Switching</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="note-tags">
-                    <span class="tag">Networking</span>
-                    <span class="tag">Cisco</span>
-                    <span class="tag">Certification</span>
-                    <span class="tag">Routing</span>
-                    <span class="tag">Switching</span>
-                    <span class="tag">IP</span>
                 </div>
             </div>
 
@@ -615,26 +572,6 @@
                 
                 <div class="note-content">
                     <p><strong>Comprehensive networking fundamentals covering TCP/IP, DNS, DHCP, subnetting, VLANs, and network security.</strong> Essential knowledge for any IT professional.</p>
-                    
-                    <div class="note-topics">
-                        <h4>Key Topics</h4>
-                        <ul>
-                            <li>TCP/IP Protocol Suite</li>
-                            <li>Network Topologies</li>
-                            <li>Subnetting and CIDR</li>
-                            <li>DNS and DHCP</li>
-                            <li>Wireless Networking</li>
-                            <li>Network Security</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="note-tags">
-                    <span class="tag">TCP/IP</span>
-                    <span class="tag">DNS</span>
-                    <span class="tag">DHCP</span>
-                    <span class="tag">Subnetting</span>
-                    <span class="tag">VLAN</span>
-                    <span class="tag">Wireless</span>
                 </div>
             </div>
 
@@ -651,26 +588,6 @@
                 
                 <div class="note-content">
                     <p><strong>Complete Linux administration course from basics to advanced topics.</strong> Covers command line, shell scripting, system administration, and security.</p>
-                    
-                    <div class="note-topics">
-                        <h4>Key Topics</h4>
-                        <ul>
-                            <li>Linux Command Line</li>
-                            <li>File System Management</li>
-                            <li>User and Group Management</li>
-                            <li>Shell Scripting</li>
-                            <li>Process Management</li>
-                            <li>System Security</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="note-tags">
-                    <span class="tag">Linux</span>
-                    <span class="tag">Command Line</span>
-                    <span class="tag">Shell Scripting</span>
-                    <span class="tag">System Admin</span>
-                    <span class="tag">Open Source</span>
-                    <span class="tag">Security</span>
                 </div>
             </div>
 
@@ -687,26 +604,6 @@
                 
                 <div class="note-content">
                     <p><strong>Complete Python programming course from basics to advanced concepts.</strong> Includes data structures, algorithms, OOP, and popular libraries.</p>
-                    
-                    <div class="note-topics">
-                        <h4>Key Topics</h4>
-                        <ul>
-                            <li>Python Syntax and Basics</li>
-                            <li>Data Structures</li>
-                            <li>Object-Oriented Programming</li>
-                            <li>File Handling</li>
-                            <li>Popular Libraries (NumPy, Pandas)</li>
-                            <li>Web Development with Django/Flask</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="note-tags">
-                    <span class="tag">Python</span>
-                    <span class="tag">Programming</span>
-                    <span class="tag">OOP</span>
-                    <span class="tag">Data Science</span>
-                    <span class="tag">Web Development</span>
-                    <span class="tag">Automation</span>
                 </div>
             </div>
 
@@ -723,26 +620,6 @@
                 
                 <div class="note-content">
                     <p><strong>Comprehensive C programming course covering fundamentals to advanced topics.</strong> Master the language that powers operating systems and embedded systems.</p>
-                    
-                    <div class="note-topics">
-                        <h4>Key Topics</h4>
-                        <ul>
-                            <li>C Syntax and Basics</li>
-                            <li>Pointers and Memory Management</li>
-                            <li>Data Structures in C</li>
-                            <li>File I/O Operations</li>
-                            <li>Dynamic Memory Allocation</li>
-                            <li>Multi-file Programs</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="note-tags">
-                    <span class="tag">C Programming</span>
-                    <span class="tag">Pointers</span>
-                    <span class="tag">Memory Management</span>
-                    <span class="tag">Data Structures</span>
-                    <span class="tag">System Programming</span>
-                    <span class="tag">Algorithms</span>
                 </div>
             </div>
 
@@ -759,26 +636,6 @@
                 
                 <div class="note-content">
                     <p><strong>Complete C++ programming course from basics to advanced OOP concepts.</strong> Learn the language used in game development, high-performance applications, and system software.</p>
-                    
-                    <div class="note-topics">
-                        <h4>Key Topics</h4>
-                        <ul>
-                            <li>C++ Syntax and Basics</li>
-                            <li>Object-Oriented Programming</li>
-                            <li>Templates and STL</li>
-                            <li>Memory Management</li>
-                            <li>Exception Handling</li>
-                            <li>Advanced C++ Features</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="note-tags">
-                    <span class="tag">C++</span>
-                    <span class="tag">OOP</span>
-                    <span class="tag">STL</span>
-                    <span class="tag">Templates</span>
-                    <span class="tag">Game Development</span>
-                    <span class="tag">High Performance</span>
                 </div>
             </div>
 
@@ -791,12 +648,6 @@
                 
                 <div class="note-content">
                     <p>New course materials and study notes are in development. Stay tuned for updates!</p>
-                </div>
-                
-                <div class="note-tags">
-                    <span class="tag">New</span>
-                    <span class="tag">Upcoming</span>
-                    <span class="tag">Exciting</span>
                 </div>
             </div>
         </div>
@@ -811,152 +662,280 @@
         © 2025 Architect Johan | All Rights Reserved.
     </footer>
 
- <script>
-    // Matrix Digital Rain Animation
-    const canvas = document.getElementById('matrix-canvas');
-    const ctx = canvas.getContext('2d');
+    <script>
+        // Matrix Digital Rain Animation
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
 
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    resizeCanvas();
-
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
-    const charArray = chars.split('');
-
-    const fontSize = 16;
-    const columns = canvas.width / fontSize;
-    const drops = [];
-
-    for (let i = 0; i < columns; i++) {
-        drops[i] = Math.random() * -100;
-    }
-
-    function drawMatrix() {
-        ctx.fillStyle = 'rgba(2, 4, 10, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = '#00FFB3';
-        ctx.font = `${fontSize}px monospace`;
-
-        for (let i = 0; i < drops.length; i++) {
-            const char = charArray[Math.floor(Math.random() * charArray.length)];
-            const x = i * fontSize;
-            const y = drops[i] * fontSize;
-
-            ctx.fillText(char, x, y);
-
-            if (y > canvas.height && Math.random() > 0.975) {
-                drops[i] = 0;
-            }
-            drops[i]++;
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
-    }
+        resizeCanvas();
 
-    const matrixInterval = setInterval(drawMatrix, 50);
-    window.addEventListener('resize', resizeCanvas);
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
+        const charArray = chars.split('');
 
-    // Card click handlers with authentication check
-    function handleCardClick(url) {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            alert('Please login to access this content');
-            window.location.href = 'index.html';
-            return;
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -100;
         }
-        window.location.href = url;
-    }
 
-    // Logout functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to logout?')) {
-                    // Clear authentication data
-                    localStorage.removeItem('auth_token');
-                    localStorage.removeItem('token_timestamp');
-                    localStorage.removeItem('username');
-                    sessionStorage.clear();
-                    
-                    // Redirect to login page
-                    window.location.href = 'index.html';
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(2, 4, 10, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00FFB3';
+            ctx.font = `${fontSize}px monospace`;
+
+            for (let i = 0; i < drops.length; i++) {
+                const char = charArray[Math.floor(Math.random() * charArray.length)];
+                const x = i * fontSize;
+                const y = drops[i] * fontSize;
+
+                ctx.fillText(char, x, y);
+
+                if (y > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
                 }
-            });
+                drops[i]++;
+            }
         }
 
-        // Check if user is authenticated
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            window.location.href = 'index.html';
-            return;
+        const matrixInterval = setInterval(drawMatrix, 50);
+        window.addEventListener('resize', resizeCanvas);
+
+        // Load user profile data for navbar
+        async function loadUserProfileForNavbar() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    console.log('No authentication token found');
+                    return;
+                }
+
+                const response = await fetch('/api/user-profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    updateNavbarProfile(userData);
+                    
+                    // Save user data to localStorage for fallback
+                    saveUserDataToLocalStorage(userData);
+                } else {
+                    console.error('Failed to fetch user profile:', response.status);
+                    // Fallback to localStorage data
+                    loadUserDataFromLocalStorage();
+                }
+            } catch (error) {
+                console.error('Error loading profile for navbar:', error);
+                // Fallback to localStorage data
+                loadUserDataFromLocalStorage();
+            }
         }
 
-        // Add click event listeners to all note cards
-        const noteCards = document.querySelectorAll('.note-card');
-        noteCards.forEach(card => {
-            if (!card.classList.contains('coming-soon-card')) {
-                const currentOnClick = card.getAttribute('onclick');
-                if (currentOnClick) {
-                    // Extract the URL from the onclick attribute
-                    const urlMatch = currentOnClick.match(/window\.location\.href='([^']+)'/);
-                    if (urlMatch && urlMatch[1]) {
-                        const url = urlMatch[1];
-                        card.removeAttribute('onclick');
-                        card.addEventListener('click', function() {
-                            handleCardClick(url);
-                        });
+        function updateNavbarProfile(userData) {
+            const navProfileImage = document.getElementById('nav-profile-image');
+            if (!navProfileImage) return;
+
+            // Update profile image or initials
+            if (userData.profile_image) {
+                navProfileImage.innerHTML = '';
+                navProfileImage.style.backgroundImage = `url(${userData.profile_image})`;
+                navProfileImage.style.backgroundSize = 'cover';
+                navProfileImage.style.backgroundPosition = 'center';
+            } else {
+                const initials = userData.full_name.split(' ').map(name => name[0]).join('').toUpperCase();
+                navProfileImage.innerHTML = initials || 'AJ';
+                navProfileImage.style.backgroundImage = 'none';
+                navProfileImage.style.background = 'linear-gradient(135deg, #00FFB3, #2EC6FF)';
+            }
+        }
+
+        function saveUserDataToLocalStorage(userData) {
+            localStorage.setItem('full_name', userData.full_name);
+            localStorage.setItem('email', userData.email);
+            localStorage.setItem('username', userData.username);
+            if (userData.join_date) {
+                localStorage.setItem('join_date', new Date(userData.join_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long'
+                }));
+            }
+            if (userData.profile_image) {
+                localStorage.setItem('profileImage', userData.profile_image);
+            }
+        }
+
+        function loadUserDataFromLocalStorage() {
+            const username = localStorage.getItem('username') || 'ArchitectJohan';
+            const fullName = localStorage.getItem('full_name') || 'Architect Johan';
+            const email = localStorage.getItem('email') || 'admin@architectjohan.com';
+
+            // Update profile image from localStorage
+            const navProfileImage = document.getElementById('nav-profile-image');
+            const savedImage = localStorage.getItem('profileImage');
+            
+            if (navProfileImage) {
+                if (savedImage) {
+                    navProfileImage.innerHTML = '';
+                    navProfileImage.style.backgroundImage = `url(${savedImage})`;
+                    navProfileImage.style.backgroundSize = 'cover';
+                    navProfileImage.style.backgroundPosition = 'center';
+                } else {
+                    // Use initials if no image
+                    const initials = fullName.split(' ').map(name => name[0]).join('').toUpperCase();
+                    navProfileImage.innerHTML = initials || 'AJ';
+                    navProfileImage.style.backgroundImage = 'none';
+                    navProfileImage.style.background = 'linear-gradient(135deg, #00FFB3, #2EC6FF)';
+                }
+            }
+        }
+
+        // Card click handlers with authentication check
+        function handleCardClick(url) {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                alert('Please login to access this content');
+                window.location.href = 'index.html';
+                return;
+            }
+            window.location.href = url;
+        }
+
+        // Navigation function
+        function navigateToPage(url) {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    throw new Error('Not authenticated');
+                }
+                
+                // Check if token is expired
+                const tokenTimestamp = localStorage.getItem('token_timestamp');
+                if (tokenTimestamp) {
+                    const now = new Date().getTime();
+                    const tokenTime = parseInt(tokenTimestamp);
+                    const hoursSinceLogin = (now - tokenTime) / (1000 * 60 * 60);
+                    
+                    if (hoursSinceLogin > 24) { // 24 hours expiry
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('token_timestamp');
+                        localStorage.removeItem('username');
+                        window.location.href = 'index.html';
+                        return;
                     }
                 }
+                
+                window.location.href = url;
+            } catch (error) {
+                console.error('Navigation error:', error);
+                alert('Authentication required. Please login again.');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Logout functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutBtn = document.getElementById('logout-btn');
+            const profileSection = document.getElementById('profile-section');
+
+            // Load user profile data
+            loadUserProfileForNavbar();
+
+            // Profile section click handler
+            if (profileSection) {
+                profileSection.addEventListener('click', function() {
+                    window.location.href = 'profile.html';
+                });
+            }
+
+            // Logout button click handler
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (confirm('Are you sure you want to logout?')) {
+                        performLogout();
+                    }
+                });
+            }
+
+            // Check if user is authenticated
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Add click event listeners to all note cards
+            const noteCards = document.querySelectorAll('.note-card');
+            noteCards.forEach(card => {
+                if (!card.classList.contains('coming-soon-card')) {
+                    const currentOnClick = card.getAttribute('onclick');
+                    if (currentOnClick) {
+                        // Extract the URL from the onclick attribute
+                        const urlMatch = currentOnClick.match(/window\.location\.href='([^']+)'/);
+                        if (urlMatch && urlMatch[1]) {
+                            const url = urlMatch[1];
+                            card.removeAttribute('onclick');
+                            card.addEventListener('click', function() {
+                                handleCardClick(url);
+                            });
+                        }
+                    }
+                }
+            });
+
+            // Special handler for CEHv13 card to ensure it works
+            const cehCard = document.querySelector('.note-card[onclick*="ceh-details.html"]');
+            if (cehCard) {
+                cehCard.removeAttribute('onclick');
+                cehCard.addEventListener('click', function() {
+                    handleCardClick('ceh-details.html');
+                });
             }
         });
 
-        // Special handler for CEHv13 card to ensure it works
-        const cehCard = document.querySelector('.note-card[onclick*="ceh-details.html"]');
-        if (cehCard) {
-            cehCard.removeAttribute('onclick');
-            cehCard.addEventListener('click', function() {
-                handleCardClick('ceh-details.html');
-            });
-        }
-    });
-
-    // Add this function to handle navigation with better error handling
-    function navigateToPage(url) {
-        try {
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                throw new Error('Not authenticated');
-            }
-            
-            // Check if token is expired
-            const tokenTimestamp = localStorage.getItem('token_timestamp');
-            if (tokenTimestamp) {
-                const now = new Date().getTime();
-                const tokenTime = parseInt(tokenTimestamp);
-                const hoursSinceLogin = (now - tokenTime) / (1000 * 60 * 60);
-                
-                if (hoursSinceLogin > 24) { // 24 hours expiry
-                    localStorage.removeItem('auth_token');
-                    localStorage.removeItem('token_timestamp');
-                    localStorage.removeItem('username');
-                    window.location.href = 'index.html';
-                    return;
+        async function performLogout() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (token) {
+                    await fetch('/api/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
                 }
+            } catch (error) {
+                console.error('Logout API error:', error);
+            } finally {
+                // Clear all authentication data
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('token_timestamp');
+                localStorage.removeItem('username');
+                localStorage.removeItem('full_name');
+                localStorage.removeItem('email');
+                localStorage.removeItem('profileImage');
+                sessionStorage.clear();
+                
+                // Redirect to login page
+                window.location.href = 'index.html';
             }
-            
-            window.location.href = url;
-        } catch (error) {
-            console.error('Navigation error:', error);
-            alert('Authentication required. Please login again.');
-            window.location.href = 'index.html';
         }
-    }
-</script>
+
+        // Auto-refresh profile data every 5 minutes
+        setInterval(loadUserProfileForNavbar, 300000);
+    </script>
 </body>
-
 </html>
-
-
