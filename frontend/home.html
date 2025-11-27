@@ -146,6 +146,13 @@
             text-align: center;
             margin-bottom: 80px;
             animation: float 6s ease-in-out infinite;
+            position: relative;
+            z-index: 9999 !important;
+            background: rgba(2, 4, 10, 0.95);
+            padding: 25px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 255, 179, 0.25);
+            box-shadow: 0 0 35px rgba(0, 255, 179, 0.15);
         }
 
         @keyframes float {
@@ -159,12 +166,21 @@
             text-transform: uppercase;
             letter-spacing: 4px;
             margin-bottom: 30px;
-             text-shadow: 0 0 10px rgba(0, 255, 179, 0.6);
-            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: fadeInUp 1s ease-out;
+            text-shadow: 0 0 10px rgba(0, 255, 179, 0.6);
+            position: relative;
+            z-index: 99999 !important;
+            /* FIX: Removed gradient background for username clarity */
+            color: #00FFB3;
+        }
+
+        .welcome-message .username {
+            /* FIX: Solid color for username to prevent blur */
+            color: #2EC6FF;
+            text-shadow: 0 0 15px rgba(46, 198, 255, 0.8);
+            background: none;
+            -webkit-background-clip: initial;
+            -webkit-text-fill-color: initial;
+            background-clip: initial;
         }
 
         @keyframes fadeInUp {
@@ -192,6 +208,8 @@
         .typing-container {
             display: inline-block;
             text-align: center;
+            position: relative;
+            z-index: 99999 !important;
         }
 
         .typing-text {
@@ -502,48 +520,6 @@
         #matrix-canvas {
             z-index: 0 !important;
         }
-
-        .hero {
-            position: relative;
-            z-index: 9999 !important;
-            background: rgba(2, 4, 10, 0.85); /* makes text crisp */
-            padding: 20px 10px;
-            border-radius: 10px;
-        }
-
-        .welcome-message {
-            z-index: 9999 !important;
-        }
-
-        /* ===== FIX: REMOVE BLUR BEHIND WELCOME TEXT ===== */
-        #matrix-canvas {
-            z-index: 0 !important;   /* matrix stays behind EVERYTHING */
-        }
-
-        .hero {
-            position: relative;
-            z-index: 9999 !important;
-
-            /* Clean dark glass background behind WELCOME */
-            background: rgba(2, 4, 10, 0.85);
-            padding: 25px 20px;
-            border-radius: 12px;
-
-            /* Optional light glow border */
-            border: 1px solid rgba(0, 255, 179, 0.25);
-            box-shadow: 0 0 35px rgba(0, 255, 179, 0.15);
-        }
-
-        .welcome-message {
-            position: relative;
-            z-index: 99999 !important;
-            text-shadow: 0 0 15px rgba(0, 255, 179, 0.6); /* cleaner glow */
-        }
-
-        .typing-container {
-            position: relative;
-            z-index: 99999 !important;
-        }
     </style>
 </head>
 <body>
@@ -572,7 +548,7 @@
         <div class="content-area">
             <div class="hero">
                 <h1 class="welcome-message" id="welcomeMessage">
-                    Welcome, <span id="userFullName">Loading...</span> <span class="welcome-emoji">👋</span>
+                    Welcome, <span id="userFullName" class="username">Loading...</span> <span class="welcome-emoji">👋</span>
                 </h1>
                 
                 <div class="typing-container">
@@ -594,8 +570,6 @@
                     <p>Browse through comprehensive notes and documentation for reference.</p>
                     <a href="notes.html" class="card-btn">Enter Module</a>
                 </div>
-
-                <!-- Practice Set section removed as requested -->
             </div>
         </div>
         
