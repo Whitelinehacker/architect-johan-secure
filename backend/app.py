@@ -119,6 +119,7 @@ def get_db_connection():
         return None
 
 # Initialize PostgreSQL database
+# Initialize PostgreSQL database
 def init_db():
     """Initialize PostgreSQL database tables"""
     try:
@@ -144,10 +145,21 @@ def init_db():
                     locked_until TIMESTAMP,
                     is_active BOOLEAN DEFAULT TRUE,
                     reset_token TEXT,
-                    reset_token_expiry TIMESTAMP,
-                    profile_image TEXT
+                    reset_token_expiry TIMESTAMP
                 )
             ''')
+            
+            # Check if profile_image column exists, if not add it
+            cursor.execute('''
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name='users' AND column_name='profile_image'
+            ''')
+            profile_image_exists = cursor.fetchone()
+            
+            if not profile_image_exists:
+                cursor.execute('ALTER TABLE users ADD COLUMN profile_image TEXT')
+                logger.info("✅ Added profile_image column to users table")
             
             # User activity log table
             cursor.execute('''
@@ -198,6 +210,21 @@ def init_db():
                 )
             ''')
             
+            # User progress summary table (optional - for better performance)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS user_progress_summary (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(100) UNIQUE NOT NULL,
+                    total_videos_watched INTEGER DEFAULT 0,
+                    total_practice_sets_completed INTEGER DEFAULT 0,
+                    current_streak INTEGER DEFAULT 0,
+                    longest_streak INTEGER DEFAULT 0,
+                    total_learning_hours DECIMAL(10,2) DEFAULT 0,
+                    last_activity_date DATE,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
             # Check if admin user exists
             cursor.execute('SELECT * FROM users WHERE username = %s', ('ArchitectJohan',))
             admin_exists = cursor.fetchone()
@@ -216,16 +243,36 @@ def init_db():
                     '0000000000',
                     'admin'
                 ))
-                logger.info("Default admin user created")
+                logger.info("✅ Default admin user created")
+            
+            # Create indexes for better performance
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_user_activity_username 
+                ON user_activity(username, timestamp)
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_video_access_username 
+                ON video_access(username, access_time)
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_practice_access_username 
+                ON practice_access(username, access_time)
+            ''')
+            
+            logger.info("✅ Database indexes created/verified")
         
         conn.commit()
         conn.close()
         
-        logger.info("PostgreSQL database initialized successfully")
+        logger.info("✅ PostgreSQL database initialized successfully")
         return True
         
     except Exception as e:
-        logger.error(f"Database initialization failed: {e}")
+        logger.error(f"❌ Database initialization failed: {e}")
+        import traceback
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
         return False
 
 # Initialize database on startup
@@ -632,6 +679,7 @@ def admin_required(f):
     return decorated
 
 # PROFILE ROUTES
+# PROFILE ROUTES
 @app.route('/api/user-profile', methods=['GET'])
 @token_required
 def get_user_profile(current_user):
@@ -641,54 +689,62 @@ def get_user_profile(current_user):
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
-        # Calculate progress statistics
-        conn = get_db_connection()
+        # Calculate progress statistics with better error handling
         videos_watched = 0
         practice_completed = 0
         streak = 1
         
+        conn = get_db_connection()
         if conn:
-            with conn.cursor() as cursor:
-                # Get videos watched count
-                cursor.execute(
-                    'SELECT COUNT(DISTINCT video_id) as video_count FROM video_access WHERE username = %s',
-                    (current_user,)
-                )
-                video_result = cursor.fetchone()
-                videos_watched = video_result['video_count'] if video_result else 0
-                
-                # Get practice sets accessed
-                cursor.execute(
-                    'SELECT COUNT(DISTINCT practice_set) as practice_count FROM practice_access WHERE username = %s AND status = %s',
-                    (current_user, 'success')
-                )
-                practice_result = cursor.fetchone()
-                practice_completed = practice_result['practice_count'] if practice_result else 0
-                
-                # Calculate streak (simplified - in production you'd want more sophisticated logic)
-                cursor.execute(
-                    'SELECT COUNT(DISTINCT DATE(access_time)) as streak FROM video_access WHERE username = %s AND access_time >= CURRENT_DATE - INTERVAL %s',
-                    (current_user, '7 days')
-                )
-                streak_result = cursor.fetchone()
-                streak = streak_result['streak'] if streak_result else 1
-                
-            conn.close()
+            try:
+                with conn.cursor() as cursor:
+                    # Get videos watched count
+                    cursor.execute(
+                        'SELECT COUNT(DISTINCT video_id) as video_count FROM video_access WHERE username = %s',
+                        (current_user,)
+                    )
+                    video_result = cursor.fetchone()
+                    videos_watched = video_result['video_count'] if video_result else 0
+                    
+                    # Get practice sets accessed
+                    cursor.execute(
+                        'SELECT COUNT(DISTINCT practice_set) as practice_count FROM practice_access WHERE username = %s AND status = %s',
+                        (current_user, 'success')
+                    )
+                    practice_result = cursor.fetchone()
+                    practice_completed = practice_result['practice_count'] if practice_result else 0
+                    
+                    # Calculate streak (simplified)
+                    cursor.execute(
+                        'SELECT COUNT(DISTINCT DATE(access_time)) as streak FROM video_access WHERE username = %s AND access_time >= CURRENT_DATE - INTERVAL %s',
+                        (current_user, '7 days')
+                    )
+                    streak_result = cursor.fetchone()
+                    streak = streak_result['streak'] if streak_result else 1
+                    
+            except Exception as db_error:
+                logger.error(f"Database error in profile calculation: {db_error}")
+                # Use default values if database query fails
+            finally:
+                conn.close()
         
-        # Prepare profile image URL
+        # Prepare profile image URL safely
         profile_image_url = None
-        if user.get('profile_image'):
-            profile_image_url = f"data:image/jpeg;base64,{user['profile_image']}"
+        try:
+            if user.get('profile_image'):
+                profile_image_url = f"data:image/jpeg;base64,{user['profile_image']}"
+        except Exception as img_error:
+            logger.error(f"Error processing profile image: {img_error}")
         
         return jsonify({
             'username': user['username'],
             'full_name': user['full_name'],
             'email': user['email'],
-            'mobile_no': user['mobile_no'],
+            'mobile_no': user.get('mobile_no', ''),
             'role': user['role'],
-            'membership': 'basic',  # You can expand this based on your business logic
-            'join_date': user['created_at'].isoformat() if user['created_at'] else None,
-            'last_login': user['last_login'].isoformat() if user['last_login'] else None,
+            'membership': 'basic',
+            'join_date': user['created_at'].isoformat() if user.get('created_at') else None,
+            'last_login': user['last_login'].isoformat() if user.get('last_login') else None,
             'profile_image': profile_image_url,
             'progress': {
                 'daily_progress': calculate_daily_progress(current_user),
@@ -697,13 +753,15 @@ def get_user_profile(current_user):
                 'streak': streak,
                 'videos_watched': videos_watched,
                 'practice_completed': practice_completed,
-                'hours_learned': videos_watched * 0.5,  # Estimate 30 minutes per video
-                'achievements': min(videos_watched // 5, 10)  # Simple achievement calculation
+                'hours_learned': videos_watched * 0.5,
+                'achievements': min(videos_watched // 5, 10)
             }
         }), 200
         
     except Exception as e:
         logger.error(f"Profile fetch error: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Failed to fetch profile data'}), 500
 
 def calculate_daily_progress(username):
@@ -839,6 +897,14 @@ def upload_profile_image(current_user):
         if file.filename == '':
             return jsonify({'error': 'No image selected'}), 400
         
+        # Check file size (max 5MB)
+        file.seek(0, 2)  # Seek to end to get file size
+        file_size = file.tell()
+        file.seek(0)  # Reset file pointer
+        
+        if file_size > 5 * 1024 * 1024:  # 5MB limit
+            return jsonify({'error': 'File size too large. Maximum size is 5MB.'}), 400
+        
         if file and allowed_file(file.filename):
             # Read file data
             image_data = file.read()
@@ -847,21 +913,27 @@ def upload_profile_image(current_user):
             image_base64 = base64.b64encode(image_data).decode('utf-8')
             
             # Update user profile image in database
-            user = get_user_by_username(current_user)
-            if user:
-                user['profile_image'] = image_base64
-                if update_user(user):
-                    log_user_activity(current_user, 'profile_image_updated', request.remote_addr, request.headers.get('User-Agent'))
-                    
-                    return jsonify({
-                        'success': True,
-                        'message': 'Profile image updated successfully',
-                        'image_url': f'data:image/jpeg;base64,{image_base64}'
-                    }), 200
-                else:
-                    return jsonify({'error': 'Failed to save profile image'}), 500
+            conn = get_db_connection()
+            if conn:
+                with conn.cursor() as cursor:
+                    cursor.execute('''
+                        UPDATE users 
+                        SET profile_image = %s
+                        WHERE username = %s
+                    ''', (image_base64, current_user))
+                
+                conn.commit()
+                conn.close()
+                
+                log_user_activity(current_user, 'profile_image_updated', request.remote_addr, request.headers.get('User-Agent'))
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Profile image updated successfully',
+                    'image_url': f'data:image/jpeg;base64,{image_base64}'
+                }), 200
             else:
-                return jsonify({'error': 'User not found'}), 404
+                return jsonify({'error': 'Database connection failed'}), 500
         else:
             return jsonify({'error': 'Invalid file type. Only JPEG, PNG, GIF allowed.'}), 400
             
