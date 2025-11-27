@@ -16,6 +16,7 @@ import json
 import requests
 import random
 from datetime import timezone
+import base64
 
 # Import psycopg3 (new version)
 try:
@@ -143,7 +144,8 @@ def init_db():
                     locked_until TIMESTAMP,
                     is_active BOOLEAN DEFAULT TRUE,
                     reset_token TEXT,
-                    reset_token_expiry TIMESTAMP
+                    reset_token_expiry TIMESTAMP,
+                    profile_image TEXT
                 )
             ''')
             
@@ -313,7 +315,10 @@ def update_user(user):
                     failed_attempts = %s, 
                     locked_until = %s,
                     reset_token = %s,
-                    reset_token_expiry = %s
+                    reset_token_expiry = %s,
+                    profile_image = %s,
+                    full_name = %s,
+                    mobile_no = %s
                 WHERE username = %s
             ''', (
                 user.get('last_login'),
@@ -321,6 +326,9 @@ def update_user(user):
                 user.get('locked_until'),
                 user.get('reset_token'),
                 user.get('reset_token_expiry'),
+                user.get('profile_image'),
+                user.get('full_name'),
+                user.get('mobile_no'),
                 user['username']
             ))
         
@@ -622,6 +630,250 @@ def admin_required(f):
         return f(current_user, *args, **kwargs)
     
     return decorated
+
+# PROFILE ROUTES
+@app.route('/api/user-profile', methods=['GET'])
+@token_required
+def get_user_profile(current_user):
+    """Get complete user profile data"""
+    try:
+        user = get_user_by_username(current_user)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Calculate progress statistics
+        conn = get_db_connection()
+        videos_watched = 0
+        practice_completed = 0
+        streak = 1
+        
+        if conn:
+            with conn.cursor() as cursor:
+                # Get videos watched count
+                cursor.execute(
+                    'SELECT COUNT(DISTINCT video_id) as video_count FROM video_access WHERE username = %s',
+                    (current_user,)
+                )
+                video_result = cursor.fetchone()
+                videos_watched = video_result['video_count'] if video_result else 0
+                
+                # Get practice sets accessed
+                cursor.execute(
+                    'SELECT COUNT(DISTINCT practice_set) as practice_count FROM practice_access WHERE username = %s AND status = %s',
+                    (current_user, 'success')
+                )
+                practice_result = cursor.fetchone()
+                practice_completed = practice_result['practice_count'] if practice_result else 0
+                
+                # Calculate streak (simplified - in production you'd want more sophisticated logic)
+                cursor.execute(
+                    'SELECT COUNT(DISTINCT DATE(access_time)) as streak FROM video_access WHERE username = %s AND access_time >= CURRENT_DATE - INTERVAL %s',
+                    (current_user, '7 days')
+                )
+                streak_result = cursor.fetchone()
+                streak = streak_result['streak'] if streak_result else 1
+                
+            conn.close()
+        
+        # Prepare profile image URL
+        profile_image_url = None
+        if user.get('profile_image'):
+            profile_image_url = f"data:image/jpeg;base64,{user['profile_image']}"
+        
+        return jsonify({
+            'username': user['username'],
+            'full_name': user['full_name'],
+            'email': user['email'],
+            'mobile_no': user['mobile_no'],
+            'role': user['role'],
+            'membership': 'basic',  # You can expand this based on your business logic
+            'join_date': user['created_at'].isoformat() if user['created_at'] else None,
+            'last_login': user['last_login'].isoformat() if user['last_login'] else None,
+            'profile_image': profile_image_url,
+            'progress': {
+                'daily_progress': calculate_daily_progress(current_user),
+                'weekly_progress': calculate_weekly_progress(current_user),
+                'monthly_progress': calculate_monthly_progress(current_user),
+                'streak': streak,
+                'videos_watched': videos_watched,
+                'practice_completed': practice_completed,
+                'hours_learned': videos_watched * 0.5,  # Estimate 30 minutes per video
+                'achievements': min(videos_watched // 5, 10)  # Simple achievement calculation
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Profile fetch error: {e}")
+        return jsonify({'error': 'Failed to fetch profile data'}), 500
+
+def calculate_daily_progress(username):
+    """Calculate daily progress percentage"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return 25
+        
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT COUNT(*) as activity_count 
+                FROM user_activity 
+                WHERE username = %s 
+                AND DATE(timestamp) = CURRENT_DATE
+                AND action IN ('login_success', 'accessed_videos', 'accessed_notes')
+            ''', (username,))
+            result = cursor.fetchone()
+            activity_count = result['activity_count'] if result else 0
+        
+        conn.close()
+        
+        # Simple progress calculation based on activity
+        progress = min(activity_count * 10, 100)
+        return progress if progress > 0 else 25  # Minimum 25% for demo
+        
+    except Exception as e:
+        logger.error(f"Daily progress calculation error: {e}")
+        return 25
+
+def calculate_weekly_progress(username):
+    """Calculate weekly progress percentage"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return 65
+        
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT COUNT(DISTINCT DATE(timestamp)) as active_days 
+                FROM user_activity 
+                WHERE username = %s 
+                AND timestamp >= CURRENT_DATE - INTERVAL '7 days'
+                AND action IN ('login_success', 'accessed_videos', 'accessed_notes')
+            ''', (username,))
+            result = cursor.fetchone()
+            active_days = result['active_days'] if result else 0
+        
+        conn.close()
+        
+        progress = min(active_days * 15, 100)
+        return progress if progress > 0 else 65
+        
+    except Exception as e:
+        logger.error(f"Weekly progress calculation error: {e}")
+        return 65
+
+def calculate_monthly_progress(username):
+    """Calculate monthly progress percentage"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return 45
+        
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT COUNT(DISTINCT DATE(timestamp)) as active_days 
+                FROM user_activity 
+                WHERE username = %s 
+                AND timestamp >= CURRENT_DATE - INTERVAL '30 days'
+                AND action IN ('login_success', 'accessed_videos', 'accessed_notes')
+            ''', (username,))
+            result = cursor.fetchone()
+            active_days = result['active_days'] if result else 0
+        
+        conn.close()
+        
+        progress = min(active_days * 3.33, 100)  # 30 days in month
+        return progress if progress > 0 else 45
+        
+    except Exception as e:
+        logger.error(f"Monthly progress calculation error: {e}")
+        return 45
+
+@app.route('/api/update-profile', methods=['POST'])
+@token_required
+def update_user_profile(current_user):
+    """Update user profile information"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data.get('full_name'):
+            return jsonify({'error': 'Full name is required'}), 400
+        
+        # Get current user
+        user = get_user_by_username(current_user)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Update user data
+        user['full_name'] = data['full_name']
+        if data.get('mobile_no'):
+            user['mobile_no'] = data['mobile_no']
+        
+        # Update user in database
+        if update_user(user):
+            # Log the activity
+            log_user_activity(current_user, 'profile_updated', request.remote_addr, request.headers.get('User-Agent'))
+            
+            return jsonify({
+                'success': True,
+                'message': 'Profile updated successfully'
+            }), 200
+        else:
+            return jsonify({'error': 'Failed to update profile'}), 500
+        
+    except Exception as e:
+        logger.error(f"Profile update error: {e}")
+        return jsonify({'error': 'Failed to update profile'}), 500
+
+@app.route('/api/upload-profile-image', methods=['POST'])
+@token_required
+def upload_profile_image(current_user):
+    """Handle profile image upload"""
+    try:
+        # Check if image file is present
+        if 'profile_image' not in request.files:
+            return jsonify({'error': 'No image file provided'}), 400
+        
+        file = request.files['profile_image']
+        
+        if file.filename == '':
+            return jsonify({'error': 'No image selected'}), 400
+        
+        if file and allowed_file(file.filename):
+            # Read file data
+            image_data = file.read()
+            
+            # Convert to base64 for storage
+            image_base64 = base64.b64encode(image_data).decode('utf-8')
+            
+            # Update user profile image in database
+            user = get_user_by_username(current_user)
+            if user:
+                user['profile_image'] = image_base64
+                if update_user(user):
+                    log_user_activity(current_user, 'profile_image_updated', request.remote_addr, request.headers.get('User-Agent'))
+                    
+                    return jsonify({
+                        'success': True,
+                        'message': 'Profile image updated successfully',
+                        'image_url': f'data:image/jpeg;base64,{image_base64}'
+                    }), 200
+                else:
+                    return jsonify({'error': 'Failed to save profile image'}), 500
+            else:
+                return jsonify({'error': 'User not found'}), 404
+        else:
+            return jsonify({'error': 'Invalid file type. Only JPEG, PNG, GIF allowed.'}), 400
+            
+    except Exception as e:
+        logger.error(f"Profile image upload error: {e}")
+        return jsonify({'error': 'Failed to upload profile image'}), 500
+
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 # CSRF TOKEN ROUTE
 @app.route('/api/csrf-token', methods=['GET'])
@@ -1132,7 +1384,11 @@ def serve_css(path):
 def serve_downloads(filename):
     return send_from_directory('../frontend/downloads', filename)
 
-# Serve reset-password.html
+# Serve profile.html and reset-password.html
+@app.route('/profile.html')
+def serve_profile():
+    return send_from_directory('../frontend', 'profile.html')
+
 @app.route('/reset-password.html')
 def serve_reset_password():
     return send_from_directory('../frontend', 'reset-password.html')
@@ -1304,36 +1560,6 @@ def check_mobile():
         logger.error(f"Mobile check error: {e}")
         return jsonify({'exists': False, 'error': 'Server error'}), 500
 
-
-@app.route('/api/user-profile', methods=['GET'])
-@token_required
-def get_user_profile(current_user):
-    try:
-        user = get_user_by_username(current_user)
-        if user:
-            # Calculate today's progress
-            today_progress = calculate_today_progress(current_user)
-            
-            return jsonify({
-                'username': user['username'],
-                'full_name': user['full_name'],
-                'email': user['email'],
-                'today_progress': today_progress,
-                'profile_picture': user.get('profile_picture_url'),  # Add this field to your users table
-                'joined_date': user['created_at'].isoformat() if user['created_at'] else None
-            }), 200
-        else:
-            return jsonify({'error': 'User not found'}), 404
-    except Exception as e:
-        logger.error(f"Profile fetch error: {e}")
-        return jsonify({'error': 'Failed to fetch profile'}), 500
-
-def calculate_today_progress(username):
-    # Implement your progress calculation logic here
-    # This should return a value between 0-100
-    # Example: Calculate based on today's completed activities
-    return 65  # Placeholder - replace with actual logic
-
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -1349,6 +1575,3 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
-
-
