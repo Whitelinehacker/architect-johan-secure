@@ -68,6 +68,7 @@
         .nav-links {
             display: flex;
             gap: 30px;
+            align-items: center;
         }
 
         .nav-links a {
@@ -107,6 +108,56 @@
 
         .nav-links a:hover::after {
             width: 80%;
+        }
+
+        /* Profile section in navbar */
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section:hover {
+            transform: translateY(-2px);
+        }
+
+        .profile-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #00FFB3;
+            object-fit: cover;
+            background: linear-gradient(135deg, #00FFB3, #2EC6FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #02040A;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section:hover .profile-image {
+            border-color: #2EC6FF;
+            box-shadow: 0 0 20px rgba(46, 198, 255, 0.6);
+            transform: scale(1.1);
+        }
+
+        /* Logout button specific styles */
+        .logout-btn {
+            color: #FF6B6B !important;
+            background: rgba(255, 107, 107, 0.1) !important;
+            border: 1px solid rgba(255, 107, 107, 0.3) !important;
+        }
+
+        .logout-btn:hover {
+            color: #FF5252 !important;
+            background: rgba(255, 107, 107, 0.2) !important;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.8) !important;
+            border-color: #FF6B6B !important;
         }
 
         /* Main content */
@@ -258,6 +309,109 @@
             font-size: 16px;
         }
 
+        /* Password Modal */
+        .password-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 4, 10, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .password-modal-content {
+            background: rgba(2, 4, 10, 0.95);
+            border: 2px solid #00FFB3;
+            border-radius: 20px;
+            padding: 40px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0, 255, 179, 0.5);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .password-modal h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(0, 255, 179, 0.1);
+            border: 2px solid #00FFB3;
+            border-radius: 10px;
+            color: #00FFB3;
+            font-size: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .password-input:focus {
+            outline: none;
+            border-color: #2EC6FF;
+            box-shadow: 0 0 20px rgba(46, 198, 255, 0.5);
+        }
+
+        .password-input::placeholder {
+            color: #2EC6FF;
+            opacity: 0.7;
+        }
+
+        .password-btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            color: #02040A;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .password-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 255, 179, 0.5);
+        }
+
+        .password-btn.cancel {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+        }
+
+        .error-message {
+            color: #FF6B6B;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
         /* Back buttons */
         .back-buttons {
             display: flex;
@@ -329,6 +483,13 @@
 
             .nav-links {
                 gap: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .profile-section {
+                margin-left: 0;
+                gap: 10px;
             }
 
             .main-content {
@@ -361,6 +522,11 @@
             .back-btn {
                 text-align: center;
             }
+
+            .password-modal-content {
+                padding: 30px 20px;
+                margin: 20px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -385,24 +551,25 @@
                 padding: 25px;
             }
         }
-
-        .logout-btn {
-            color: #FF6B6B !important;
-            background: rgba(255, 107, 107, 0.1) !important;
-            border: 1px solid rgba(255, 107, 107, 0.3) !important;
-        }
-
-        .logout-btn:hover {
-            color: #FF5252 !important;
-            background: rgba(255, 107, 107, 0.2) !important;
-            text-shadow: 0 0 10px rgba(255, 107, 107, 0.8) !important;
-            border-color: #FF6B6B !important;
-        }
     </style>
 </head>
 <body>
     <!-- Matrix background -->
     <canvas id="matrix-canvas"></canvas>
+
+    <!-- Password Modal -->
+    <div class="password-modal" id="passwordModal">
+        <div class="password-modal-content">
+            <h2>Enter Password</h2>
+            <p style="color: #2EC6FF; margin-bottom: 20px;">Please enter the password to access CEH v13 Study Notes</p>
+            <input type="password" class="password-input" id="passwordInput" placeholder="Enter password..." autocomplete="off">
+            <div class="error-message" id="passwordError">Incorrect password. Please try again.</div>
+            <div style="margin-top: 25px;">
+                <button class="password-btn" onclick="verifyPassword()">Verify Password</button>
+                <button class="password-btn cancel" onclick="closePasswordModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Navbar -->
     <nav class="navbar">
@@ -411,8 +578,16 @@
             <a href="home.html">Home</a>
             <a href="videos.html">Videos</a>
             <a href="notes.html" class="active">Notes</a>
+            <a href="trending.html">Trending Videos</a>
+            <a href="announcements.html">Announcements</a>
             <a href="support.html">Support</a>
             <a href="about.html">About</a>
+            
+            <!-- Profile Section -->
+            <div class="profile-section" id="profile-section">
+                <div class="profile-image" id="nav-profile-image">AJ</div>
+            </div>
+            
             <a href="#" id="logout-btn" class="logout-btn">Logout</a>
         </div>
     </nav>
@@ -441,7 +616,7 @@
             </div>
 
             <!-- Notes -->
-            <div class="download-section" onclick="handleDownloadClick('cehv13_notes.html', 'CEH Study Notes')">
+            <div class="download-section" onclick="openPasswordModal()">
                 <div class="section-header">
                     <div class="section-icon">📝</div>
                     <h2 class="section-title">Study Notes</h2>
@@ -474,59 +649,239 @@
         // API Base URL
         const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
 
+        // Global variables
+        let currentTargetUrl = '';
+
         // Authentication check
-  document.addEventListener('DOMContentLoaded', function() {
-    checkAuthentication();
-});
-
-// Check if user is authenticated
-async function checkAuthentication() {
-    const token = localStorage.getItem('auth_token');
-    
-    if (!token) {
-        console.log('❌ No authentication token found');
-        window.location.href = 'index.html';
-        return;
-    }
-
-    try {
-        // Validate token with backend
-        const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthentication();
+            loadUserProfileForNavbar();
         });
 
-        if (!response.ok) {
-            console.log('❌ Token validation failed:', response.status);
-            // Clear invalid token and redirect
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('username');
-            localStorage.removeItem('user_role');
-            window.location.href = 'index.html';
-            return;
+        // Check if user is authenticated
+        async function checkAuthentication() {
+            const token = localStorage.getItem('auth_token');
+            
+            if (!token) {
+                console.log('❌ No authentication token found');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                // Validate token with backend
+                const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.log('❌ Token validation failed:', response.status);
+                    // Clear invalid token and redirect
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('user_role');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const data = await response.json();
+                console.log('✅ User authenticated successfully:', data.username);
+                
+                // Update UI to show logged in user
+                const username = localStorage.getItem('username');
+                if (username) {
+                    console.log('✅ Welcome back, ' + username);
+                }
+
+            } catch (error) {
+                console.error('❌ Authentication check failed:', error);
+                // Clear tokens and redirect to login
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('username');
+                localStorage.removeItem('user_role');
+                window.location.href = 'index.html';
+            }
         }
 
-        const data = await response.json();
-        console.log('✅ User authenticated successfully:', data.username);
-        
-        // Update UI to show logged in user
-        const username = localStorage.getItem('username');
-        if (username) {
-            console.log('✅ Welcome back, ' + username);
+        // Load user profile data for navbar
+        async function loadUserProfileForNavbar() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    console.log('No authentication token found');
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/api/user-profile`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    updateNavbarProfile(userData);
+                    
+                    // Save user data to localStorage for fallback
+                    saveUserDataToLocalStorage(userData);
+                } else {
+                    console.error('Failed to fetch user profile:', response.status);
+                    // Fallback to localStorage data
+                    loadUserDataFromLocalStorage();
+                }
+            } catch (error) {
+                console.error('Error loading profile for navbar:', error);
+                // Fallback to localStorage data
+                loadUserDataFromLocalStorage();
+            }
         }
 
-    } catch (error) {
-        console.error('❌ Authentication check failed:', error);
-        // Clear tokens and redirect to login
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('username');
-        localStorage.removeItem('user_role');
-        window.location.href = 'index.html';
-    }
-}
+        function updateNavbarProfile(userData) {
+            const navProfileImage = document.getElementById('nav-profile-image');
+            if (!navProfileImage) return;
+
+            // Update profile image or initials
+            if (userData.profile_image) {
+                navProfileImage.innerHTML = '';
+                navProfileImage.style.backgroundImage = `url(${userData.profile_image})`;
+                navProfileImage.style.backgroundSize = 'cover';
+                navProfileImage.style.backgroundPosition = 'center';
+            } else {
+                const initials = userData.full_name.split(' ').map(name => name[0]).join('').toUpperCase();
+                navProfileImage.innerHTML = initials || 'AJ';
+                navProfileImage.style.backgroundImage = 'none';
+                navProfileImage.style.background = 'linear-gradient(135deg, #00FFB3, #2EC6FF)';
+            }
+        }
+
+        function saveUserDataToLocalStorage(userData) {
+            localStorage.setItem('full_name', userData.full_name);
+            localStorage.setItem('email', userData.email);
+            localStorage.setItem('username', userData.username);
+            if (userData.join_date) {
+                localStorage.setItem('join_date', new Date(userData.join_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long'
+                }));
+            }
+            if (userData.profile_image) {
+                localStorage.setItem('profileImage', userData.profile_image);
+            }
+        }
+
+        function loadUserDataFromLocalStorage() {
+            const username = localStorage.getItem('username') || 'ArchitectJohan';
+            const fullName = localStorage.getItem('full_name') || 'Architect Johan';
+            const email = localStorage.getItem('email') || 'admin@architectjohan.com';
+
+            // Update profile image from localStorage
+            const navProfileImage = document.getElementById('nav-profile-image');
+            const savedImage = localStorage.getItem('profileImage');
+            
+            if (navProfileImage) {
+                if (savedImage) {
+                    navProfileImage.innerHTML = '';
+                    navProfileImage.style.backgroundImage = `url(${savedImage})`;
+                    navProfileImage.style.backgroundSize = 'cover';
+                    navProfileImage.style.backgroundPosition = 'center';
+                } else {
+                    // Use initials if no image
+                    const initials = fullName.split(' ').map(name => name[0]).join('').toUpperCase();
+                    navProfileImage.innerHTML = initials || 'AJ';
+                    navProfileImage.style.backgroundImage = 'none';
+                    navProfileImage.style.background = 'linear-gradient(135deg, #00FFB3, #2EC6FF)';
+                }
+            }
+        }
+
+        // Password Modal Functions
+        function openPasswordModal() {
+            currentTargetUrl = 'cehv13_notes.html';
+            const modal = document.getElementById('passwordModal');
+            const passwordInput = document.getElementById('passwordInput');
+            const errorMessage = document.getElementById('passwordError');
+            
+            modal.style.display = 'flex';
+            passwordInput.value = '';
+            errorMessage.style.display = 'none';
+            passwordInput.focus();
+        }
+
+        function closePasswordModal() {
+            const modal = document.getElementById('passwordModal');
+            modal.style.display = 'none';
+            currentTargetUrl = '';
+        }
+
+        async function verifyPassword() {
+            const password = document.getElementById('passwordInput').value;
+            const errorMessage = document.getElementById('passwordError');
+            const token = localStorage.getItem('auth_token');
+
+            if (!password) {
+                errorMessage.textContent = 'Please enter a password';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            if (!token) {
+                alert('Please log in to access this content.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                // Verify password with backend
+                const response = await fetch(`${API_BASE_URL}/api/verify-practice-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        password: password,
+                        practice_set: 'ceh_study_notes'
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Password verified successfully
+                        closePasswordModal();
+                        
+                        // Track access and navigate
+                        await trackAccess('CEH Study Notes', 'CEH v13');
+                        window.location.href = currentTargetUrl;
+                    } else {
+                        errorMessage.textContent = result.error || 'Incorrect password';
+                        errorMessage.style.display = 'block';
+                    }
+                } else {
+                    const errorData = await response.json();
+                    errorMessage.textContent = errorData.error || 'Password verification failed';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Password verification error:', error);
+                errorMessage.textContent = 'Network error. Please try again.';
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        // Handle Enter key in password input
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                verifyPassword();
+            }
+        });
 
         // Handle download section clicks with API tracking
         async function handleDownloadClick(url, sectionName) {
@@ -540,6 +895,26 @@ async function checkAuthentication() {
 
             try {
                 // Track user access in backend
+                await trackAccess(sectionName, 'CEH v13');
+                
+                // Navigate to the requested page
+                window.location.href = url;
+
+            } catch (error) {
+                console.error('Access tracking failed:', error);
+                // Still navigate to the page even if tracking fails
+                window.location.href = url;
+            }
+        }
+
+        // Track access function
+        async function trackAccess(sectionName, courseName) {
+            const token = localStorage.getItem('auth_token');
+            const username = localStorage.getItem('username');
+
+            if (!token || !username) return;
+
+            try {
                 await fetch(`${API_BASE_URL}/api/track-access`, {
                     method: 'POST',
                     headers: {
@@ -549,18 +924,12 @@ async function checkAuthentication() {
                     body: JSON.stringify({
                         username: username,
                         section: sectionName,
-                        course: 'CEH v13',
+                        course: courseName,
                         timestamp: new Date().toISOString()
                     })
                 });
-
-                // Navigate to the requested page
-                window.location.href = url;
-
             } catch (error) {
                 console.error('Access tracking failed:', error);
-                // Still navigate to the page even if tracking fails
-                window.location.href = url;
             }
         }
 
@@ -612,6 +981,16 @@ async function checkAuthentication() {
         // Logout functionality
         document.addEventListener('DOMContentLoaded', function() {
             const logoutBtn = document.getElementById('logout-btn');
+            const profileSection = document.getElementById('profile-section');
+
+            // Profile section click handler
+            if (profileSection) {
+                profileSection.addEventListener('click', function() {
+                    window.location.href = 'profile.html';
+                });
+            }
+
+            // Logout button click handler
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', async function(e) {
                     e.preventDefault();
@@ -639,6 +1018,7 @@ async function checkAuthentication() {
                         localStorage.removeItem('username');
                         localStorage.removeItem('user_role');
                         localStorage.removeItem('full_name');
+                        localStorage.removeItem('profileImage');
                         sessionStorage.clear();
                         
                         // Redirect to login page
@@ -647,7 +1027,9 @@ async function checkAuthentication() {
                 });
             }
         });
+
+        // Auto-refresh profile data every 5 minutes
+        setInterval(loadUserProfileForNavbar, 300000);
     </script>
 </body>
-
 </html>
