@@ -453,7 +453,7 @@
             
             <!-- Profile Section -->
             <div class="profile-section" id="profile-section">
-                <div class="profile-image">AJ</div>
+                <div class="profile-image" id="nav-profile-image">AJ</div>
             </div>
             
             <a href="#" id="logout-btn" class="logout-btn">Logout</a>
@@ -463,7 +463,7 @@
     <!-- Main content -->
     <div class="main-content">
         <div class="hero">
-            <h1>Welcome, Architect Johan</h1>
+            <h1 id="welcome-message">Welcome, Architect Johan</h1>
             <div class="typing-container">
                 <div class="typing-text" id="typing-text"></div>
             </div>
@@ -585,14 +585,161 @@
         // Start typing animation after page load
         setTimeout(typeWriter, 1000);
 
+        // Load user profile data for navbar
+        async function loadUserProfileForNavbar() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    console.log('No authentication token found');
+                    return;
+                }
+
+                const response = await fetch('/api/user-profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    updateNavbarProfile(userData);
+                    updateWelcomeMessage(userData);
+                    
+                    // Save user data to localStorage for fallback
+                    saveUserDataToLocalStorage(userData);
+                } else {
+                    console.error('Failed to fetch user profile:', response.status);
+                    // Fallback to localStorage data
+                    loadUserDataFromLocalStorage();
+                }
+            } catch (error) {
+                console.error('Error loading profile for navbar:', error);
+                // Fallback to localStorage data
+                loadUserDataFromLocalStorage();
+            }
+        }
+
+        function updateNavbarProfile(userData) {
+            const navProfileImage = document.getElementById('nav-profile-image');
+            if (!navProfileImage) return;
+
+            // Update profile image or initials
+            if (userData.profile_image) {
+                navProfileImage.innerHTML = '';
+                navProfileImage.style.backgroundImage = `url(${userData.profile_image})`;
+                navProfileImage.style.backgroundSize = 'cover';
+                navProfileImage.style.backgroundPosition = 'center';
+            } else {
+                const initials = userData.full_name.split(' ').map(name => name[0]).join('').toUpperCase();
+                navProfileImage.innerHTML = initials || 'AJ';
+                navProfileImage.style.backgroundImage = 'none';
+                navProfileImage.style.background = 'linear-gradient(135deg, #00FFB3, #2EC6FF)';
+            }
+        }
+
+        function updateWelcomeMessage(userData) {
+            const welcomeElement = document.getElementById('welcome-message');
+            if (welcomeElement && userData.full_name) {
+                welcomeElement.textContent = `Welcome, ${userData.full_name}`;
+            }
+        }
+
+        function saveUserDataToLocalStorage(userData) {
+            localStorage.setItem('full_name', userData.full_name);
+            localStorage.setItem('email', userData.email);
+            localStorage.setItem('username', userData.username);
+            if (userData.join_date) {
+                localStorage.setItem('join_date', new Date(userData.join_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long'
+                }));
+            }
+            if (userData.profile_image) {
+                localStorage.setItem('profileImage', userData.profile_image);
+            }
+        }
+
+        function loadUserDataFromLocalStorage() {
+            const username = localStorage.getItem('username') || 'ArchitectJohan';
+            const fullName = localStorage.getItem('full_name') || 'Architect Johan';
+            const email = localStorage.getItem('email') || 'admin@architectjohan.com';
+
+            // Update welcome message
+            const welcomeElement = document.getElementById('welcome-message');
+            if (welcomeElement) {
+                welcomeElement.textContent = `Welcome, ${fullName}`;
+            }
+
+            // Update profile image from localStorage
+            const navProfileImage = document.getElementById('nav-profile-image');
+            const savedImage = localStorage.getItem('profileImage');
+            
+            if (navProfileImage) {
+                if (savedImage) {
+                    navProfileImage.innerHTML = '';
+                    navProfileImage.style.backgroundImage = `url(${savedImage})`;
+                    navProfileImage.style.backgroundSize = 'cover';
+                    navProfileImage.style.backgroundPosition = 'center';
+                } else {
+                    // Use initials if no image
+                    const initials = fullName.split(' ').map(name => name[0]).join('').toUpperCase();
+                    navProfileImage.innerHTML = initials || 'AJ';
+                    navProfileImage.style.backgroundImage = 'none';
+                    navProfileImage.style.background = 'linear-gradient(135deg, #00FFB3, #2EC6FF)';
+                }
+            }
+        }
+
+        // Track user activity when accessing different sections
+        async function trackUserActivity(section) {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) return;
+
+                await fetch('/api/track-access', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        section: section,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            } catch (error) {
+                console.error('Error tracking activity:', error);
+            }
+        }
+
+        // Add click event listeners to track dashboard card clicks
+        function setupActivityTracking() {
+            const dashboardCards = document.querySelectorAll('.dashboard-card a');
+            dashboardCards.forEach(card => {
+                card.addEventListener('click', function(e) {
+                    const cardTitle = this.closest('.dashboard-card').querySelector('h3').textContent;
+                    trackUserActivity(cardTitle.toLowerCase().replace(/\s+/g, '_'));
+                });
+            });
+        }
+
         // Logout functionality
         document.addEventListener('DOMContentLoaded', function() {
             const logoutBtn = document.getElementById('logout-btn');
             const profileSection = document.getElementById('profile-section');
 
+            // Load user profile data
+            loadUserProfileForNavbar();
+
+            // Setup activity tracking
+            setupActivityTracking();
+
             // Profile section click handler
             if (profileSection) {
                 profileSection.addEventListener('click', function() {
+                    trackUserActivity('profile_access');
                     window.location.href = 'profile.html';
                 });
             }
@@ -602,14 +749,7 @@
                 logoutBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     if (confirm('Are you sure you want to logout?')) {
-                        // Clear authentication data
-                        localStorage.removeItem('auth_token');
-                        localStorage.removeItem('token_timestamp');
-                        localStorage.removeItem('username');
-                        sessionStorage.clear();
-                        
-                        // Redirect to login page
-                        window.location.href = 'index.html';
+                        performLogout();
                     }
                 });
             }
@@ -621,21 +761,106 @@
                 return;
             }
 
-            // Update welcome message with username
-            const username = localStorage.getItem('username') || 'Architect Johan';
-            const welcomeElement = document.querySelector('.hero h1');
-            if (welcomeElement) {
-                welcomeElement.textContent = `Welcome, ${username}`;
-            }
+            // Validate token on page load
+            validateToken();
+        });
 
-            // Update profile initials
-            const profileImage = document.querySelector('.profile-image');
-            if (profileImage && username) {
-                const initials = username.split(' ').map(name => name[0]).join('').toUpperCase();
-                profileImage.textContent = initials || 'AJ';
+        async function validateToken() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const response = await fetch('/api/validate-token', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    // Token is invalid, redirect to login
+                    performLogout();
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                console.error('Token validation error:', error);
+                // On error, still allow access but show warning
+                console.warn('Token validation failed, but allowing continued access');
+            }
+        }
+
+        async function performLogout() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (token) {
+                    await fetch('/api/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Logout API error:', error);
+            } finally {
+                // Clear all authentication data
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('token_timestamp');
+                localStorage.removeItem('username');
+                localStorage.removeItem('full_name');
+                localStorage.removeItem('email');
+                sessionStorage.clear();
+                
+                // Redirect to login page
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Auto-refresh profile data every 5 minutes
+        setInterval(loadUserProfileForNavbar, 300000);
+
+        // Track page load activity
+        window.addEventListener('load', function() {
+            trackUserActivity('home_page_loaded');
+        });
+
+        // Handle page visibility change (tab switch)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                // Page became visible, refresh profile data
+                loadUserProfileForNavbar();
             }
         });
+
+        // Handle online/offline status
+        window.addEventListener('online', function() {
+            console.log('Connection restored - refreshing data...');
+            loadUserProfileForNavbar();
+        });
+
+        window.addEventListener('offline', function() {
+            console.log('Connection lost - using cached data');
+        });
+
+        // Error handling for failed image loads
+        document.addEventListener('error', function(e) {
+            if (e.target.classList.contains('profile-image')) {
+                console.log('Profile image failed to load, using initials');
+                const profileImage = e.target;
+                const username = localStorage.getItem('username') || 'ArchitectJohan';
+                const fullName = localStorage.getItem('full_name') || 'Architect Johan';
+                const initials = fullName.split(' ').map(name => name[0]).join('').toUpperCase();
+                
+                profileImage.innerHTML = initials || 'AJ';
+                profileImage.style.backgroundImage = 'none';
+                profileImage.style.background = 'linear-gradient(135deg, #00FFB3, #2EC6FF)';
+            }
+        }, true);
     </script>
 </body>
 </html>
-
