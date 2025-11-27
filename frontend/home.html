@@ -519,6 +519,25 @@
 }
 
 
+/* Fix welcome blur issue */
+#matrix-canvas {
+    z-index: 0 !important;
+}
+
+.hero {
+    position: relative;
+    z-index: 9999 !important;
+    background: rgba(2, 4, 10, 0.85); /* makes text crisp */
+    padding: 20px 10px;
+    border-radius: 10px;
+}
+
+.welcome-message {
+    z-index: 9999 !important;
+}
+
+
+
     </style>
 </head>
 <body>
@@ -769,3 +788,4 @@
     </script>
 </body>
 </html>
+
