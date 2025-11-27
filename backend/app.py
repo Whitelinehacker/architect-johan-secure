@@ -63,7 +63,8 @@ PRACTICE_PASSWORDS = {
     'practice_set_7': 'Arch1t3ch_Joh@N!X#Pr7_2025',
     'practice_set_8': 'Arch1t3ch_Joh@N!X#Pr8_2025',
     'practice_set_9': 'ArCh!t3ct_J0h@n-CEHv11$',
-    'practice_mode': 'Arch1t3ch_Joh@N!X#P1_Pro@2025'
+    'practice_mode': 'Arch1t3ch_Joh@N!X#P1_Pro@2025',
+    'ceh_study_notes': 'CEH^Vault_52@k!Rn'
 }
 
 EXAM_LEVEL_PASSWORDS = {
@@ -1605,4 +1606,5 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
