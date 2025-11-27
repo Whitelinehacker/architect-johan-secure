@@ -116,6 +116,12 @@
             align-items: center;
             gap: 15px;
             margin-left: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section:hover {
+            transform: translateY(-2px);
         }
 
         .profile-image {
@@ -131,18 +137,13 @@
             color: #02040A;
             font-weight: bold;
             font-size: 16px;
+            transition: all 0.3s ease;
         }
 
-        .announcement-badge {
-            background: linear-gradient(135deg, #FF6B6B, #FF5252);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            animation: pulse 2s infinite;
+        .profile-section:hover .profile-image {
+            border-color: #2EC6FF;
+            box-shadow: 0 0 20px rgba(46, 198, 255, 0.6);
+            transform: scale(1.1);
         }
 
         /* Logout button specific styles */
@@ -451,8 +452,7 @@
             <a href="about.html">About</a>
             
             <!-- Profile Section -->
-            <div class="profile-section">
-                <div class="announcement-badge">New</div>
+            <div class="profile-section" id="profile-section">
                 <div class="profile-image">AJ</div>
             </div>
             
@@ -484,8 +484,19 @@
                 <a href="notes.html" class="card-btn">Enter Module</a>
             </div>
 
-        
-            
+            <div class="dashboard-card">
+                <div class="card-icon">🔥</div>
+                <h3>Trending Videos</h3>
+                <p>Check out the most popular and trending video content from our community.</p>
+                <a href="trending.html" class="card-btn">View Trending</a>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="card-icon">📢</div>
+                <h3>Announcements</h3>
+                <p>Stay updated with the latest news, updates and important announcements.</p>
+                <a href="announcements.html" class="card-btn">View Updates</a>
+            </div>
         </div>
     </div>
 
@@ -589,6 +600,16 @@
         // Logout functionality
         document.addEventListener('DOMContentLoaded', function() {
             const logoutBtn = document.getElementById('logout-btn');
+            const profileSection = document.getElementById('profile-section');
+
+            // Profile section click handler
+            if (profileSection) {
+                profileSection.addEventListener('click', function() {
+                    window.location.href = 'profile.html';
+                });
+            }
+
+            // Logout button click handler
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', function(e) {
                     e.preventDefault();
