@@ -229,8 +229,7 @@
             text-transform: uppercase;
             letter-spacing: 4px;
             margin-bottom: 30px;
-            text-shadow: 0 0 25px rgba(0, 255, 179, 0.8),
-                         0 0 50px rgba(0, 255, 179, 0.5);
+             text-shadow: 0 0 10px rgba(0, 255, 179, 0.6);
             background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -495,6 +494,31 @@
                 font-size: 14px;
             }
         }
+
+
+.welcome-message {
+    position: relative;
+    z-index: 20;
+}
+
+.hero {
+    position: relative;
+}
+
+.hero::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 100%;
+    background: rgba(2, 4, 10, 0.6);
+    filter: none !important;
+    z-index: -1;
+}
+
+
     </style>
 </head>
 <body>
@@ -588,7 +612,7 @@
         }
 
         function drawMatrix() {
-            ctx.fillStyle = 'rgba(2, 4, 10, 0.05)';
+            ctx.fillStyle = 'rgba(2, 4, 10, 0.15)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.fillStyle = '#00FFB3';
