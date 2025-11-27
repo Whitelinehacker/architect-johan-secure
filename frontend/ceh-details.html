@@ -820,68 +820,61 @@
         }
 
         async function verifyPassword() {
-            const password = document.getElementById('passwordInput').value;
-            const errorMessage = document.getElementById('passwordError');
-            const token = localStorage.getItem('auth_token');
+    const password = document.getElementById('passwordInput').value;
+    const errorMessage = document.getElementById('passwordError');
+    const token = localStorage.getItem('auth_token');
 
-            if (!password) {
-                errorMessage.textContent = 'Please enter a password';
-                errorMessage.style.display = 'block';
-                return;
-            }
+    if (!password) {
+        errorMessage.textContent = 'Please enter a password';
+        errorMessage.style.display = 'block';
+        return;
+    }
 
-            if (!token) {
-                alert('Please log in to access this content.');
-                window.location.href = 'index.html';
-                return;
-            }
+    if (!token) {
+        alert('Please log in to access this content.');
+        window.location.href = 'index.html';
+        return;
+    }
 
-            try {
-                // Verify password with backend
-                const response = await fetch(`${API_BASE_URL}/api/verify-practice-password`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        password: password,
-                        practice_set: 'ceh_study_notes'
-                    })
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        // Password verified successfully
-                        closePasswordModal();
-                        
-                        // Track access and navigate
-                        await trackAccess('CEH Study Notes', 'CEH v13');
-                        window.location.href = currentTargetUrl;
-                    } else {
-                        errorMessage.textContent = result.error || 'Incorrect password';
-                        errorMessage.style.display = 'block';
-                    }
-                } else {
-                    const errorData = await response.json();
-                    errorMessage.textContent = errorData.error || 'Password verification failed';
-                    errorMessage.style.display = 'block';
-                }
-            } catch (error) {
-                console.error('Password verification error:', error);
-                errorMessage.textContent = 'Network error. Please try again.';
-                errorMessage.style.display = 'block';
-            }
-        }
-
-        // Handle Enter key in password input
-        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                verifyPassword();
-            }
+    try {
+        // Verify password with backend - using ceh_study_notes
+        const response = await fetch(`${API_BASE_URL}/api/verify-practice-password`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                password: password,
+                practice_set: 'ceh_study_notes'  // This matches your backend
+            })
         });
+
+        if (response.ok) {
+            const result = await response.json();
+            
+            if (result.success) {
+                // Password verified successfully
+                closePasswordModal();
+                
+                // Track access and navigate
+                await trackAccess('CEH Study Notes', 'CEH v13');
+                window.location.href = currentTargetUrl;
+            } else {
+                errorMessage.textContent = 'Incorrect password. Hint: Use the CEH-specific password';
+                errorMessage.style.display = 'block';
+            }
+        } else {
+            const errorData = await response.json();
+            errorMessage.textContent = errorData.error || 'Password verification failed';
+            errorMessage.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Password verification error:', error);
+        errorMessage.textContent = 'Network error. Please try again.';
+        errorMessage.style.display = 'block';
+    }
+}
 
         // Handle download section clicks with API tracking
         async function handleDownloadClick(url, sectionName) {
@@ -1033,3 +1026,4 @@
     </script>
 </body>
 </html>
+
