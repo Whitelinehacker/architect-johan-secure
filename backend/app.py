@@ -120,6 +120,7 @@ def get_db_connection():
 
 # Initialize PostgreSQL database
 # Initialize PostgreSQL database
+# Initialize PostgreSQL database
 def init_db():
     """Initialize PostgreSQL database tables"""
     try:
@@ -145,21 +146,10 @@ def init_db():
                     locked_until TIMESTAMP,
                     is_active BOOLEAN DEFAULT TRUE,
                     reset_token TEXT,
-                    reset_token_expiry TIMESTAMP
+                    reset_token_expiry TIMESTAMP,
+                    profile_image TEXT
                 )
             ''')
-            
-            # Check if profile_image column exists, if not add it
-            cursor.execute('''
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name='users' AND column_name='profile_image'
-            ''')
-            profile_image_exists = cursor.fetchone()
-            
-            if not profile_image_exists:
-                cursor.execute('ALTER TABLE users ADD COLUMN profile_image TEXT')
-                logger.info("✅ Added profile_image column to users table")
             
             # User activity log table
             cursor.execute('''
@@ -210,21 +200,6 @@ def init_db():
                 )
             ''')
             
-            # User progress summary table (optional - for better performance)
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS user_progress_summary (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(100) UNIQUE NOT NULL,
-                    total_videos_watched INTEGER DEFAULT 0,
-                    total_practice_sets_completed INTEGER DEFAULT 0,
-                    current_streak INTEGER DEFAULT 0,
-                    longest_streak INTEGER DEFAULT 0,
-                    total_learning_hours DECIMAL(10,2) DEFAULT 0,
-                    last_activity_date DATE,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            
             # Check if admin user exists
             cursor.execute('SELECT * FROM users WHERE username = %s', ('ArchitectJohan',))
             admin_exists = cursor.fetchone()
@@ -244,24 +219,6 @@ def init_db():
                     'admin'
                 ))
                 logger.info("✅ Default admin user created")
-            
-            # Create indexes for better performance
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_user_activity_username 
-                ON user_activity(username, timestamp)
-            ''')
-            
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_video_access_username 
-                ON video_access(username, access_time)
-            ''')
-            
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_practice_access_username 
-                ON practice_access(username, access_time)
-            ''')
-            
-            logger.info("✅ Database indexes created/verified")
         
         conn.commit()
         conn.close()
@@ -680,6 +637,7 @@ def admin_required(f):
 
 # PROFILE ROUTES
 # PROFILE ROUTES
+# PROFILE ROUTES
 @app.route('/api/user-profile', methods=['GET'])
 @token_required
 def get_user_profile(current_user):
@@ -714,10 +672,10 @@ def get_user_profile(current_user):
                     practice_result = cursor.fetchone()
                     practice_completed = practice_result['practice_count'] if practice_result else 0
                     
-                    # Calculate streak (simplified)
+                    # Calculate streak (simplified) - Fixed SQL syntax
                     cursor.execute(
-                        'SELECT COUNT(DISTINCT DATE(access_time)) as streak FROM video_access WHERE username = %s AND access_time >= CURRENT_DATE - INTERVAL %s',
-                        (current_user, '7 days')
+                        "SELECT COUNT(DISTINCT DATE(access_time)) as streak FROM video_access WHERE username = %s AND access_time >= CURRENT_DATE - INTERVAL '7 days'",
+                        (current_user,)
                     )
                     streak_result = cursor.fetchone()
                     streak = streak_result['streak'] if streak_result else 1
@@ -845,7 +803,7 @@ def calculate_monthly_progress(username):
     except Exception as e:
         logger.error(f"Monthly progress calculation error: {e}")
         return 45
-
+        
 @app.route('/api/update-profile', methods=['POST'])
 @token_required
 def update_user_profile(current_user):
@@ -1647,3 +1605,4 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
