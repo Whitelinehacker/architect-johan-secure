@@ -110,6 +110,56 @@
             width: 80%;
         }
 
+        /* Profile section in navbar */
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section:hover {
+            transform: translateY(-2px);
+        }
+
+        .profile-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #00FFB3;
+            object-fit: cover;
+            background: linear-gradient(135deg, #00FFB3, #2EC6FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #02040A;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section:hover .profile-image {
+            border-color: #2EC6FF;
+            box-shadow: 0 0 20px rgba(46, 198, 255, 0.6);
+            transform: scale(1.1);
+        }
+
+        /* Logout button specific styles */
+        .logout-btn {
+            color: #FF6B6B !important;
+            background: rgba(255, 107, 107, 0.1) !important;
+            border: 1px solid rgba(255, 107, 107, 0.3) !important;
+        }
+
+        .logout-btn:hover {
+            color: #FF5252 !important;
+            background: rgba(255, 107, 107, 0.2) !important;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.8) !important;
+            border-color: #FF6B6B !important;
+        }
+
         /* Main content */
         .main-content {
             position: relative;
@@ -155,7 +205,7 @@
         /* Practice sets grid */
         .practice-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 30px;
             margin-bottom: 50px;
         }
@@ -262,6 +312,94 @@
         /* Premium info styles */
         .practice-card.premium .practice-info {
             color: #FFD700;
+        }
+
+        /* Progress Bar Styles */
+        .progress-section {
+            margin: 20px 0;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #2EC6FF;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 255, 179, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00FFB3, #2EC6FF);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            color: #02040A;
+        }
+
+        .resume-btn {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #02040A;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 179, 0.4);
+        }
+
+        .resume-btn:hover {
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
         }
 
         /* Premium badge */
@@ -498,6 +636,11 @@
                 justify-content: center;
             }
 
+            .profile-section {
+                margin-left: 0;
+                gap: 10px;
+            }
+
             .main-content {
                 padding: 180px 20px 80px;
             }
@@ -532,6 +675,10 @@
             .modal-buttons {
                 flex-direction: column;
             }
+
+            .action-buttons {
+                flex-direction: column;
+            }
         }
 
         @media (max-width: 480px) {
@@ -555,20 +702,6 @@
             .modal-content {
                 padding: 30px 20px;
             }
-        }
-
-        /* Logout button */
-        .logout-btn {
-            color: #FF6B6B !important;
-            background: rgba(255, 107, 107, 0.1) !important;
-            border: 1px solid rgba(255, 107, 107, 0.3) !important;
-        }
-
-        .logout-btn:hover {
-            color: #FF5252 !important;
-            background: rgba(255, 107, 107, 0.2) !important;
-            text-shadow: 0 0 10px rgba(255, 107, 107, 0.8) !important;
-            border-color: #FF6B6B !important;
         }
     </style>
 </head>
@@ -609,8 +742,16 @@
             <a href="home.html">Home</a>
             <a href="videos.html">Videos</a>
             <a href="notes.html" class="active">Notes</a>
+            <a href="trending.html">Trending Videos</a>
+            <a href="announcements.html">Announcements</a>
             <a href="support.html">Support</a>
-             <a href="about.html">About</a>
+            <a href="about.html">About</a>
+            
+            <!-- Profile Section -->
+            <div class="profile-section" id="profile-section">
+                <div class="profile-image" id="nav-profile-image">AJ</div>
+            </div>
+            
             <a href="#" id="logout-btn" class="logout-btn">Logout</a>
         </div>
     </nav>
@@ -622,89 +763,8 @@
             <p>12 Comprehensive Practice Exams</p>
         </div>
 
-        <div class="practice-grid">
-            <!-- Practice Set 1 -->
-            <div class="practice-card" onclick="openPasswordModalForSet(1)">
-                <div class="practice-header">
-                    <div class="practice-icon">1</div>
-                    <h2 class="practice-title">Practice Set 1</h2>
-                </div>
-                <p class="practice-info">125 Questions | Footprinting & Reconnaissance</p>
-            </div>
-
-            <!-- Practice Set 2 -->
-            <div class="practice-card" onclick="openPasswordModalForSet(2)">
-                <div class="practice-header">
-                    <div class="practice-icon">2</div>
-                    <h2 class="practice-title">Practice Set 2</h2>
-                </div>
-                <p class="practice-info">125 Questions | Scanning Networks</p>
-            </div>
-
-            <!-- Practice Set 3 -->
-            <div class="practice-card" onclick="openPasswordModalForSet(3)">
-                <div class="practice-header">
-                    <div class="practice-icon">3</div>
-                    <h2 class="practice-title">Practice Set 3</h2>
-                </div>
-                <p class="practice-info">125 Questions | Enumeration & Vulnerability Analysis</p>
-            </div>
-
-            <!-- Practice Set 4 -->
-            <div class="practice-card" onclick="openPasswordModalForSet(4)">
-                <div class="practice-header">
-                    <div class="practice-icon">4</div>
-                    <h2 class="practice-title">Practice Set 4</h2>
-                </div>
-                <p class="practice-info">125 Questions | System Hacking</p>
-            </div>
-
-            <!-- Practice Set 5 -->
-            <div class="practice-card" onclick="openPasswordModalForSet(5)">
-                <div class="practice-header">
-                    <div class="practice-icon">5</div>
-                    <h2 class="practice-title">Practice Set 5</h2>
-                </div>
-                <p class="practice-info">125 Questions | Malware Threats</p>
-            </div>
-
-            <!-- Practice Set 6 -->
-            <div class="practice-card" onclick="openPasswordModalForSet(6)">
-                <div class="practice-header">
-                    <div class="practice-icon">6</div>
-                    <h2 class="practice-title">Practice Set 6</h2>
-                </div>
-                <p class="practice-info">125 Questions | Sniffing & Social Engineering</p>
-            </div>
-
-            <!-- Practice Set 7 -->
-            <div class="practice-card" onclick="openPasswordModalForSet(7)">
-                <div class="practice-header">
-                    <div class="practice-icon">7</div>
-                    <h2 class="practice-title">Practice Set 7</h2>
-                </div>
-                <p class="practice-info">125 Questions | Denial-of-Service & Session Hijacking</p>
-            </div>
-
-            <!-- Practice Set 8 -->
-            <div class="practice-card" onclick="openPasswordModalForSet(8)">
-                <div class="practice-header">
-                    <div class="practice-icon">8</div>
-                    <h2 class="practice-title">Practice Set 8</h2>
-                </div>
-                <p class="practice-info">125 Questions | Web Server & Application Attacks</p>
-            </div>
-
-            <!-- Premium Practice Set -->
-            <div class="practice-card premium" onclick="openPasswordModalForSet(9)">
-                <div class="premium-badge">PREMIUM</div>
-                <div class="practice-header">
-                    <div class="practice-icon">⭐</div>
-                    <h2 class="practice-title">Premium Practice Set</h2>
-                </div>
-                <p class="practice-info">250 Questions | Advanced Scenarios & Real-world Challenges</p>
-            </div>
-           
+        <div class="practice-grid" id="practice-container">
+            <!-- Practice sets will be generated dynamically -->
         </div>
 
         <div class="back-buttons">
@@ -720,6 +780,112 @@
     </footer>
 
     <script>
+        // API Base URL
+        const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
+
+        // Practice sets data
+        const practiceSets = [
+            { id: 1, title: "Practice Set 1", questions: 125, description: "Footprinting & Reconnaissance", premium: false },
+            { id: 2, title: "Practice Set 2", questions: 125, description: "Scanning Networks", premium: false },
+            { id: 3, title: "Practice Set 3", questions: 125, description: "Enumeration & Vulnerability Analysis", premium: false },
+            { id: 4, title: "Practice Set 4", questions: 125, description: "System Hacking", premium: false },
+            { id: 5, title: "Practice Set 5", questions: 125, description: "Malware Threats", premium: false },
+            { id: 6, title: "Practice Set 6", questions: 125, description: "Sniffing & Social Engineering", premium: false },
+            { id: 7, title: "Practice Set 7", questions: 125, description: "Denial-of-Service & Session Hijacking", premium: false },
+            { id: 8, title: "Practice Set 8", questions: 125, description: "Web Server & Application Attacks", premium: false },
+            { id: 9, title: "Premium Practice Set", questions: 250, description: "Advanced Scenarios & Real-world Challenges", premium: true }
+        ];
+
+        // Initialize practice sets with progress tracking
+        function initializePracticeSets() {
+            const container = document.getElementById('practice-container');
+            container.innerHTML = '';
+
+            practiceSets.forEach(set => {
+                const progress = getPracticeProgress(set.id);
+                const card = document.createElement('div');
+                card.className = `practice-card ${set.premium ? 'premium' : ''}`;
+                
+                card.innerHTML = `
+                    ${set.premium ? '<div class="premium-badge">PREMIUM</div>' : ''}
+                    <div class="practice-header">
+                        <div class="practice-icon">${set.premium ? '⭐' : set.id}</div>
+                        <h2 class="practice-title">${set.title}</h2>
+                    </div>
+                    <p class="practice-info">${set.questions} Questions | ${set.description}</p>
+                    
+                    <div class="progress-section">
+                        <div class="progress-info">
+                            <span>Progress</span>
+                            <span>${progress.completed}/${set.questions}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progress.percentage}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        ${progress.completed > 0 ? `
+                            <button class="action-btn resume-btn" onclick="openPasswordModalForSet(${set.id}, 'resume')">
+                                🔄 Resume
+                            </button>
+                            <button class="action-btn start-btn" onclick="openPasswordModalForSet(${set.id}, 'restart')">
+                                🚀 Start Over
+                            </button>
+                        ` : `
+                            <button class="action-btn start-btn" onclick="openPasswordModalForSet(${set.id}, 'start')">
+                                🚀 Start Practice
+                            </button>
+                        `}
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // Get practice progress from localStorage
+        function getPracticeProgress(setId) {
+            const progressKey = `practice_${setId}_progress`;
+            const savedProgress = localStorage.getItem(progressKey);
+            
+            if (savedProgress) {
+                return JSON.parse(savedProgress);
+            }
+            
+            // Default progress for new sets
+            return {
+                completed: 0,
+                percentage: 0,
+                currentQuestion: 1,
+                score: 0,
+                started: false,
+                lastAccessed: null
+            };
+        }
+
+        // Save practice progress to localStorage
+        function savePracticeProgress(setId, progress) {
+            const progressKey = `practice_${setId}_progress`;
+            localStorage.setItem(progressKey, JSON.stringify(progress));
+        }
+
+        // Update progress when user completes questions
+        function updateProgress(setId, completed, totalQuestions, currentQuestion = 1, score = 0) {
+            const percentage = Math.round((completed / totalQuestions) * 100);
+            const progress = {
+                completed: completed,
+                percentage: percentage,
+                currentQuestion: currentQuestion,
+                score: score,
+                started: true,
+                lastAccessed: new Date().toISOString()
+            };
+            
+            savePracticeProgress(setId, progress);
+            return progress;
+        }
+
         // Matrix Digital Rain Animation
         const canvas = document.getElementById('matrix-canvas');
         const ctx = canvas.getContext('2d');
@@ -766,35 +932,23 @@
         window.addEventListener('resize', resizeCanvas);
 
         // Password Modal Functions
-        function openPasswordModalForSet(setNumber) {
+        let currentSetId = null;
+        let currentAction = 'start';
+
+        function openPasswordModalForSet(setId, action = 'start') {
+            currentSetId = setId;
+            currentAction = action;
+            
             const modal = document.getElementById('passwordModal');
             const modalTitle = document.getElementById('modal-title');
             const modalDescription = document.getElementById('modal-description');
+            const set = practiceSets.find(s => s.id === setId);
             
-            // Update modal content based on practice set
-            modalTitle.textContent = `Practice Set ${setNumber} Access`;
-            modalDescription.textContent = `Enter password to access ${getPracticeSetDescription(setNumber)} materials`;
-            
-            // Store the current practice set being accessed
-            modal.dataset.practiceSet = `practice_set_${setNumber}`;
+            modalTitle.textContent = `${set.title} Access`;
+            modalDescription.textContent = `Enter password to ${action === 'resume' ? 'resume' : 'start'} ${set.description} practice`;
             
             modal.classList.add('active');
             document.getElementById('practicePassword').focus();
-        }
-
-        function getPracticeSetDescription(setNumber) {
-            const descriptions = {
-                1: 'Footprinting & Reconnaissance',
-                2: 'Scanning Networks', 
-                3: 'Enumeration & Vulnerability Analysis',
-                4: 'System Hacking',
-                5: 'Malware Threats',
-                6: 'Sniffing & Social Engineering',
-                7: 'Denial-of-Service & Session Hijacking',
-                8: 'Web Server & Application Attacks',
-                9: 'Premium Advanced Scenarios'
-            };
-            return descriptions[setNumber] || 'Practice Materials';
         }
 
         function closePasswordModal() {
@@ -802,6 +956,8 @@
             modal.classList.remove('active');
             document.getElementById('passwordForm').reset();
             document.getElementById('errorMessage').classList.remove('show');
+            currentSetId = null;
+            currentAction = 'start';
         }
 
         // Password Verification
@@ -811,10 +967,13 @@
             const password = document.getElementById('practicePassword').value;
             const errorMessage = document.getElementById('errorMessage');
             const submitBtn = this.querySelector('.submit-btn');
-            const modal = document.getElementById('passwordModal');
-            const practiceSet = modal.dataset.practiceSet || 'practice_set_1';
             
-            // Get authentication token
+            if (!currentSetId) {
+                errorMessage.textContent = 'No practice set selected';
+                errorMessage.classList.add('show');
+                return;
+            }
+
             const token = localStorage.getItem('auth_token');
             
             if (!token) {
@@ -826,7 +985,7 @@
                 submitBtn.textContent = 'Verifying...';
                 submitBtn.disabled = true;
 
-                const response = await fetch('https://architect-johan-secure.onrender.com/api/verify-practice-password', {
+                const response = await fetch(`${API_BASE_URL}/api/verify-practice-password`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -834,30 +993,43 @@
                     },
                     body: JSON.stringify({
                         password: password,
-                        practice_set: practiceSet
+                        practice_set: `practice_set_${currentSetId}`
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    // Password correct - set verification flag and redirect
-                    sessionStorage.setItem(`${practiceSet}_verified`, 'true');
-                    closePasswordModal();
+                    // Password correct - handle different actions
+                    sessionStorage.setItem(`practice_set_${currentSetId}_verified`, 'true');
                     
-                    // Determine redirect URL based on practice set
-                    let redirectUrl;
-                    if (practiceSet === 'practice_set_1') {
-                        redirectUrl = 'practic_set.html';
-                    } else if (practiceSet === 'practice_set_9') {
-                        redirectUrl = 'practice_set_9.html'; // You'll need to create this file
-                    } else {
-                        redirectUrl = `${practiceSet}.html`;
+                    // Update progress if starting over
+                    if (currentAction === 'restart') {
+                        updateProgress(currentSetId, 0, practiceSets.find(s => s.id === currentSetId).questions, 1, 0);
                     }
                     
-                    window.location.href = redirectUrl;
+                    closePasswordModal();
+                    
+                    // Determine redirect URL
+                    let redirectUrl;
+                    if (currentSetId === 1) {
+                        redirectUrl = 'practic_set.html';
+                    } else if (currentSetId === 9) {
+                        redirectUrl = 'practice_set_9.html';
+                    } else {
+                        redirectUrl = `practice_set_${currentSetId}.html`;
+                    }
+                    
+                    // Add action parameter to URL
+                    const url = new URL(redirectUrl, window.location.origin);
+                    url.searchParams.set('action', currentAction);
+                    if (currentAction === 'resume') {
+                        const progress = getPracticeProgress(currentSetId);
+                        url.searchParams.set('question', progress.currentQuestion);
+                    }
+                    
+                    window.location.href = url.toString();
                 } else {
-                    // Password incorrect
                     errorMessage.textContent = data.error || 'Incorrect password';
                     errorMessage.classList.add('show');
                     document.getElementById('practicePassword').value = '';
@@ -880,30 +1052,199 @@
             }
         });
 
+        // Authentication and Profile Functions
+        async function checkAuthentication() {
+            const token = localStorage.getItem('auth_token');
+            
+            if (!token) {
+                console.log('❌ No authentication token found');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.log('❌ Token validation failed:', response.status);
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('user_role');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const data = await response.json();
+                console.log('✅ User authenticated successfully:', data.username);
+
+            } catch (error) {
+                console.error('❌ Authentication check failed:', error);
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('username');
+                localStorage.removeItem('user_role');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Load user profile data for navbar
+        async function loadUserProfileForNavbar() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    console.log('No authentication token found');
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/api/user-profile`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    updateNavbarProfile(userData);
+                    
+                    // Save user data to localStorage for fallback
+                    saveUserDataToLocalStorage(userData);
+                } else {
+                    console.error('Failed to fetch user profile:', response.status);
+                    // Fallback to localStorage data
+                    loadUserDataFromLocalStorage();
+                }
+            } catch (error) {
+                console.error('Error loading profile for navbar:', error);
+                // Fallback to localStorage data
+                loadUserDataFromLocalStorage();
+            }
+        }
+
+        function updateNavbarProfile(userData) {
+            const navProfileImage = document.getElementById('nav-profile-image');
+            if (!navProfileImage) return;
+
+            // Update profile image or initials
+            if (userData.profile_image) {
+                navProfileImage.innerHTML = '';
+                navProfileImage.style.backgroundImage = `url(${userData.profile_image})`;
+                navProfileImage.style.backgroundSize = 'cover';
+                navProfileImage.style.backgroundPosition = 'center';
+            } else {
+                const initials = userData.full_name.split(' ').map(name => name[0]).join('').toUpperCase();
+                navProfileImage.innerHTML = initials || 'AJ';
+                navProfileImage.style.backgroundImage = 'none';
+                navProfileImage.style.background = 'linear-gradient(135deg, #00FFB3, #2EC6FF)';
+            }
+        }
+
+        function saveUserDataToLocalStorage(userData) {
+            localStorage.setItem('full_name', userData.full_name);
+            localStorage.setItem('email', userData.email);
+            localStorage.setItem('username', userData.username);
+            if (userData.join_date) {
+                localStorage.setItem('join_date', new Date(userData.join_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long'
+                }));
+            }
+            if (userData.profile_image) {
+                localStorage.setItem('profileImage', userData.profile_image);
+            }
+        }
+
+        function loadUserDataFromLocalStorage() {
+            const username = localStorage.getItem('username') || 'ArchitectJohan';
+            const fullName = localStorage.getItem('full_name') || 'Architect Johan';
+            const email = localStorage.getItem('email') || 'admin@architectjohan.com';
+
+            // Update profile image from localStorage
+            const navProfileImage = document.getElementById('nav-profile-image');
+            const savedImage = localStorage.getItem('profileImage');
+            
+            if (navProfileImage) {
+                if (savedImage) {
+                    navProfileImage.innerHTML = '';
+                    navProfileImage.style.backgroundImage = `url(${savedImage})`;
+                    navProfileImage.style.backgroundSize = 'cover';
+                    navProfileImage.style.backgroundPosition = 'center';
+                } else {
+                    // Use initials if no image
+                    const initials = fullName.split(' ').map(name => name[0]).join('').toUpperCase();
+                    navProfileImage.innerHTML = initials || 'AJ';
+                    navProfileImage.style.backgroundImage = 'none';
+                    navProfileImage.style.background = 'linear-gradient(135deg, #00FFB3, #2EC6FF)';
+                }
+            }
+        }
+
         // Logout functionality
-        document.addEventListener('DOMContentLoaded', function() {
+        function setupLogout() {
             const logoutBtn = document.getElementById('logout-btn');
+            const profileSection = document.getElementById('profile-section');
+
+            // Profile section click handler
+            if (profileSection) {
+                profileSection.addEventListener('click', function() {
+                    window.location.href = 'profile.html';
+                });
+            }
+
+            // Logout button click handler
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
+                logoutBtn.addEventListener('click', async function(e) {
                     e.preventDefault();
                     if (confirm('Are you sure you want to logout?')) {
+                        const token = localStorage.getItem('auth_token');
+                        
+                        // Call logout API if token exists
+                        if (token) {
+                            try {
+                                await fetch(`${API_BASE_URL}/api/logout`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Authorization': `Bearer ${token}`,
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+                            } catch (error) {
+                                console.error('Logout API call failed:', error);
+                            }
+                        }
+                        
+                        // Clear authentication data
                         localStorage.removeItem('auth_token');
                         localStorage.removeItem('token_timestamp');
                         localStorage.removeItem('username');
+                        localStorage.removeItem('user_role');
+                        localStorage.removeItem('full_name');
+                        localStorage.removeItem('profileImage');
                         sessionStorage.clear();
+                        
+                        // Redirect to login page
                         window.location.href = 'index.html';
                     }
                 });
             }
+        }
 
-            // Check authentication
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                window.location.href = 'index.html';
-                return;
-            }
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthentication();
+            loadUserProfileForNavbar();
+            initializePracticeSets();
+            setupLogout();
         });
+
+        // Auto-refresh profile data every 5 minutes
+        setInterval(loadUserProfileForNavbar, 300000);
     </script>
 </body>
 </html>
-
