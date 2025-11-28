@@ -201,6 +201,28 @@ def init_db():
                 )
             ''')
             
+            # User practice progress table - NEW TABLE ADDED
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS user_practice_progress (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(100) NOT NULL,
+                    practice_set VARCHAR(100) NOT NULL,
+                    current_question INTEGER DEFAULT 1,
+                    user_answers JSONB,
+                    score INTEGER DEFAULT 0,
+                    completed BOOLEAN DEFAULT FALSE,
+                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(username, practice_set)
+                )
+            ''')
+            
+            # Create index for better performance on practice progress queries
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_user_practice_progress 
+                ON user_practice_progress (username, practice_set)
+            ''')
+            
             # Check if admin user exists
             cursor.execute('SELECT * FROM users WHERE username = %s', ('ArchitectJohan',))
             admin_exists = cursor.fetchone()
@@ -224,7 +246,7 @@ def init_db():
         conn.commit()
         conn.close()
         
-        logger.info("✅ PostgreSQL database initialized successfully")
+        logger.info("✅ PostgreSQL database initialized successfully with practice progress tracking")
         return True
         
     except Exception as e:
@@ -1647,6 +1669,136 @@ def serve_html_files(filename):
     except:
         return "File not found", 404
 
+@app.route('/api/save-practice-progress', methods=['POST'])
+@token_required
+def save_practice_progress(current_user):
+    """Save user progress for practice sets"""
+    try:
+        data = request.get_json()
+        practice_set = data.get('practice_set')
+        current_question = data.get('current_question', 1)
+        user_answers = data.get('user_answers', [])
+        score = data.get('score', 0)
+        completed = data.get('completed', False)
+        
+        if not practice_set:
+            return jsonify({'error': 'Practice set is required'}), 400
+        
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        with conn.cursor() as cursor:
+            # Check if progress record exists
+            cursor.execute('''
+                SELECT id FROM user_practice_progress 
+                WHERE username = %s AND practice_set = %s
+            ''', (current_user, practice_set))
+            
+            existing_record = cursor.fetchone()
+            
+            if existing_record:
+                # Update existing record
+                cursor.execute('''
+                    UPDATE user_practice_progress 
+                    SET current_question = %s, user_answers = %s, 
+                        score = %s, completed = %s, last_updated = CURRENT_TIMESTAMP
+                    WHERE username = %s AND practice_set = %s
+                ''', (current_question, json.dumps(user_answers), score, completed, current_user, practice_set))
+            else:
+                # Create new record
+                cursor.execute('''
+                    INSERT INTO user_practice_progress 
+                    (username, practice_set, current_question, user_answers, score, completed)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                ''', (current_user, practice_set, current_question, json.dumps(user_answers), score, completed))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progress saved successfully'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Save progress error: {e}")
+        return jsonify({'error': 'Failed to save progress'}), 500
+
+@app.route('/api/get-practice-progress', methods=['GET'])
+@token_required
+def get_practice_progress(current_user):
+    """Get user progress for all practice sets"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT practice_set, current_question, user_answers, score, completed, last_updated
+                FROM user_practice_progress 
+                WHERE username = %s
+                ORDER BY practice_set
+            ''', (current_user,))
+            
+            progress_data = cursor.fetchall()
+        
+        conn.close()
+        
+        # Format the response
+        progress = {}
+        for row in progress_data:
+            progress[row['practice_set']] = {
+                'current_question': row['current_question'],
+                'user_answers': row['user_answers'] if row['user_answers'] else [],
+                'score': row['score'],
+                'completed': row['completed'],
+                'last_updated': row['last_updated'].isoformat() if row['last_updated'] else None
+            }
+        
+        return jsonify({
+            'success': True,
+            'progress': progress
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Get progress error: {e}")
+        return jsonify({'error': 'Failed to get progress'}), 500
+
+@app.route('/api/reset-practice-progress', methods=['POST'])
+@token_required
+def reset_practice_progress(current_user):
+    """Reset user progress for a practice set"""
+    try:
+        data = request.get_json()
+        practice_set = data.get('practice_set')
+        
+        if not practice_set:
+            return jsonify({'error': 'Practice set is required'}), 400
+        
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+            
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                DELETE FROM user_practice_progress 
+                WHERE username = %s AND practice_set = %s
+            ''', (current_user, practice_set))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progress reset successfully'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Reset progress error: {e}")
+        return jsonify({'error': 'Failed to reset progress'}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -1662,3 +1814,4 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
