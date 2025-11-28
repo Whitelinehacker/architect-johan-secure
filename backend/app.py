@@ -1237,8 +1237,11 @@ def verify_practice_password(current_user):
                 log_practice_access(current_user, practice_set, request.remote_addr, 'success')
                 
                 # Determine redirect URL based on practice set
+                redirect_url = ''
                 if practice_set == 'practice_set_1':
                     redirect_url = 'practic_set.html'
+                elif practice_set == 'ceh_study_notes':  # ADD THIS CASE
+                    redirect_url = 'cehv13_notes.html'   # Make sure this file exists
                 else:
                     redirect_url = f'{practice_set}.html'
                 
@@ -1606,5 +1609,4 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
 
