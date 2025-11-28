@@ -221,7 +221,6 @@
                         inset 0 0 40px rgba(0, 255, 179, 0.05);
             position: relative;
             overflow: hidden;
-            cursor: pointer;
         }
 
         .practice-card:hover {
@@ -379,8 +378,6 @@
             cursor: pointer;
             transition: all 0.3s ease;
             text-align: center;
-            text-decoration: none;
-            display: inline-block;
         }
 
         .start-btn {
@@ -960,7 +957,7 @@
             currentAction = 'start';
         }
 
-        // Password Verification
+        // Password Verification - FIXED REDIRECT LOGIC
         document.getElementById('passwordForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -1010,17 +1007,43 @@
                     
                     closePasswordModal();
                     
-                    // Determine redirect URL
+                    // FIXED REDIRECT LOGIC - Use explicit file names
                     let redirectUrl;
-                    if (currentSetId === 1) {
-                        redirectUrl = 'practic_set.html';
-                    } else if (currentSetId === 9) {
-                        redirectUrl = 'practice_set_9.html';
-                    } else {
-                        redirectUrl = `practice_set_${currentSetId}.html`;
+                    switch(currentSetId) {
+                        case 1:
+                            redirectUrl = 'practic_set.html'; // Note the spelling
+                            break;
+                        case 2:
+                            redirectUrl = 'practice_set_2.html';
+                            break;
+                        case 3:
+                            redirectUrl = 'practice_set_3.html';
+                            break;
+                        case 4:
+                            redirectUrl = 'practice_set_4.html';
+                            break;
+                        case 5:
+                            redirectUrl = 'practice_set_5.html';
+                            break;
+                        case 6:
+                            redirectUrl = 'practice_set_6.html';
+                            break;
+                        case 7:
+                            redirectUrl = 'practice_set_7.html';
+                            break;
+                        case 8:
+                            redirectUrl = 'practice_set_8.html';
+                            break;
+                        case 9:
+                            redirectUrl = 'practice_set_9.html';
+                            break;
+                        default:
+                            redirectUrl = 'practic_set.html';
                     }
                     
-                    // Add action parameter to URL
+                    console.log('Redirecting to:', redirectUrl);
+                    
+                    // Add action parameter to URL for the practice set page
                     const url = new URL(redirectUrl, window.location.origin);
                     url.searchParams.set('action', currentAction);
                     if (currentAction === 'resume') {
