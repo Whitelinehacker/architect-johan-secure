@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CEH v13 Practice Sets - Architect Johan</title>
     <style>
+        /* Your existing CSS styles remain the same */
         * {
             margin: 0;
             padding: 0;
@@ -390,6 +391,11 @@
             color: #02040A;
         }
 
+        .reset-btn {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+            color: #02040A;
+        }
+
         .action-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 255, 179, 0.4);
@@ -397,6 +403,10 @@
 
         .resume-btn:hover {
             box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .reset-btn:hover {
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
         }
 
         /* Premium badge */
@@ -413,6 +423,34 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+
+        /* Status badges */
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-completed {
+            background: linear-gradient(135deg, #00FF00 0%, #00CC00 100%);
+            color: #02040A;
+        }
+
+        .status-in-progress {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #02040A;
+        }
+
+        .status-not-started {
+            background: linear-gradient(135deg, #666666 0%, #999999 100%);
+            color: #02040A;
         }
 
         /* Password Modal */
@@ -619,6 +657,28 @@
             letter-spacing: 2px;
         }
 
+        /* Loading spinner */
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 255, 179, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #00FFB3;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .navbar {
@@ -732,6 +792,12 @@
         </div>
     </div>
 
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+        <p>Loading practice progress...</p>
+    </div>
+
     <!-- Navbar -->
     <nav class="navbar">
         <div class="logo">Architect Johan</div>
@@ -793,94 +859,272 @@
             { id: 9, title: "Premium Practice Set", questions: 250, description: "Advanced Scenarios & Real-world Challenges", premium: true }
         ];
 
-        // Initialize practice sets with progress tracking
-        function initializePracticeSets() {
+        // Global variable to store progress data
+        let practiceProgress = {};
+
+        // Initialize practice sets with backend progress tracking
+        async function initializePracticeSets() {
             const container = document.getElementById('practice-container');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            
+            // Show loading spinner
+            loadingSpinner.style.display = 'block';
             container.innerHTML = '';
 
-            practiceSets.forEach(set => {
-                const progress = getPracticeProgress(set.id);
-                const card = document.createElement('div');
-                card.className = `practice-card ${set.premium ? 'premium' : ''}`;
+            try {
+                // Load progress from backend
+                await loadPracticeProgress();
                 
-                card.innerHTML = `
-                    ${set.premium ? '<div class="premium-badge">PREMIUM</div>' : ''}
-                    <div class="practice-header">
-                        <div class="practice-icon">${set.premium ? '⭐' : set.id}</div>
-                        <h2 class="practice-title">${set.title}</h2>
-                    </div>
-                    <p class="practice-info">${set.questions} Questions | ${set.description}</p>
-                    
-                    <div class="progress-section">
-                        <div class="progress-info">
-                            <span>Progress</span>
-                            <span>${progress.completed}/${set.questions}</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${progress.percentage}%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="action-buttons">
-                        ${progress.completed > 0 ? `
-                            <button class="action-btn resume-btn" onclick="openPasswordModalForSet(${set.id}, 'resume')">
-                                🔄 Resume
-                            </button>
-                            <button class="action-btn start-btn" onclick="openPasswordModalForSet(${set.id}, 'restart')">
-                                🚀 Start Over
-                            </button>
-                        ` : `
-                            <button class="action-btn start-btn" onclick="openPasswordModalForSet(${set.id}, 'start')">
-                                🚀 Start Practice
-                            </button>
-                        `}
-                    </div>
-                `;
+                practiceSets.forEach(set => {
+                    const progress = getPracticeProgress(set.id);
+                    const card = createPracticeCard(set, progress);
+                    container.appendChild(card);
+                });
                 
-                container.appendChild(card);
-            });
+            } catch (error) {
+                console.error('Error initializing practice sets:', error);
+                // Fallback to local storage if backend fails
+                practiceSets.forEach(set => {
+                    const progress = getPracticeProgressFromLocal(set.id);
+                    const card = createPracticeCard(set, progress);
+                    container.appendChild(card);
+                });
+            } finally {
+                // Hide loading spinner
+                loadingSpinner.style.display = 'none';
+            }
         }
 
-        // Get practice progress from localStorage
+        // Create practice card with progress
+        function createPracticeCard(set, progress) {
+            const card = document.createElement('div');
+            card.className = `practice-card ${set.premium ? 'premium' : ''}`;
+            
+            // Determine status
+            let status = 'not-started';
+            let statusText = 'Not Started';
+            if (progress.completed) {
+                status = 'completed';
+                statusText = 'Completed';
+            } else if (progress.currentQuestion > 1) {
+                status = 'in-progress';
+                statusText = 'In Progress';
+            }
+            
+            card.innerHTML = `
+                ${set.premium ? '<div class="premium-badge">PREMIUM</div>' : ''}
+                <div class="status-badge status-${status}">${statusText}</div>
+                
+                <div class="practice-header">
+                    <div class="practice-icon">${set.premium ? '⭐' : set.id}</div>
+                    <h2 class="practice-title">${set.title}</h2>
+                </div>
+                <p class="practice-info">${set.questions} Questions | ${set.description}</p>
+                
+                <div class="progress-section">
+                    <div class="progress-info">
+                        <span>Progress</span>
+                        <span>${progress.completedQuestions}/${set.questions}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress.percentage}%"></div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    ${progress.completedQuestions > 0 ? `
+                        <button class="action-btn resume-btn" onclick="openPasswordModalForSet(${set.id}, 'resume')">
+                            🔄 Resume (Q${progress.currentQuestion})
+                        </button>
+                        <button class="action-btn start-btn" onclick="openPasswordModalForSet(${set.id}, 'restart')">
+                            🚀 Start Over
+                        </button>
+                        <button class="action-btn reset-btn" onclick="resetPracticeProgress(${set.id})">
+                            🗑️ Reset
+                        </button>
+                    ` : `
+                        <button class="action-btn start-btn" onclick="openPasswordModalForSet(${set.id}, 'start')">
+                            🚀 Start Practice
+                        </button>
+                    `}
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Load practice progress from backend
+        async function loadPracticeProgress() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    throw new Error('No authentication token');
+                }
+
+                const response = await fetch(`${API_BASE_URL}/api/get-practice-progress`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    practiceProgress = data.progress || {};
+                    console.log('✅ Practice progress loaded from backend:', practiceProgress);
+                } else {
+                    throw new Error('Failed to load progress from backend');
+                }
+            } catch (error) {
+                console.error('❌ Error loading practice progress:', error);
+                // Fallback to localStorage
+                practiceProgress = getPracticeProgressFromLocalStorage();
+            }
+        }
+
+        // Get practice progress for a specific set
         function getPracticeProgress(setId) {
+            const practiceKey = `practice_set_${setId}`;
+            const backendProgress = practiceProgress[practiceKey];
+            
+            if (backendProgress) {
+                return {
+                    currentQuestion: backendProgress.current_question || 1,
+                    completedQuestions: backendProgress.completed ? 
+                        practiceSets.find(s => s.id === setId).questions : 
+                        (backendProgress.current_question - 1) || 0,
+                    percentage: backendProgress.completed ? 100 : 
+                        Math.round(((backendProgress.current_question - 1) / practiceSets.find(s => s.id === setId).questions) * 100),
+                    completed: backendProgress.completed || false,
+                    score: backendProgress.score || 0
+                };
+            }
+            
+            // Fallback to localStorage
+            return getPracticeProgressFromLocal(setId);
+        }
+
+        // Get practice progress from localStorage (fallback)
+        function getPracticeProgressFromLocal(setId) {
             const progressKey = `practice_${setId}_progress`;
             const savedProgress = localStorage.getItem(progressKey);
             
             if (savedProgress) {
-                return JSON.parse(savedProgress);
+                const progress = JSON.parse(savedProgress);
+                const totalQuestions = practiceSets.find(s => s.id === setId).questions;
+                return {
+                    currentQuestion: progress.currentQuestion || 1,
+                    completedQuestions: progress.completed ? totalQuestions : (progress.currentQuestion - 1) || 0,
+                    percentage: progress.completed ? 100 : Math.round(((progress.currentQuestion - 1) / totalQuestions) * 100),
+                    completed: progress.completed || false,
+                    score: progress.score || 0
+                };
             }
             
             // Default progress for new sets
             return {
-                completed: 0,
-                percentage: 0,
                 currentQuestion: 1,
-                score: 0,
-                started: false,
-                lastAccessed: null
+                completedQuestions: 0,
+                percentage: 0,
+                completed: false,
+                score: 0
             };
         }
 
-        // Save practice progress to localStorage
-        function savePracticeProgress(setId, progress) {
-            const progressKey = `practice_${setId}_progress`;
-            localStorage.setItem(progressKey, JSON.stringify(progress));
-        }
-
-        // Update progress when user completes questions
-        function updateProgress(setId, completed, totalQuestions, currentQuestion = 1, score = 0) {
-            const percentage = Math.round((completed / totalQuestions) * 100);
-            const progress = {
-                completed: completed,
-                percentage: percentage,
-                currentQuestion: currentQuestion,
-                score: score,
-                started: true,
-                lastAccessed: new Date().toISOString()
-            };
-            
-            savePracticeProgress(setId, progress);
+        // Get all practice progress from localStorage (fallback)
+        function getPracticeProgressFromLocalStorage() {
+            const progress = {};
+            practiceSets.forEach(set => {
+                const practiceKey = `practice_set_${set.id}`;
+                const localProgress = getPracticeProgressFromLocal(set.id);
+                progress[practiceKey] = {
+                    current_question: localProgress.currentQuestion,
+                    completed: localProgress.completed,
+                    score: localProgress.score
+                };
+            });
             return progress;
+        }
+
+        // Save practice progress to backend
+        async function savePracticeProgressToBackend(setId, progressData) {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    throw new Error('No authentication token');
+                }
+
+                const response = await fetch(`${API_BASE_URL}/api/save-practice-progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        practice_set: `practice_set_${setId}`,
+                        current_question: progressData.currentQuestion,
+                        user_answers: progressData.userAnswers || [],
+                        score: progressData.score || 0,
+                        completed: progressData.completed || false
+                    })
+                });
+
+                if (response.ok) {
+                    console.log('✅ Progress saved to backend for set:', setId);
+                    // Update local progress cache
+                    await loadPracticeProgress();
+                } else {
+                    throw new Error('Failed to save progress to backend');
+                }
+            } catch (error) {
+                console.error('❌ Error saving progress to backend:', error);
+                // Fallback to localStorage
+                savePracticeProgressToLocal(setId, progressData);
+            }
+        }
+
+        // Save practice progress to localStorage (fallback)
+        function savePracticeProgressToLocal(setId, progressData) {
+            const progressKey = `practice_${setId}_progress`;
+            localStorage.setItem(progressKey, JSON.stringify(progressData));
+            console.log('✅ Progress saved to localStorage for set:', setId);
+        }
+
+        // Reset practice progress
+        async function resetPracticeProgress(setId) {
+            if (confirm('Are you sure you want to reset your progress for this practice set? This action cannot be undone.')) {
+                try {
+                    const token = localStorage.getItem('auth_token');
+                    if (token) {
+                        const response = await fetch(`${API_BASE_URL}/api/reset-practice-progress`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                practice_set: `practice_set_${setId}`
+                            })
+                        });
+
+                        if (response.ok) {
+                            console.log('✅ Progress reset on backend for set:', setId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Error resetting progress on backend:', error);
+                }
+
+                // Always reset local storage
+                const progressKey = `practice_${setId}_progress`;
+                localStorage.removeItem(progressKey);
+                
+                // Reload the practice sets to reflect changes
+                await initializePracticeSets();
+                
+                alert('Progress reset successfully!');
+            }
         }
 
         // Matrix Digital Rain Animation
@@ -942,7 +1186,13 @@
             const set = practiceSets.find(s => s.id === setId);
             
             modalTitle.textContent = `${set.title} Access`;
-            modalDescription.textContent = `Enter password to ${action === 'resume' ? 'resume' : 'start'} ${set.description} practice`;
+            
+            if (action === 'resume') {
+                const progress = getPracticeProgress(setId);
+                modalDescription.textContent = `Resume from question ${progress.currentQuestion} of ${set.description}`;
+            } else {
+                modalDescription.textContent = `Start ${set.description} practice`;
+            }
             
             modal.classList.add('active');
             document.getElementById('practicePassword').focus();
@@ -957,7 +1207,7 @@
             currentAction = 'start';
         }
 
-        // Password Verification - FIXED REDIRECT LOGIC
+        // Password Verification with Backend Progress Tracking
         document.getElementById('passwordForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -1002,12 +1252,12 @@
                     
                     // Update progress if starting over
                     if (currentAction === 'restart') {
-                        updateProgress(currentSetId, 0, practiceSets.find(s => s.id === currentSetId).questions, 1, 0);
+                        await resetPracticeProgress(currentSetId);
                     }
                     
                     closePasswordModal();
                     
-                    // FIXED REDIRECT LOGIC - Use consistent file names
+                    // Redirect to practice set with action parameter
                     let redirectUrl;
                     switch(currentSetId) {
                         case 1:
@@ -1046,6 +1296,7 @@
                     // Add action parameter to URL for the practice set page
                     const url = new URL(redirectUrl, window.location.origin);
                     url.searchParams.set('action', currentAction);
+                    
                     if (currentAction === 'resume') {
                         const progress = getPracticeProgress(currentSetId);
                         url.searchParams.set('question', progress.currentQuestion);
@@ -1268,6 +1519,9 @@
 
         // Auto-refresh profile data every 5 minutes
         setInterval(loadUserProfileForNavbar, 300000);
+
+        // Auto-refresh practice progress every 2 minutes
+        setInterval(loadPracticeProgress, 120000);
     </script>
 </body>
 </html>
