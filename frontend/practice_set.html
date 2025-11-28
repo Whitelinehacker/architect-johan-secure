@@ -1008,40 +1008,39 @@
                     closePasswordModal();
                     
                     // FIXED REDIRECT LOGIC - Use explicit file names
-                    let redirectUrl;
-                    switch(currentSetId) {
-                        case 1:
-                            redirectUrl = 'practic_set.html'; // Note the spelling
-                            break;
-                        case 2:
-                            redirectUrl = 'practice_set_2.html';
-                            break;
-                        case 3:
-                            redirectUrl = 'practice_set_3.html';
-                            break;
-                        case 4:
-                            redirectUrl = 'practice_set_4.html';
-                            break;
-                        case 5:
-                            redirectUrl = 'practice_set_5.html';
-                            break;
-                        case 6:
-                            redirectUrl = 'practice_set_6.html';
-                            break;
-                        case 7:
-                            redirectUrl = 'practice_set_7.html';
-                            break;
-                        case 8:
-                            redirectUrl = 'practice_set_8.html';
-                            break;
-                        case 9:
-                            redirectUrl = 'practice_set_9.html';
-                            break;
-                        default:
-                            redirectUrl = 'practic_set.html';
-                    }
-                    
-                    console.log('Redirecting to:', redirectUrl);
+                   // FIXED REDIRECT LOGIC - Use consistent file names
+let redirectUrl;
+switch(currentSetId) {
+    case 1:
+        redirectUrl = 'practice_set_1.html'; // Fixed spelling
+        break;
+    case 2:
+        redirectUrl = 'practice_set_2.html';
+        break;
+    case 3:
+        redirectUrl = 'practice_set_3.html';
+        break;
+    case 4:
+        redirectUrl = 'practice_set_4.html';
+        break;
+    case 5:
+        redirectUrl = 'practice_set_5.html';
+        break;
+    case 6:
+        redirectUrl = 'practice_set_6.html';
+        break;
+    case 7:
+        redirectUrl = 'practice_set_7.html';
+        break;
+    case 8:
+        redirectUrl = 'practice_set_8.html';
+        break;
+    case 9:
+        redirectUrl = 'practice_set_9.html';
+        break;
+    default:
+        redirectUrl = 'practice_set_1.html'; // Default to set 1
+}
                     
                     // Add action parameter to URL for the practice set page
                     const url = new URL(redirectUrl, window.location.origin);
@@ -1271,3 +1270,4 @@
     </script>
 </body>
 </html>
+
