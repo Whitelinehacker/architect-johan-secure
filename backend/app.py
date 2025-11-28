@@ -1593,6 +1593,59 @@ def check_mobile():
     except Exception as e:
         logger.error(f"Mobile check error: {e}")
         return jsonify({'exists': False, 'error': 'Server error'}), 500
+    
+    
+# Practice Set File Serving Routes
+@app.route('/practic_set.html')
+def serve_practice_set_1():
+    """Serve practice set 1 (with original spelling)"""
+    return send_from_directory('../frontend', 'practic_set.html')
+
+@app.route('/practice_set_1.html')
+def serve_practice_set_1_correct():
+    """Serve practice set 1 with correct spelling"""
+    return send_from_directory('../frontend', 'practice_set_1.html')
+
+@app.route('/practice_set_2.html')
+def serve_practice_set_2():
+    return send_from_directory('../frontend', 'practice_set_2.html')
+
+@app.route('/practice_set_3.html')
+def serve_practice_set_3():
+    return send_from_directory('../frontend', 'practice_set_3.html')
+
+@app.route('/practice_set_4.html')
+def serve_practice_set_4():
+    return send_from_directory('../frontend', 'practice_set_4.html')
+
+@app.route('/practice_set_5.html')
+def serve_practice_set_5():
+    return send_from_directory('../frontend', 'practice_set_5.html')
+
+@app.route('/practice_set_6.html')
+def serve_practice_set_6():
+    return send_from_directory('../frontend', 'practice_set_6.html')
+
+@app.route('/practice_set_7.html')
+def serve_practice_set_7():
+    return send_from_directory('../frontend', 'practice_set_7.html')
+
+@app.route('/practice_set_8.html')
+def serve_practice_set_8():
+    return send_from_directory('../frontend', 'practice_set_8.html')
+
+@app.route('/practice_set_9.html')
+def serve_practice_set_9():
+    return send_from_directory('../frontend', 'practice_set_9.html')
+
+# Catch-all for any other HTML files
+@app.route('/<filename>.html')
+def serve_html_files(filename):
+    """Serve any HTML file from the frontend directory"""
+    try:
+        return send_from_directory('../frontend', f'{filename}.html')
+    except:
+        return "File not found", 404
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
@@ -1609,4 +1662,3 @@ if __name__ == '__main__':
     print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
