@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Architect Johan — Software Tools</title>
     <style>
-        /* Your existing CSS remains the same */
         * {
             margin: 0;
             padding: 0;
@@ -36,6 +35,7 @@
             opacity: 0.3;
         }
 
+        /* Navbar */
         .navbar {
             position: fixed;
             top: 0;
@@ -109,6 +109,43 @@
             width: 80%;
         }
 
+        /* Profile section in navbar */
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section:hover {
+            transform: translateY(-2px);
+        }
+
+        .profile-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #00FFB3;
+            object-fit: cover;
+            background: linear-gradient(135deg, #00FFB3, #2EC6FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #02040A;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .profile-section:hover .profile-image {
+            border-color: #2EC6FF;
+            box-shadow: 0 0 20px rgba(46, 198, 255, 0.6);
+            transform: scale(1.1);
+        }
+
+        /* Logout button specific styles */
         .logout-btn {
             color: #FF6B6B !important;
             background: rgba(255, 107, 107, 0.1) !important;
@@ -232,6 +269,14 @@
             font-size: 20px;
             font-weight: bold;
             flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .module-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
 
         .software-card:hover .module-icon {
@@ -276,49 +321,6 @@
             text-align: center;
             text-transform: uppercase;
             letter-spacing: 1px;
-        }
-
-        .software-list {
-            margin: 15px 0;
-            background: rgba(0, 255, 179, 0.05);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 255, 179, 0.2);
-        }
-
-        .software-list h4 {
-            color: #00FFB3;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-size: 16px;
-            text-shadow: 0 0 10px rgba(0, 255, 179, 0.5);
-            text-align: center;
-        }
-
-        .software-list ul {
-            list-style: none;
-            padding-left: 0;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 8px;
-        }
-
-        .software-list li {
-            color: #2EC6FF;
-            margin-bottom: 5px;
-            padding-left: 20px;
-            position: relative;
-            font-size: 13px;
-        }
-
-        .software-list li::before {
-            content: '▶';
-            position: absolute;
-            left: 0;
-            color: #00FFB3;
-            font-size: 10px;
-            text-shadow: 0 0 8px rgba(0, 255, 179, 0.5);
         }
 
         .download-btn {
@@ -376,77 +378,6 @@
         .file-available {
             color: #00FFB3;
             background: rgba(0, 255, 179, 0.1);
-        }
-
-        .file-missing {
-            color: #FF6B6B;
-            background: rgba(255, 107, 107, 0.1);
-        }
-
-        .file-checking {
-            color: #2EC6FF;
-            background: rgba(46, 198, 255, 0.1);
-        }
-
-        .search-filter {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            gap: 20px;
-        }
-
-        .search-box {
-            flex: 1;
-            position: relative;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 15px 20px 15px 50px;
-            background: rgba(2, 4, 10, 0.9);
-            border: 2px solid #00FFB3;
-            border-radius: 12px;
-            color: #00FFB3;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 16px;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-        }
-
-        .search-box input:focus {
-            outline: none;
-            border-color: #2EC6FF;
-            box-shadow: 0 0 20px rgba(46, 198, 255, 0.5);
-        }
-
-        .search-box::before {
-            content: '🔍';
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 18px;
-            color: #00FFB3;
-        }
-
-        .filter-select {
-            padding: 15px 20px;
-            background: rgba(2, 4, 10, 0.9);
-            border: 2px solid #00FFB3;
-            border-radius: 12px;
-            color: #00FFB3;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 16px;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: #2EC6FF;
-            box-shadow: 0 0 20px rgba(46, 198, 255, 0.5);
         }
 
         .back-home {
@@ -520,6 +451,11 @@
                 justify-content: center;
             }
 
+            .profile-section {
+                margin-left: 0;
+                gap: 10px;
+            }
+
             .main-content {
                 padding: 180px 20px 80px;
             }
@@ -546,14 +482,6 @@
             .module-icon {
                 margin-right: 0;
             }
-
-            .search-filter {
-                flex-direction: column;
-            }
-
-            .search-box, .filter-select {
-                width: 100%;
-            }
         }
 
         @media (max-width: 480px) {
@@ -579,6 +507,7 @@
 <body>
     <canvas id="matrix-canvas"></canvas>
 
+    <!-- Navbar -->
     <nav class="navbar">
         <div class="logo">Architect Johan</div>
         <div class="nav-links">
@@ -586,8 +515,16 @@
             <a href="videos.html">Videos</a>
             <a href="notes.html">Notes</a>
             <a href="software_downloads.html" class="active">Software</a>
+            <a href="trending.html">Trending Videos</a>
+            <a href="announcements.html">Announcements</a>
             <a href="support.html">Support</a>
-             <a href="about.html">About</a>
+            <a href="about.html">About</a>
+            
+            <!-- Profile Section -->
+            <div class="profile-section" id="profile-section">
+                <div class="profile-image" id="nav-profile-image">AJ</div>
+            </div>
+            
             <a href="#" id="logout-btn" class="logout-btn">Logout</a>
         </div>
     </nav>
@@ -596,20 +533,6 @@
         <div class="page-header">
             <h1>Software Tools</h1>
             <p>Ethical Hacking & Security Tools Collection</p>
-        </div>
-
-        <div class="search-filter">
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="Search tools and modules...">
-            </div>
-            <select class="filter-select" id="provider-filter">
-                <option value="all">All Providers</option>
-                <option value="EC-Council">EC-Council</option>
-                <option value="Infinity Training Institute">Infinity Training Institute</option>
-                <option value="PUE">PUE</option>
-                <option value="PEOPLElogy Berhad">PEOPLElogy Berhad</option>
-                <option value="EC-Council Learning">EC-Council Learning</option>
-            </select>
         </div>
 
         <div class="software-grid" id="software-container">
@@ -626,183 +549,182 @@
     </footer>
 
     <script>
-        // Simplified module data with single download link
+        // API Base URL
+        const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
+
+        // Simplified module data with logos
         const modules = [
             { 
                 id: '00', 
                 title: 'CEHv13 ISO File', 
                 provider: 'EC-Council', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1JUvNE1Jtq6dnBgfdH4ekXD0859vdxmh7',
-                description: 'Complete CEH v13 ISO package containing ethical hacking fundamentals, penetration testing methodologies, security essentials, hands-on labs, certified tools, and full course resources.' 
+                description: 'Complete CEH v13 ISO package containing ethical hacking fundamentals, penetration testing methodologies, security essentials, hands-on labs, certified tools, and full course resources.',
+                logo: 'images/ceh-logo.png'
             },
             { 
                 id: '01', 
                 title: 'Lab Prerequisites', 
                 provider: 'EC-Council', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1fxLy-4VT7Sq3TpcvZeCfMhke12EmhHQE',
-                description: 'Foundational concepts of ethical hacking, penetration testing, and security fundamentals.' 
+                description: 'Foundational concepts of ethical hacking, penetration testing, and security fundamentals.',
+                logo: 'images/lab-logo.png'
             },
             { 
                 id: '02', 
                 title: 'Footprinting & Reconnaissance', 
                 provider: 'EC-Council', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1dvTGLS4Zhzzx_xP8ZR2Ntp9H_z7rBhjq',
-                description: 'Information gathering techniques and tools for footprinting and reconnaissance.' 
+                description: 'Information gathering techniques and tools for footprinting and reconnaissance.',
+                logo: 'images/footprinting-logo.png'
             },
             { 
                 id: '03', 
                 title: 'Scanning Networks', 
                 provider: 'EC-Council', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1vvYX6_8uOwebgWcXP1wejXQ9mQco6ekW',
-                description: 'Network scanning methodologies and port scanning techniques.' 
+                description: 'Network scanning methodologies and port scanning techniques.',
+                logo: 'images/scanning-logo.png'
             },
             { 
                 id: '04', 
                 title: 'Enumeration', 
                 provider: 'EC-Council', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1x8LV-jhRjHq0GNoX1KbYrE69zRfmuxKT',
-                description: 'Extracting information from networks, systems, and applications.' 
+                description: 'Extracting information from networks, systems, and applications.',
+                logo: 'images/enumeration-logo.png'
             },
             { 
                 id: '05', 
                 title: 'Vulnerability Analysis', 
                 provider: 'EC-Council', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1odnHF0acvhDVLcS40aJMDaBrxW2RSBRC',
-                description: 'Identifying and analyzing security vulnerabilities in systems.' 
+                description: 'Identifying and analyzing security vulnerabilities in systems.',
+                logo: 'images/vulnerability-logo.png'
             },
             { 
                 id: '06', 
                 title: 'System Hacking', 
                 provider: 'Infinity Training Institute', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1tvCNhuzC5Uye_hX-_RoEHKJAICMRcwl9',
-                description: 'Gaining access to systems, privilege escalation, and maintaining access.' 
+                description: 'Gaining access to systems, privilege escalation, and maintaining access.',
+                logo: 'images/system-hacking-logo.png'
             },
             { 
                 id: '07', 
                 title: 'Malware Threats', 
                 provider: 'EC-Council', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=19HVowNIUP8eD5s55GdL37WPQvWlXE_DR',
-                description: 'Understanding, analyzing, and countering malware threats.' 
+                description: 'Understanding, analyzing, and countering malware threats.',
+                logo: 'images/malware-logo.png'
             },
             { 
                 id: '08', 
                 title: 'Sniffing', 
                 provider: 'EC-Council Learning', 
                 downloadUrl: 'https://your-direct-download-link.com/module08.rar',
-                description: 'Network traffic analysis and packet sniffing techniques.' 
+                description: 'Network traffic analysis and packet sniffing techniques.',
+                logo: 'images/sniffing-logo.png'
             },
             { 
                 id: '09', 
                 title: 'Social Engineering', 
                 provider: 'EC-Council', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1Gv46iQMCCCqD4I-PZEv8u89EtoS2YtMA',
-                description: 'Human element exploitation and social engineering techniques.' 
+                description: 'Human element exploitation and social engineering techniques.',
+                logo: 'images/social-eng-logo.png'
             },
             { 
                 id: '10', 
                 title: 'Denial-of-Service (DoS)', 
                 provider: 'PUE', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=19PcGUsBoQ4hd454E_686qF7TXLaomifC',
-                description: 'Understanding and testing DoS/DDoS attacks and countermeasures.' 
+                description: 'Understanding and testing DoS/DDoS attacks and countermeasures.',
+                logo: 'images/dos-logo.png'
             },
             { 
                 id: '11', 
                 title: 'Session Hijacking', 
                 provider: 'PEOPLElogy Berhad', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=17TtLaQOvkPbILTtwfA4IDk2AMfh18qto',
-                description: 'Session management attacks and hijacking techniques.' 
+                description: 'Session management attacks and hijacking techniques.',
+                logo: 'images/session-logo.png'
             },
             { 
                 id: '12', 
                 title: 'Evading IDS, Firewalls & Honeypots', 
                 provider: 'Infinity Training Institute', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1Jkr1sWTacCxjguKJhA6pG9SVJvl2-l_g',
-                description: 'Techniques to bypass security controls and detection systems.' 
+                description: 'Techniques to bypass security controls and detection systems.',
+                logo: 'images/evasion-logo.png'
             },
             { 
                 id: '13', 
                 title: 'Hacking Web Servers', 
                 provider: 'EC-Council', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1zctmY05NziaPMm221U1PiHYRa56jni8w',
-                description: 'Web server vulnerabilities and exploitation techniques.' 
+                description: 'Web server vulnerabilities and exploitation techniques.',
+                logo: 'images/web-server-logo.png'
             },
             { 
                 id: '14', 
                 title: 'Hacking Web Applications', 
                 provider: 'EC-Council Learning', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1xjAnRGLO4HA_qvfAy8VuEVg88VGEEnvF',
-                description: 'Web application security testing and exploitation.' 
+                description: 'Web application security testing and exploitation.',
+                logo: 'images/web-app-logo.png'
             },
             { 
                 id: '15', 
                 title: 'SQL Injection', 
                 provider: 'EC-Council', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=159DCSP6Pk5EETgUg781uhLypKKVXmnEA',
-                description: 'SQL injection attacks and database exploitation techniques.' 
+                description: 'SQL injection attacks and database exploitation techniques.',
+                logo: 'images/sql-logo.png'
             },
             { 
                 id: '16', 
                 title: 'Hacking Wireless Networks', 
                 provider: 'Infinity Training Institute', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=13_Ft79shCxXfcSBXc7G9KuCfvuJon9jE',
-                description: 'Wireless network security assessment and exploitation.' 
+                description: 'Wireless network security assessment and exploitation.',
+                logo: 'images/wireless-logo.png'
             },
             { 
                 id: '17', 
                 title: 'Hacking Mobile Platforms', 
                 provider: 'Infinity Training Institute', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=13dpOEcv2MCP2yRSRQcOIEnXGo7ZiWcLr',
-                description: 'Mobile application and platform security testing.' 
+                description: 'Mobile application and platform security testing.',
+                logo: 'images/mobile-logo.png'
             },
             { 
                 id: '18', 
                 title: 'IoT & OT Hacking', 
                 provider: 'PEOPLElogy Berhad', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1aTIZu9qNvf4jJ3Ptsy9Fl-2otlY5leBw',
-                description: 'Internet of Things and Operational Technology security assessment.' 
+                description: 'Internet of Things and Operational Technology security assessment.',
+                logo: 'images/iot-logo.png'
             },
             { 
                 id: '19', 
                 title: 'Cloud Computing', 
                 provider: 'EC-Council', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=13JyH6h9ZdsWWG7verDyBwrQLteuRRvk5',
-                description: 'Cloud security assessment and penetration testing.' 
+                description: 'Cloud security assessment and penetration testing.',
+                logo: 'images/cloud-logo.png'
             },
             { 
                 id: '20', 
                 title: 'Cryptography', 
                 provider: 'PUE', 
                 downloadUrl: 'https://drive.google.com/uc?export=download&id=1eQePCUpw5wypQAdGWViewn8vN-oFnsLz',
-                description: 'Cryptographic attacks and encryption analysis.' 
+                description: 'Cryptographic attacks and encryption analysis.',
+                logo: 'images/crypto-logo.png'
             }
         ];
 
-        // Tool lists for each module
-        const toolLists = {
-            '00': ['VMware Workstation Pro', 'Android Virtual Machines', 'Kali Linux Tools', 'Metasploit Framework', 'Complete Lab Environment'],
-            '01': ['Kali Linux Setup', 'VirtualBox/VMware', 'Metasploit Framework', 'Nmap Scanner', 'Wireshark'],
-            '02': ['Maltego', 'theHarvester', 'Recon-ng', 'Shodan CLI', 'DNS Enumeration Tools'],
-            '03': ['Nmap Advanced', 'Masscan', 'Zmap', 'Hping3', 'Netcat'],
-            '04': ['Enum4linux', 'SNMPWalk', 'LDAP Search Tools', 'RPC Client', 'SNMP Enumeration Tools'],
-            '05': ['Nessus', 'OpenVAS', 'Nexpose', 'Nikto', 'Vulnerability Scanners'],
-            '06': ['John the Ripper', 'Hashcat', 'Hydra', 'Mimikatz', 'Privilege Escalation Tools'],
-            '07': ['Malware Analysis Toolkit', 'YARA Rules', 'Volatility Framework', 'PE Analysis Tools', 'Sandbox Environments'],
-            '08': ['Wireshark Advanced', 'Tcpdump', 'Ettercap', 'Bettercap', 'Network Miners'],
-            '09': ['Social Engineering Toolkit', 'GoPhish', 'BeEF Framework', 'Credential Harvesting Tools', 'Phishing Templates'],
-            '10': ['LOIC', 'HOIC', 'Slowloris', 'R-U-Dead-Yet', 'DDoS Simulation Tools'],
-            '11': ['Burp Suite', 'OWASP ZAP', 'Cookie Editors', 'Session Management Tools', 'Web Proxy Tools'],
-            '12': ['Nmap Evasion Scripts', 'Fragmentation Tools', 'Protocol Manipulation Tools', 'Traffic Obfuscation', 'IDS Evasion Toolkit'],
-            '13': ['Dirb/Dirbuster', 'Nikto Web Scanner', 'WPScan', 'Web Server Assessment Tools', 'Vulnerability Scanners'],
-            '14': ['Burp Suite Professional', 'OWASP ZAP', 'SQLMap', 'XSStrike', 'Web Application Scanners'],
-            '15': ['SQLMap Advanced', 'Havij', 'SQLNinja', 'NoSQL Injection Tools', 'Database Assessment Tools'],
-            '16': ['Aircrack-ng Suite', 'Kismet', 'Wifite', 'Fern Wifi Cracker', 'Wireless Adapters'],
-            '17': ['MobSF', 'Drozer', 'APKTool', 'Frida', 'Mobile Security Framework'],
-            '18': ['Shodan API Tools', 'Firmware Analysis Toolkit', 'IoT Vulnerability Scanners', 'Protocol Analyzers', 'Hardware Hacking Tools'],
-            '19': ['Pacu (AWS)', 'Scout Suite', 'CloudSploit', 'Cloud Security Scanners', 'Cloud Enumeration Tools'],
-            '20': ['John the Ripper (Jumbo)', 'Hashcat Advanced', 'Cryptool', 'OpenSSL Toolkit', 'Crypto Analysis Tools']
-        };
-
-        // Generate modules dynamically with single download button
+        // Generate modules dynamically with logos
         function generateModules() {
             const container = document.getElementById('software-container');
             container.innerHTML = '';
@@ -810,11 +732,14 @@
             modules.forEach(module => {
                 const card = document.createElement('div');
                 card.className = 'software-card';
-                card.setAttribute('data-provider', module.provider);
+                
+                const logoContent = module.logo ? 
+                    `<img src="${module.logo}" alt="${module.title}" onerror="this.style.display='none'; this.parentElement.innerHTML='${module.id}';">` : 
+                    module.id;
                 
                 card.innerHTML = `
                     <div class="module-header">
-                        <div class="module-icon">${module.id}</div>
+                        <div class="module-icon">${logoContent}</div>
                         <div>
                             <div class="module-number">Module #${module.id}</div>
                             <h2 class="module-title">${module.title}</h2>
@@ -823,12 +748,6 @@
                     <div class="module-provider">Provider: ${module.provider}</div>
                     <div class="module-content">
                         <p>${module.description}</p>
-                        <div class="software-list">
-                            <h4>Available Tools</h4>
-                            <ul>
-                                ${toolLists[module.id].map(tool => `<li>${tool}</li>`).join('')}
-                            </ul>
-                        </div>
                     </div>
                     <a href="${module.downloadUrl}" class="download-btn" target="_blank" download>
                         📥 Download Now
@@ -842,29 +761,137 @@
             });
         }
 
-        // Download notification
-        function showDownloadNotification(fileName) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: rgba(0, 255, 179, 0.9);
-                color: #02040A;
-                padding: 15px 25px;
-                border-radius: 10px;
-                font-weight: bold;
-                z-index: 1000;
-                animation: slideInRight 0.3s ease;
-                font-family: 'Courier New', monospace;
-                box-shadow: 0 5px 20px rgba(0, 255, 179, 0.5);
-            `;
-            notification.textContent = `📥 Downloading: ${fileName}`;
-            document.body.appendChild(notification);
+        // Authentication check
+        async function checkAuthentication() {
+            const token = localStorage.getItem('auth_token');
             
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 3000);
+            if (!token) {
+                console.log('❌ No authentication token found');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/validate-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    console.log('❌ Token validation failed:', response.status);
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('user_role');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const data = await response.json();
+                console.log('✅ User authenticated successfully:', data.username);
+
+            } catch (error) {
+                console.error('❌ Authentication check failed:', error);
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('username');
+                localStorage.removeItem('user_role');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Load user profile data for navbar
+        async function loadUserProfileForNavbar() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    console.log('No authentication token found');
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/api/user-profile`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    updateNavbarProfile(userData);
+                    
+                    // Save user data to localStorage for fallback
+                    saveUserDataToLocalStorage(userData);
+                } else {
+                    console.error('Failed to fetch user profile:', response.status);
+                    // Fallback to localStorage data
+                    loadUserDataFromLocalStorage();
+                }
+            } catch (error) {
+                console.error('Error loading profile for navbar:', error);
+                // Fallback to localStorage data
+                loadUserDataFromLocalStorage();
+            }
+        }
+
+        function updateNavbarProfile(userData) {
+            const navProfileImage = document.getElementById('nav-profile-image');
+            if (!navProfileImage) return;
+
+            // Update profile image or initials
+            if (userData.profile_image) {
+                navProfileImage.innerHTML = '';
+                navProfileImage.style.backgroundImage = `url(${userData.profile_image})`;
+                navProfileImage.style.backgroundSize = 'cover';
+                navProfileImage.style.backgroundPosition = 'center';
+            } else {
+                const initials = userData.full_name.split(' ').map(name => name[0]).join('').toUpperCase();
+                navProfileImage.innerHTML = initials || 'AJ';
+                navProfileImage.style.backgroundImage = 'none';
+                navProfileImage.style.background = 'linear-gradient(135deg, #00FFB3, #2EC6FF)';
+            }
+        }
+
+        function saveUserDataToLocalStorage(userData) {
+            localStorage.setItem('full_name', userData.full_name);
+            localStorage.setItem('email', userData.email);
+            localStorage.setItem('username', userData.username);
+            if (userData.join_date) {
+                localStorage.setItem('join_date', new Date(userData.join_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long'
+                }));
+            }
+            if (userData.profile_image) {
+                localStorage.setItem('profileImage', userData.profile_image);
+            }
+        }
+
+        function loadUserDataFromLocalStorage() {
+            const username = localStorage.getItem('username') || 'ArchitectJohan';
+            const fullName = localStorage.getItem('full_name') || 'Architect Johan';
+            const email = localStorage.getItem('email') || 'admin@architectjohan.com';
+
+            // Update profile image from localStorage
+            const navProfileImage = document.getElementById('nav-profile-image');
+            const savedImage = localStorage.getItem('profileImage');
+            
+            if (navProfileImage) {
+                if (savedImage) {
+                    navProfileImage.innerHTML = '';
+                    navProfileImage.style.backgroundImage = `url(${savedImage})`;
+                    navProfileImage.style.backgroundSize = 'cover';
+                    navProfileImage.style.backgroundPosition = 'center';
+                } else {
+                    // Use initials if no image
+                    const initials = fullName.split(' ').map(name => name[0]).join('').toUpperCase();
+                    navProfileImage.innerHTML = initials || 'AJ';
+                    navProfileImage.style.backgroundImage = 'none';
+                    navProfileImage.style.background = 'linear-gradient(135deg, #00FFB3, #2EC6FF)';
+                }
+            }
         }
 
         // Matrix background
@@ -912,51 +939,61 @@
         const matrixInterval = setInterval(drawMatrix, 50);
         window.addEventListener('resize', resizeCanvas);
 
-        // Search and filter functionality
-        document.getElementById('search-input').addEventListener('input', filterSoftware);
-        document.getElementById('provider-filter').addEventListener('change', filterSoftware);
-
-        function filterSoftware() {
-            const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            const providerFilter = document.getElementById('provider-filter').value;
-            const cards = document.querySelectorAll('.software-card');
-
-            cards.forEach(card => {
-                const title = card.querySelector('.module-title').textContent.toLowerCase();
-                const provider = card.getAttribute('data-provider');
-                const content = card.querySelector('.module-content').textContent.toLowerCase();
-                
-                const matchesSearch = title.includes(searchTerm) || content.includes(searchTerm);
-                const matchesProvider = providerFilter === 'all' || provider === providerFilter;
-                
-                card.style.display = (matchesSearch && matchesProvider) ? 'flex' : 'none';
-            });
-        }
-
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            checkAuthentication();
+            loadUserProfileForNavbar();
+            generateModules();
+
+            // Profile section click handler
+            const profileSection = document.getElementById('profile-section');
+            if (profileSection) {
+                profileSection.addEventListener('click', function() {
+                    window.location.href = 'profile.html';
+                });
+            }
+
+            // Logout button click handler
             const logoutBtn = document.getElementById('logout-btn');
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', function(e) {
+                logoutBtn.addEventListener('click', async function(e) {
                     e.preventDefault();
                     if (confirm('Are you sure you want to logout?')) {
+                        const token = localStorage.getItem('auth_token');
+                        
+                        // Call logout API if token exists
+                        if (token) {
+                            try {
+                                await fetch(`${API_BASE_URL}/api/logout`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Authorization': `Bearer ${token}`,
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+                            } catch (error) {
+                                console.error('Logout API call failed:', error);
+                            }
+                        }
+                        
+                        // Clear authentication data
                         localStorage.removeItem('auth_token');
                         localStorage.removeItem('token_timestamp');
                         localStorage.removeItem('username');
+                        localStorage.removeItem('user_role');
+                        localStorage.removeItem('full_name');
+                        localStorage.removeItem('profileImage');
                         sessionStorage.clear();
+                        
+                        // Redirect to login page
                         window.location.href = 'index.html';
                     }
                 });
             }
-
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            generateModules();
         });
+
+        // Auto-refresh profile data every 5 minutes
+        setInterval(loadUserProfileForNavbar, 300000);
     </script>
 </body>
 </html>
