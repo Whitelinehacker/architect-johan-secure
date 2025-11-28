@@ -862,15 +862,15 @@
             
             if (result.success) {
                 // Password verified successfully
-                console.log('Password verified! Redirecting to:', currentTargetUrl);
+                console.log('Password verified!');
                 closePasswordModal();
                 
                 // Track access and navigate
                 await trackAccess('CEH Study Notes', 'CEH v13');
                 
-                // Force redirect after a short delay to ensure modal is closed
+                // Force redirect to cehv13_notes.html
                 setTimeout(() => {
-                    window.location.href = currentTargetUrl;
+                    window.location.href = 'cehv13_notes.html';
                 }, 100);
                 
             } else {
@@ -1041,6 +1041,5 @@
     </script>
 </body>
 </html>
-
 
 
