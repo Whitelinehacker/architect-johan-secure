@@ -14,10 +14,17 @@ import logging
 import re
 import json
 import base64
-from bson.objectid import ObjectId
-from bson.json_util import dumps, loads
-from pymongo import MongoClient, ReturnDocument
-from pymongo.errors import DuplicateKeyError, ConnectionFailure
+
+# Try to import MongoDB modules
+try:
+    from pymongo import MongoClient
+    from pymongo.errors import DuplicateKeyError, ConnectionFailure
+    MONGODB_AVAILABLE = True
+    print("✅ MongoDB (pymongo) support enabled")
+except ImportError as e:
+    print(f"❌ MongoDB not available: {e}")
+    MONGODB_AVAILABLE = False
+    MongoClient = None
 
 # Load environment variables
 load_dotenv()
@@ -76,12 +83,19 @@ LOCKOUT_TIME = 900  # 15 minutes
 # MongoDB connection
 def get_mongo_client():
     """Create MongoDB client connection"""
+    if not MONGODB_AVAILABLE:
+        logger.error("MongoDB not available - pymongo not installed")
+        return None
+    
     try:
         client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
         client.admin.command('ping')
         return client
     except ConnectionFailure as e:
         logger.error(f"MongoDB connection failed: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"MongoDB error: {e}")
         return None
 
 def get_db():
@@ -93,62 +107,64 @@ def get_db():
 
 def get_users_collection():
     """Get users collection with indexes"""
+    if not MONGODB_AVAILABLE:
+        return None
+    
     db = get_db()
     if db:
         collection = db.users
-        # Create indexes
-        collection.create_index([("username", 1)], unique=True)
-        collection.create_index([("email", 1)], unique=True)
-        collection.create_index([("reset_token", 1)])
-        collection.create_index([("mobile_no", 1)], unique=True)
+        # Create indexes if they don't exist
+        try:
+            collection.create_index("username", unique=True)
+            collection.create_index("email", unique=True)
+            collection.create_index("mobile_no", unique=True)
+        except Exception as e:
+            logger.error(f"Error creating indexes: {e}")
         return collection
     return None
 
 def get_user_activity_collection():
-    """Get user_activity collection with indexes"""
+    """Get user_activity collection"""
+    if not MONGODB_AVAILABLE:
+        return None
+    
     db = get_db()
     if db:
-        collection = db.user_activity
-        collection.create_index([("username", 1)])
-        collection.create_index([("timestamp", -1)])
-        return collection
+        return db.user_activity
     return None
 
 def get_practice_access_collection():
-    """Get practice_access collection with indexes"""
+    """Get practice_access collection"""
+    if not MONGODB_AVAILABLE:
+        return None
+    
     db = get_db()
     if db:
-        collection = db.practice_access
-        collection.create_index([("username", 1)])
-        collection.create_index([("practice_set", 1)])
-        return collection
+        return db.practice_access
     return None
 
 def get_video_access_collection():
-    """Get video_access collection with indexes"""
+    """Get video_access collection"""
+    if not MONGODB_AVAILABLE:
+        return None
+    
     db = get_db()
     if db:
-        collection = db.video_access
-        collection.create_index([("username", 1)])
-        collection.create_index([("video_id", 1)])
-        return collection
+        return db.video_access
     return None
 
 def get_user_practice_progress_collection():
     """Get user_practice_progress collection with indexes"""
+    if not MONGODB_AVAILABLE:
+        return None
+    
     db = get_db()
     if db:
         collection = db.user_practice_progress
-        collection.create_index([("username", 1), ("practice_set", 1)], unique=True)
-        return collection
-    return None
-
-def get_user_video_progress_collection():
-    """Get user_video_progress collection with indexes"""
-    db = get_db()
-    if db:
-        collection = db.user_video_progress
-        collection.create_index([("username", 1), ("video_id", 1)], unique=True)
+        try:
+            collection.create_index([("username", 1), ("practice_set", 1)], unique=True)
+        except Exception as e:
+            logger.error(f"Error creating index: {e}")
         return collection
     return None
 
@@ -156,8 +172,12 @@ def get_user_video_progress_collection():
 def init_db():
     """Initialize MongoDB collections and indexes"""
     try:
+        if not MONGODB_AVAILABLE:
+            logger.error("MongoDB not available - cannot initialize database")
+            return False
+        
         # Collections are created lazily on first insert
-        # Just ensure indexes exist
+        # Just ensure indexes exist and create admin user
         users_coll = get_users_collection()
         if not users_coll:
             logger.error("Failed to connect to MongoDB")
@@ -183,12 +203,11 @@ def init_db():
             users_coll.insert_one(admin_user_data)
             logger.info("✅ Default admin user created")
         
-        # Initialize other collections' indexes
+        # Initialize other collections
         get_user_activity_collection()
         get_practice_access_collection()
         get_video_access_collection()
         get_user_practice_progress_collection()
-        get_user_video_progress_collection()
         
         logger.info("✅ MongoDB database initialized successfully")
         return True
@@ -221,9 +240,9 @@ def get_user_by_username(username):
             "is_active": True
         })
         
-        # Convert ObjectId to string for JSON serialization
-        if user and '_id' in user:
-            user['_id'] = str(user['_id'])
+        # Remove MongoDB _id for JSON serialization
+        if user:
+            user.pop('_id', None)
         return user
     except Exception as e:
         logger.error(f"Error getting user: {e}")
@@ -241,8 +260,8 @@ def get_user_by_email(email):
             "is_active": True
         })
         
-        if user and '_id' in user:
-            user['_id'] = str(user['_id'])
+        if user:
+            user.pop('_id', None)
         return user
     except Exception as e:
         logger.error(f"Error getting user by email: {e}")
@@ -260,8 +279,8 @@ def get_user_by_reset_token(reset_token):
             "is_active": True
         })
         
-        if user and '_id' in user:
-            user['_id'] = str(user['_id'])
+        if user:
+            user.pop('_id', None)
         return user
     except Exception as e:
         logger.error(f"Error getting user by reset token: {e}")
@@ -274,15 +293,15 @@ def update_user(user):
         if not users_coll:
             return False
         
-        # Remove _id from update data
-        update_data = {k: v for k, v in user.items() if k != '_id' and k != 'username'}
+        # Create update data excluding username
+        update_data = {k: v for k, v in user.items() if k != 'username'}
         
         result = users_coll.update_one(
             {"username": user['username']},
             {"$set": update_data}
         )
         
-        return result.modified_count > 0
+        return result.modified_count > 0 or result.matched_count > 0
     except Exception as e:
         logger.error(f"Error updating user: {e}")
         return False
@@ -294,7 +313,7 @@ def create_user(user_data):
         if not users_coll:
             return False
         
-        # Add timestamps
+        # Add timestamps and default values
         user_data['created_at'] = datetime.datetime.utcnow()
         user_data['last_login'] = None
         user_data['failed_attempts'] = 0
@@ -404,10 +423,6 @@ Architect Johan Security Team
         part2 = MIMEText(html, 'html')
         msg.attach(part1)
         msg.attach(part2)
-        
-        print(f"📧 Email configured for: {email}")
-        print(f"🔗 Reset link: {reset_link}")
-        print(f"🔑 Reset token: {reset_token}")
         
         # Send email with better error handling
         server = None
@@ -606,22 +621,26 @@ def get_user_profile(current_user):
             })
         
         if practice_coll:
-            practice_completed = practice_coll.distinct("practice_set", {
+            distinct_practices = practice_coll.distinct("practice_set", {
                 "username": current_user,
                 "status": "success"
             })
-            practice_completed = len(practice_completed)
+            practice_completed = len(distinct_practices)
         
         # Calculate streak (simplified)
         if video_coll:
             seven_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=7)
-            streak_data = video_coll.aggregate([
+            pipeline = [
                 {"$match": {"username": current_user, "access_time": {"$gte": seven_days_ago}}},
                 {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$access_time"}}}},
                 {"$count": "unique_days"}
-            ])
-            streak_result = list(streak_data)
-            streak = streak_result[0]['unique_days'] if streak_result else 1
+            ]
+            try:
+                streak_data = list(video_coll.aggregate(pipeline))
+                if streak_data:
+                    streak = streak_data[0].get('unique_days', 1)
+            except Exception as agg_error:
+                logger.error(f"Streak calculation error: {agg_error}")
         
         # Prepare profile image URL safely
         profile_image_url = None
@@ -700,8 +719,15 @@ def calculate_weekly_progress(username):
             {"$count": "active_days"}
         ]
         
-        result = list(activity_coll.aggregate(pipeline))
-        active_days = result[0]['active_days'] if result else 0
+        try:
+            result = list(activity_coll.aggregate(pipeline))
+            if result:
+                active_days = result[0].get('active_days', 0)
+            else:
+                active_days = 0
+        except Exception as agg_error:
+            logger.error(f"Weekly progress aggregation error: {agg_error}")
+            active_days = 0
         
         progress = min(active_days * 15, 100)
         return progress if progress > 0 else 65
@@ -729,8 +755,15 @@ def calculate_monthly_progress(username):
             {"$count": "active_days"}
         ]
         
-        result = list(activity_coll.aggregate(pipeline))
-        active_days = result[0]['active_days'] if result else 0
+        try:
+            result = list(activity_coll.aggregate(pipeline))
+            if result:
+                active_days = result[0].get('active_days', 0)
+            else:
+                active_days = 0
+        except Exception as agg_error:
+            logger.error(f"Monthly progress aggregation error: {agg_error}")
+            active_days = 0
         
         progress = min(active_days * 3.33, 100)
         return progress if progress > 0 else 45
@@ -1589,8 +1622,7 @@ def save_practice_progress(current_user):
             "user_answers": user_answers,
             "score": score,
             "completed": completed,
-            "last_updated": datetime.datetime.utcnow(),
-            "created_at": datetime.datetime.utcnow()
+            "last_updated": datetime.datetime.utcnow()
         }
         
         result = progress_coll.update_one(
@@ -1623,10 +1655,14 @@ def get_practice_progress(current_user):
         if not progress_coll:
             return jsonify({'error': 'Database connection failed'}), 500
         
-        progress_data = list(progress_coll.find(
-            {"username": current_user},
-            {"_id": 0, "username": 0}
-        ).sort("practice_set", 1))
+        cursor = progress_coll.find(
+            {"username": current_user}
+        ).sort("practice_set", 1)
+        
+        progress_data = []
+        for doc in cursor:
+            doc.pop('_id', None)
+            progress_data.append(doc)
         
         # Format the response
         progress = {}
@@ -1683,14 +1719,7 @@ if __name__ == '__main__':
     print(f"🔐 Authentication System: ENABLED")
     print(f"🗄️ Database: MongoDB (pymongo)")
     print(f"🌐 Server running on port: {port}")
-    
-    # Test MongoDB connection
-    client = get_mongo_client()
-    if client:
-        print("✅ MongoDB Connection: SUCCESS")
-        print(f"📊 Database Name: {client.get_database().name}")
-    else:
-        print("❌ MongoDB Connection: FAILED")
+    print(f"📊 MongoDB Available: {MONGODB_AVAILABLE}")
     
     # Print environment status
     print(f"📧 Email Configuration: {'✅ Available' if EMAIL_USER and EMAIL_PASSWORD else '❌ Missing'}")
