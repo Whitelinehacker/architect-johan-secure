@@ -14,6 +14,8 @@ import logging
 import re
 import json
 import base64
+import ssl
+import certifi
 
 # Try to import MongoDB modules
 try:
@@ -80,29 +82,57 @@ login_attempts = {}
 MAX_ATTEMPTS = 5
 LOCKOUT_TIME = 900  # 15 minutes
 
-# MongoDB connection
+# MongoDB connection with SSL fix
 def get_mongo_client():
-    """Create MongoDB client connection"""
+    """Create MongoDB client connection with SSL fix"""
     if not MONGODB_AVAILABLE:
         logger.error("MongoDB not available - pymongo not installed")
         return None
     
     try:
-        client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+        # Check if it's a MongoDB Atlas connection string
+        if 'mongodb+srv://' in MONGODB_URI:
+            # For MongoDB Atlas, use SSL and certifi for certificate validation
+            client = MongoClient(
+                MONGODB_URI,
+                tls=True,
+                tlsAllowInvalidCertificates=False,
+                tlsCAFile=certifi.where(),
+                serverSelectionTimeoutMS=10000,
+                connectTimeoutMS=10000,
+                socketTimeoutMS=10000
+            )
+        else:
+            # For local MongoDB
+            client = MongoClient(
+                MONGODB_URI,
+                serverSelectionTimeoutMS=10000
+            )
+        
+        # Test connection
         client.admin.command('ping')
+        print("✅ MongoDB Connection: SUCCESS")
         return client
     except ConnectionFailure as e:
         logger.error(f"MongoDB connection failed: {e}")
+        print(f"❌ MongoDB Connection Error: {e}")
         return None
     except Exception as e:
         logger.error(f"MongoDB error: {e}")
+        print(f"❌ MongoDB General Error: {e}")
         return None
 
 def get_db():
     """Get database instance"""
     client = get_mongo_client()
     if client:
-        return client.get_database()
+        try:
+            db_name = MONGODB_URI.split('/')[-1].split('?')[0]
+            if not db_name or db_name == '':
+                db_name = 'architect_johan'
+            return client[db_name]
+        except:
+            return client.get_database()
     return None
 
 def get_users_collection():
@@ -176,11 +206,17 @@ def init_db():
             logger.error("MongoDB not available - cannot initialize database")
             return False
         
+        # Test connection first
+        client = get_mongo_client()
+        if not client:
+            logger.error("Failed to connect to MongoDB")
+            return False
+        
         # Collections are created lazily on first insert
         # Just ensure indexes exist and create admin user
         users_coll = get_users_collection()
         if not users_coll:
-            logger.error("Failed to connect to MongoDB")
+            logger.error("Failed to get users collection")
             return False
         
         # Check if admin user exists
@@ -241,7 +277,7 @@ def get_user_by_username(username):
         })
         
         # Remove MongoDB _id for JSON serialization
-        if user:
+        if user and '_id' in user:
             user.pop('_id', None)
         return user
     except Exception as e:
@@ -260,7 +296,7 @@ def get_user_by_email(email):
             "is_active": True
         })
         
-        if user:
+        if user and '_id' in user:
             user.pop('_id', None)
         return user
     except Exception as e:
@@ -279,7 +315,7 @@ def get_user_by_reset_token(reset_token):
             "is_active": True
         })
         
-        if user:
+        if user and '_id' in user:
             user.pop('_id', None)
         return user
     except Exception as e:
@@ -630,12 +666,12 @@ def get_user_profile(current_user):
         # Calculate streak (simplified)
         if video_coll:
             seven_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=7)
-            pipeline = [
-                {"$match": {"username": current_user, "access_time": {"$gte": seven_days_ago}}},
-                {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$access_time"}}}},
-                {"$count": "unique_days"}
-            ]
             try:
+                pipeline = [
+                    {"$match": {"username": current_user, "access_time": {"$gte": seven_days_ago}}},
+                    {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$access_time"}}}},
+                    {"$count": "unique_days"}
+                ]
                 streak_data = list(video_coll.aggregate(pipeline))
                 if streak_data:
                     streak = streak_data[0].get('unique_days', 1)
@@ -709,17 +745,16 @@ def calculate_weekly_progress(username):
         
         seven_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=7)
         
-        pipeline = [
-            {"$match": {
-                "username": username,
-                "timestamp": {"$gte": seven_days_ago},
-                "action": {"$in": ["login_success", "accessed_videos", "accessed_notes"]}
-            }},
-            {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}}}},
-            {"$count": "active_days"}
-        ]
-        
         try:
+            pipeline = [
+                {"$match": {
+                    "username": username,
+                    "timestamp": {"$gte": seven_days_ago},
+                    "action": {"$in": ["login_success", "accessed_videos", "accessed_notes"]}
+                }},
+                {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}}}},
+                {"$count": "active_days"}
+            ]
             result = list(activity_coll.aggregate(pipeline))
             if result:
                 active_days = result[0].get('active_days', 0)
@@ -745,17 +780,16 @@ def calculate_monthly_progress(username):
         
         thirty_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=30)
         
-        pipeline = [
-            {"$match": {
-                "username": username,
-                "timestamp": {"$gte": thirty_days_ago},
-                "action": {"$in": ["login_success", "accessed_videos", "accessed_notes"]}
-            }},
-            {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}}}},
-            {"$count": "active_days"}
-        ]
-        
         try:
+            pipeline = [
+                {"$match": {
+                    "username": username,
+                    "timestamp": {"$gte": thirty_days_ago},
+                    "action": {"$in": ["login_success", "accessed_videos", "accessed_notes"]}
+                }},
+                {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}}}},
+                {"$count": "active_days"}
+            ]
             result = list(activity_coll.aggregate(pipeline))
             if result:
                 active_days = result[0].get('active_days', 0)
@@ -1720,6 +1754,16 @@ if __name__ == '__main__':
     print(f"🗄️ Database: MongoDB (pymongo)")
     print(f"🌐 Server running on port: {port}")
     print(f"📊 MongoDB Available: {MONGODB_AVAILABLE}")
+    
+    # Test MongoDB connection
+    client = get_mongo_client()
+    if client:
+        print("✅ MongoDB Connection: SUCCESS")
+        print(f"📊 Database Name: {client.get_database().name}")
+    else:
+        print("❌ MongoDB Connection: FAILED")
+        print("⚠️ Application will run without database connection")
+        print("⚠️ Some features may not work properly")
     
     # Print environment status
     print(f"📧 Email Configuration: {'✅ Available' if EMAIL_USER and EMAIL_PASSWORD else '❌ Missing'}")
