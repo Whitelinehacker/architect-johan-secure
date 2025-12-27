@@ -3,6 +3,6 @@ Flask-CORS==4.0.0
 PyJWT==2.8.0
 bcrypt==4.0.1
 python-dotenv==1.0.0
-psycopg==3.1.18
+pymongo==4.5.0  # Changed from psycopg
 Werkzeug==2.3.7
 requests==2.31.0
