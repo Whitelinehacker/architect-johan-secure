@@ -13,20 +13,11 @@ from email.mime.multipart import MIMEMultipart
 import logging
 import re
 import json
-import requests
-import random
-from datetime import timezone
 import base64
-
-# Import psycopg3 (new version)
-try:
-    import psycopg
-    from psycopg.rows import dict_row
-    print("✅ PostgreSQL (psycopg3) support enabled")
-    POSTGRESQL_AVAILABLE = True
-except ImportError as e:
-    print(f"❌ PostgreSQL not available: {e}")
-    POSTGRESQL_AVAILABLE = False
+from bson.objectid import ObjectId
+from bson.json_util import dumps, loads
+from pymongo import MongoClient, ReturnDocument
+from pymongo.errors import DuplicateKeyError, ConnectionFailure
 
 # Load environment variables
 load_dotenv()
@@ -42,6 +33,7 @@ CORS(app)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 JWT_SECRET = os.getenv('JWT_SECRET', 'your-jwt-secret-here')
 SESSION_TIMEOUT = int(os.getenv('SESSION_TIMEOUT', 3600))
+MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/architect_johan')
 
 # Email configuration (keeping for password reset only)
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
@@ -81,176 +73,128 @@ login_attempts = {}
 MAX_ATTEMPTS = 5
 LOCKOUT_TIME = 900  # 15 minutes
 
-# Validate required environment variables
-def check_environment_variables():
-    required_vars = ['SECRET_KEY', 'JWT_SECRET', 'DATABASE_URL']
-    missing_vars = [var for var in required_vars if not os.getenv(var)]
-    
-    if missing_vars:
-        logger.warning(f"Missing environment variables: {', '.join(missing_vars)}")
-        logger.warning("Some features may not work properly")
-    
-    # Check email configuration
-    if not EMAIL_USER or not EMAIL_PASSWORD:
-        logger.warning("Email configuration missing - password reset emails will not work")
-    else:
-        logger.info("Email configuration found - password reset emails are enabled")
-
-# Call this during startup
-check_environment_variables()
-
-def get_db_connection():
-    """Get PostgreSQL database connection using psycopg3"""
+# MongoDB connection
+def get_mongo_client():
+    """Create MongoDB client connection"""
     try:
-        if not POSTGRESQL_AVAILABLE:
-            logger.error("PostgreSQL not available - psycopg3 not installed")
-            return None
-            
-        database_url = os.getenv('DATABASE_URL')
-        
-        if not database_url:
-            logger.error("DATABASE_URL environment variable is not set")
-            return None
-            
-        # Render provides DATABASE_URL automatically
-        conn = psycopg.connect(database_url, row_factory=dict_row)
-        return conn
-    except Exception as e:
-        logger.error(f"Database connection error: {e}")
+        client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+        client.admin.command('ping')
+        return client
+    except ConnectionFailure as e:
+        logger.error(f"MongoDB connection failed: {e}")
         return None
 
-# Initialize PostgreSQL database
-# Initialize PostgreSQL database
-# Initialize PostgreSQL database
+def get_db():
+    """Get database instance"""
+    client = get_mongo_client()
+    if client:
+        return client.get_database()
+    return None
+
+def get_users_collection():
+    """Get users collection with indexes"""
+    db = get_db()
+    if db:
+        collection = db.users
+        # Create indexes
+        collection.create_index([("username", 1)], unique=True)
+        collection.create_index([("email", 1)], unique=True)
+        collection.create_index([("reset_token", 1)])
+        collection.create_index([("mobile_no", 1)], unique=True)
+        return collection
+    return None
+
+def get_user_activity_collection():
+    """Get user_activity collection with indexes"""
+    db = get_db()
+    if db:
+        collection = db.user_activity
+        collection.create_index([("username", 1)])
+        collection.create_index([("timestamp", -1)])
+        return collection
+    return None
+
+def get_practice_access_collection():
+    """Get practice_access collection with indexes"""
+    db = get_db()
+    if db:
+        collection = db.practice_access
+        collection.create_index([("username", 1)])
+        collection.create_index([("practice_set", 1)])
+        return collection
+    return None
+
+def get_video_access_collection():
+    """Get video_access collection with indexes"""
+    db = get_db()
+    if db:
+        collection = db.video_access
+        collection.create_index([("username", 1)])
+        collection.create_index([("video_id", 1)])
+        return collection
+    return None
+
+def get_user_practice_progress_collection():
+    """Get user_practice_progress collection with indexes"""
+    db = get_db()
+    if db:
+        collection = db.user_practice_progress
+        collection.create_index([("username", 1), ("practice_set", 1)], unique=True)
+        return collection
+    return None
+
+def get_user_video_progress_collection():
+    """Get user_video_progress collection with indexes"""
+    db = get_db()
+    if db:
+        collection = db.user_video_progress
+        collection.create_index([("username", 1), ("video_id", 1)], unique=True)
+        return collection
+    return None
+
+# Initialize MongoDB database
 def init_db():
-    """Initialize PostgreSQL database tables"""
+    """Initialize MongoDB collections and indexes"""
     try:
-        conn = get_db_connection()
-        if not conn:
-            logger.error("Failed to connect to database")
+        # Collections are created lazily on first insert
+        # Just ensure indexes exist
+        users_coll = get_users_collection()
+        if not users_coll:
+            logger.error("Failed to connect to MongoDB")
             return False
-            
-        with conn.cursor() as cursor:
-            # Users table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(100) UNIQUE NOT NULL,
-                    full_name VARCHAR(200) NOT NULL,
-                    email VARCHAR(200) UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    mobile_no VARCHAR(20) NOT NULL,
-                    role VARCHAR(20) DEFAULT 'user',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    last_login TIMESTAMP,
-                    failed_attempts INTEGER DEFAULT 0,
-                    locked_until TIMESTAMP,
-                    is_active BOOLEAN DEFAULT TRUE,
-                    reset_token TEXT,
-                    reset_token_expiry TIMESTAMP,
-                    profile_image TEXT
-                )
-            ''')
-            
-            # User activity log table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS user_activity (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(100) NOT NULL,
-                    action VARCHAR(100) NOT NULL,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    ip_address VARCHAR(45),
-                    user_agent TEXT
-                )
-            ''')
-            
-            # Practice set access log
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS practice_access (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(100) NOT NULL,
-                    practice_set VARCHAR(100) NOT NULL,
-                    access_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    ip_address VARCHAR(45),
-                    status VARCHAR(20) DEFAULT 'success'
-                )
-            ''')
-            
-            # Video access log table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS video_access (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(100) NOT NULL,
-                    video_id VARCHAR(100) NOT NULL,
-                    access_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    ip_address VARCHAR(45),
-                    status VARCHAR(20) DEFAULT 'success'
-                )
-            ''')
-            
-            # User video progress table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS user_video_progress (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(100) NOT NULL,
-                    video_id VARCHAR(100) NOT NULL,
-                    progress_percent INTEGER DEFAULT 0,
-                    last_watched TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    completed BOOLEAN DEFAULT FALSE,
-                    UNIQUE(username, video_id)
-                )
-            ''')
-            
-            # User practice progress table - NEW TABLE ADDED
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS user_practice_progress (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(100) NOT NULL,
-                    practice_set VARCHAR(100) NOT NULL,
-                    current_question INTEGER DEFAULT 1,
-                    user_answers JSONB,
-                    score INTEGER DEFAULT 0,
-                    completed BOOLEAN DEFAULT FALSE,
-                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(username, practice_set)
-                )
-            ''')
-            
-            # Create index for better performance on practice progress queries
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_user_practice_progress 
-                ON user_practice_progress (username, practice_set)
-            ''')
-            
-            # Check if admin user exists
-            cursor.execute('SELECT * FROM users WHERE username = %s', ('ArchitectJohan',))
-            admin_exists = cursor.fetchone()
-            
-            if not admin_exists:
-                # Create default admin user
-                admin_password_hash = bcrypt.hashpw(default_admin_password.encode('utf-8'), bcrypt.gensalt())
-                cursor.execute('''
-                    INSERT INTO users (username, full_name, email, password_hash, mobile_no, role)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                ''', (
-                    'ArchitectJohan',
-                    'Architect Johan',
-                    'admin@architectjohan.com',
-                    admin_password_hash.decode('utf-8'),
-                    '0000000000',
-                    'admin'
-                ))
-                logger.info("✅ Default admin user created")
         
-        conn.commit()
-        conn.close()
+        # Check if admin user exists
+        admin_user = users_coll.find_one({"username": "ArchitectJohan"})
+        if not admin_user:
+            # Create default admin user
+            admin_password_hash = bcrypt.hashpw(default_admin_password.encode('utf-8'), bcrypt.gensalt())
+            admin_user_data = {
+                "username": "ArchitectJohan",
+                "full_name": "Architect Johan",
+                "email": "admin@architectjohan.com",
+                "password_hash": admin_password_hash.decode('utf-8'),
+                "mobile_no": "0000000000",
+                "role": "admin",
+                "is_active": True,
+                "created_at": datetime.datetime.utcnow(),
+                "failed_attempts": 0,
+                "locked_until": None
+            }
+            users_coll.insert_one(admin_user_data)
+            logger.info("✅ Default admin user created")
         
-        logger.info("✅ PostgreSQL database initialized successfully with practice progress tracking")
+        # Initialize other collections' indexes
+        get_user_activity_collection()
+        get_practice_access_collection()
+        get_video_access_collection()
+        get_user_practice_progress_collection()
+        get_user_video_progress_collection()
+        
+        logger.info("✅ MongoDB database initialized successfully")
         return True
         
     except Exception as e:
-        logger.error(f"❌ Database initialization failed: {e}")
+        logger.error(f"❌ MongoDB initialization failed: {e}")
         import traceback
         logger.error(f"❌ Traceback: {traceback.format_exc()}")
         return False
@@ -260,29 +204,26 @@ def init_db():
 def initialize_database():
     """Initialize database before first request"""
     if not hasattr(app, 'database_initialized'):
-        logger.info("Initializing PostgreSQL database with psycopg3...")
-        if POSTGRESQL_AVAILABLE:
-            init_db()
-        else:
-            logger.error("Cannot initialize database - PostgreSQL not available")
+        logger.info("Initializing MongoDB database...")
+        init_db()
         app.database_initialized = True
 
-# Database helper functions (updated for psycopg3)
+# MongoDB helper functions
 def get_user_by_username(username):
     """Get user from database by username"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        users_coll = get_users_collection()
+        if not users_coll:
             return None
             
-        with conn.cursor() as cursor:
-            cursor.execute(
-                'SELECT * FROM users WHERE username = %s AND is_active = TRUE', 
-                (username,)
-            )
-            user = cursor.fetchone()
+        user = users_coll.find_one({
+            "username": username,
+            "is_active": True
+        })
         
-        conn.close()
+        # Convert ObjectId to string for JSON serialization
+        if user and '_id' in user:
+            user['_id'] = str(user['_id'])
         return user
     except Exception as e:
         logger.error(f"Error getting user: {e}")
@@ -291,18 +232,17 @@ def get_user_by_username(username):
 def get_user_by_email(email):
     """Get user from database by email"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        users_coll = get_users_collection()
+        if not users_coll:
             return None
             
-        with conn.cursor() as cursor:
-            cursor.execute(
-                'SELECT * FROM users WHERE email = %s AND is_active = TRUE', 
-                (email,)
-            )
-            user = cursor.fetchone()
+        user = users_coll.find_one({
+            "email": email,
+            "is_active": True
+        })
         
-        conn.close()
+        if user and '_id' in user:
+            user['_id'] = str(user['_id'])
         return user
     except Exception as e:
         logger.error(f"Error getting user by email: {e}")
@@ -311,18 +251,17 @@ def get_user_by_email(email):
 def get_user_by_reset_token(reset_token):
     """Get user from database by reset token"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        users_coll = get_users_collection()
+        if not users_coll:
             return None
             
-        with conn.cursor() as cursor:
-            cursor.execute(
-                'SELECT * FROM users WHERE reset_token = %s AND is_active = TRUE', 
-                (reset_token,)
-            )
-            user = cursor.fetchone()
+        user = users_coll.find_one({
+            "reset_token": reset_token,
+            "is_active": True
+        })
         
-        conn.close()
+        if user and '_id' in user:
+            user['_id'] = str(user['_id'])
         return user
     except Exception as e:
         logger.error(f"Error getting user by reset token: {e}")
@@ -331,37 +270,19 @@ def get_user_by_reset_token(reset_token):
 def update_user(user):
     """Update user in database"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        users_coll = get_users_collection()
+        if not users_coll:
             return False
-            
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                UPDATE users SET 
-                    last_login = %s, 
-                    failed_attempts = %s, 
-                    locked_until = %s,
-                    reset_token = %s,
-                    reset_token_expiry = %s,
-                    profile_image = %s,
-                    full_name = %s,
-                    mobile_no = %s
-                WHERE username = %s
-            ''', (
-                user.get('last_login'),
-                user.get('failed_attempts', 0),
-                user.get('locked_until'),
-                user.get('reset_token'),
-                user.get('reset_token_expiry'),
-                user.get('profile_image'),
-                user.get('full_name'),
-                user.get('mobile_no'),
-                user['username']
-            ))
         
-        conn.commit()
-        conn.close()
-        return True
+        # Remove _id from update data
+        update_data = {k: v for k, v in user.items() if k != '_id' and k != 'username'}
+        
+        result = users_coll.update_one(
+            {"username": user['username']},
+            {"$set": update_data}
+        )
+        
+        return result.modified_count > 0
     except Exception as e:
         logger.error(f"Error updating user: {e}")
         return False
@@ -369,26 +290,26 @@ def update_user(user):
 def create_user(user_data):
     """Create new user in database"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        users_coll = get_users_collection()
+        if not users_coll:
             return False
-            
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                INSERT INTO users (username, full_name, email, password_hash, mobile_no, role)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            ''', (
-                user_data['username'],
-                user_data['full_name'],
-                user_data['email'],
-                user_data['password_hash'],
-                user_data['mobile_no'],
-                user_data.get('role', 'user')
-            ))
         
-        conn.commit()
-        conn.close()
-        return True
+        # Add timestamps
+        user_data['created_at'] = datetime.datetime.utcnow()
+        user_data['last_login'] = None
+        user_data['failed_attempts'] = 0
+        user_data['locked_until'] = None
+        user_data['is_active'] = True
+        user_data['role'] = user_data.get('role', 'user')
+        user_data['reset_token'] = None
+        user_data['reset_token_expiry'] = None
+        user_data['profile_image'] = None
+        
+        result = users_coll.insert_one(user_data)
+        return result.inserted_id is not None
+    except DuplicateKeyError as e:
+        logger.error(f"Duplicate key error: {e}")
+        return False
     except Exception as e:
         logger.error(f"Error creating user: {e}")
         return False
@@ -409,7 +330,6 @@ def update_login_attempts(client_ip, current_time):
 def verify_password(stored_hash, provided_password):
     """Verify bcrypt encrypted password with better error handling"""
     try:
-        # Removed debug prints for security
         if not stored_hash:
             return False
             
@@ -539,54 +459,57 @@ Architect Johan Security Team
 def log_user_activity(username, action, ip_address=None, user_agent=None):
     """Log user activities for security monitoring"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        activity_coll = get_user_activity_collection()
+        if not activity_coll:
             return
             
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                INSERT INTO user_activity (username, action, ip_address, user_agent)
-                VALUES (%s, %s, %s, %s)
-            ''', (username, action, ip_address, user_agent))
+        activity_data = {
+            "username": username,
+            "action": action,
+            "timestamp": datetime.datetime.utcnow(),
+            "ip_address": ip_address,
+            "user_agent": user_agent
+        }
         
-        conn.commit()
-        conn.close()
+        activity_coll.insert_one(activity_data)
     except Exception as e:
         logger.error(f"Failed to log user activity: {e}")
 
 def log_practice_access(username, practice_set, ip_address=None, status='success'):
     """Log practice set access attempts"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        practice_coll = get_practice_access_collection()
+        if not practice_coll:
             return
             
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                INSERT INTO practice_access (username, practice_set, ip_address, status)
-                VALUES (%s, %s, %s, %s)
-            ''', (username, practice_set, ip_address, status))
+        access_data = {
+            "username": username,
+            "practice_set": practice_set,
+            "access_time": datetime.datetime.utcnow(),
+            "ip_address": ip_address,
+            "status": status
+        }
         
-        conn.commit()
-        conn.close()
+        practice_coll.insert_one(access_data)
     except Exception as e:
         logger.error(f"Failed to log practice access: {e}")
 
 def log_video_access(username, video_id, ip_address=None, status='success'):
     """Log video access attempts"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        video_coll = get_video_access_collection()
+        if not video_coll:
             return
             
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                INSERT INTO video_access (username, video_id, ip_address, status)
-                VALUES (%s, %s, %s, %s)
-            ''', (username, video_id, ip_address, status))
+        access_data = {
+            "username": username,
+            "video_id": video_id,
+            "access_time": datetime.datetime.utcnow(),
+            "ip_address": ip_address,
+            "status": status
+        }
         
-        conn.commit()
-        conn.close()
+        video_coll.insert_one(access_data)
     except Exception as e:
         logger.error(f"Failed to log video access: {e}")
 
@@ -659,8 +582,6 @@ def admin_required(f):
     return decorated
 
 # PROFILE ROUTES
-# PROFILE ROUTES
-# PROFILE ROUTES
 @app.route('/api/user-profile', methods=['GET'])
 @token_required
 def get_user_profile(current_user):
@@ -670,44 +591,37 @@ def get_user_profile(current_user):
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
-        # Calculate progress statistics with better error handling
+        # Calculate progress statistics
         videos_watched = 0
         practice_completed = 0
         streak = 1
         
-        conn = get_db_connection()
-        if conn:
-            try:
-                with conn.cursor() as cursor:
-                    # Get videos watched count
-                    cursor.execute(
-                        'SELECT COUNT(DISTINCT video_id) as video_count FROM video_access WHERE username = %s',
-                        (current_user,)
-                    )
-                    video_result = cursor.fetchone()
-                    videos_watched = video_result['video_count'] if video_result else 0
-                    
-                    # Get practice sets accessed
-                    cursor.execute(
-                        'SELECT COUNT(DISTINCT practice_set) as practice_count FROM practice_access WHERE username = %s AND status = %s',
-                        (current_user, 'success')
-                    )
-                    practice_result = cursor.fetchone()
-                    practice_completed = practice_result['practice_count'] if practice_result else 0
-                    
-                    # Calculate streak (simplified) - Fixed SQL syntax
-                    cursor.execute(
-                        "SELECT COUNT(DISTINCT DATE(access_time)) as streak FROM video_access WHERE username = %s AND access_time >= CURRENT_DATE - INTERVAL '7 days'",
-                        (current_user,)
-                    )
-                    streak_result = cursor.fetchone()
-                    streak = streak_result['streak'] if streak_result else 1
-                    
-            except Exception as db_error:
-                logger.error(f"Database error in profile calculation: {db_error}")
-                # Use default values if database query fails
-            finally:
-                conn.close()
+        video_coll = get_video_access_collection()
+        practice_coll = get_practice_access_collection()
+        
+        if video_coll:
+            videos_watched = video_coll.count_documents({
+                "username": current_user,
+                "status": "success"
+            })
+        
+        if practice_coll:
+            practice_completed = practice_coll.distinct("practice_set", {
+                "username": current_user,
+                "status": "success"
+            })
+            practice_completed = len(practice_completed)
+        
+        # Calculate streak (simplified)
+        if video_coll:
+            seven_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=7)
+            streak_data = video_coll.aggregate([
+                {"$match": {"username": current_user, "access_time": {"$gte": seven_days_ago}}},
+                {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$access_time"}}}},
+                {"$count": "unique_days"}
+            ])
+            streak_result = list(streak_data)
+            streak = streak_result[0]['unique_days'] if streak_result else 1
         
         # Prepare profile image URL safely
         profile_image_url = None
@@ -748,26 +662,20 @@ def get_user_profile(current_user):
 def calculate_daily_progress(username):
     """Calculate daily progress percentage"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        activity_coll = get_user_activity_collection()
+        if not activity_coll:
             return 25
         
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                SELECT COUNT(*) as activity_count 
-                FROM user_activity 
-                WHERE username = %s 
-                AND DATE(timestamp) = CURRENT_DATE
-                AND action IN ('login_success', 'accessed_videos', 'accessed_notes')
-            ''', (username,))
-            result = cursor.fetchone()
-            activity_count = result['activity_count'] if result else 0
+        today = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         
-        conn.close()
+        activity_count = activity_coll.count_documents({
+            "username": username,
+            "timestamp": {"$gte": today},
+            "action": {"$in": ["login_success", "accessed_videos", "accessed_notes"]}
+        })
         
-        # Simple progress calculation based on activity
         progress = min(activity_count * 10, 100)
-        return progress if progress > 0 else 25  # Minimum 25% for demo
+        return progress if progress > 0 else 25
         
     except Exception as e:
         logger.error(f"Daily progress calculation error: {e}")
@@ -776,22 +684,24 @@ def calculate_daily_progress(username):
 def calculate_weekly_progress(username):
     """Calculate weekly progress percentage"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        activity_coll = get_user_activity_collection()
+        if not activity_coll:
             return 65
         
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                SELECT COUNT(DISTINCT DATE(timestamp)) as active_days 
-                FROM user_activity 
-                WHERE username = %s 
-                AND timestamp >= CURRENT_DATE - INTERVAL '7 days'
-                AND action IN ('login_success', 'accessed_videos', 'accessed_notes')
-            ''', (username,))
-            result = cursor.fetchone()
-            active_days = result['active_days'] if result else 0
+        seven_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=7)
         
-        conn.close()
+        pipeline = [
+            {"$match": {
+                "username": username,
+                "timestamp": {"$gte": seven_days_ago},
+                "action": {"$in": ["login_success", "accessed_videos", "accessed_notes"]}
+            }},
+            {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}}}},
+            {"$count": "active_days"}
+        ]
+        
+        result = list(activity_coll.aggregate(pipeline))
+        active_days = result[0]['active_days'] if result else 0
         
         progress = min(active_days * 15, 100)
         return progress if progress > 0 else 65
@@ -803,24 +713,26 @@ def calculate_weekly_progress(username):
 def calculate_monthly_progress(username):
     """Calculate monthly progress percentage"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        activity_coll = get_user_activity_collection()
+        if not activity_coll:
             return 45
         
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                SELECT COUNT(DISTINCT DATE(timestamp)) as active_days 
-                FROM user_activity 
-                WHERE username = %s 
-                AND timestamp >= CURRENT_DATE - INTERVAL '30 days'
-                AND action IN ('login_success', 'accessed_videos', 'accessed_notes')
-            ''', (username,))
-            result = cursor.fetchone()
-            active_days = result['active_days'] if result else 0
+        thirty_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=30)
         
-        conn.close()
+        pipeline = [
+            {"$match": {
+                "username": username,
+                "timestamp": {"$gte": thirty_days_ago},
+                "action": {"$in": ["login_success", "accessed_videos", "accessed_notes"]}
+            }},
+            {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$timestamp"}}}},
+            {"$count": "active_days"}
+        ]
         
-        progress = min(active_days * 3.33, 100)  # 30 days in month
+        result = list(activity_coll.aggregate(pipeline))
+        active_days = result[0]['active_days'] if result else 0
+        
+        progress = min(active_days * 3.33, 100)
         return progress if progress > 0 else 45
         
     except Exception as e:
@@ -894,17 +806,12 @@ def upload_profile_image(current_user):
             image_base64 = base64.b64encode(image_data).decode('utf-8')
             
             # Update user profile image in database
-            conn = get_db_connection()
-            if conn:
-                with conn.cursor() as cursor:
-                    cursor.execute('''
-                        UPDATE users 
-                        SET profile_image = %s
-                        WHERE username = %s
-                    ''', (image_base64, current_user))
-                
-                conn.commit()
-                conn.close()
+            users_coll = get_users_collection()
+            if users_coll:
+                users_coll.update_one(
+                    {"username": current_user},
+                    {"$set": {"profile_image": image_base64}}
+                )
                 
                 log_user_activity(current_user, 'profile_image_updated', request.remote_addr, request.headers.get('User-Agent'))
                 
@@ -942,7 +849,7 @@ def get_csrf_token():
         logger.error(f"CSRF token generation error: {e}")
         return jsonify({'error': 'Failed to generate CSRF token'}), 500
 
-# VALIDATE TOKEN ROUTE - ADD THIS ENDPOINT
+# VALIDATE TOKEN ROUTE
 @app.route('/api/validate-token', methods=['POST'])
 def validate_token():
     """Validate JWT token"""
@@ -1049,24 +956,18 @@ def signup():
             return jsonify({'error': 'Username must be 3-30 characters long and contain only letters, numbers, and underscores'}), 400
         
         # Check if username, email or mobile already exists with separate error messages
-        conn = get_db_connection()
-        if not conn:
+        users_coll = get_users_collection()
+        if not users_coll:
             return jsonify({'error': 'Database connection failed'}), 500
-            
-        with conn.cursor() as cursor:
-            # Check username
-            cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
-            existing_username = cursor.fetchone()
-            
-            # Check email
-            cursor.execute('SELECT * FROM users WHERE email = %s', (email,))
-            existing_email = cursor.fetchone()
-            
-            # Check mobile number
-            cursor.execute('SELECT * FROM users WHERE mobile_no = %s', (mobile_no,))
-            existing_mobile = cursor.fetchone()
         
-        conn.close()
+        # Check username
+        existing_username = users_coll.find_one({"username": username})
+        
+        # Check email
+        existing_email = users_coll.find_one({"email": email})
+        
+        # Check mobile number
+        existing_mobile = users_coll.find_one({"mobile_no": mobile_no})
         
         if existing_username:
             return jsonify({'error': 'Username already taken. Please choose a different username.'}), 400
@@ -1262,8 +1163,8 @@ def verify_practice_password(current_user):
                 redirect_url = ''
                 if practice_set == 'practice_set_1':
                     redirect_url = 'practic_set.html'
-                elif practice_set == 'ceh_study_notes':  # ADD THIS CASE
-                    redirect_url = 'cehv13_notes.html'   # Make sure this file exists
+                elif practice_set == 'ceh_study_notes':
+                    redirect_url = 'cehv13_notes.html'
                 else:
                     redirect_url = f'{practice_set}.html'
                 
@@ -1456,7 +1357,7 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.datetime.utcnow().isoformat(),
-        'database': 'connected' if get_db_connection() else 'disconnected'
+        'database': 'connected' if get_mongo_client() else 'disconnected'
     }), 200
 
 # DEBUG ENDPOINTS (Remove in production)
@@ -1594,18 +1495,11 @@ def check_mobile():
             }), 400
         
         # Check if mobile exists in database
-        conn = get_db_connection()
-        if not conn:
+        users_coll = get_users_collection()
+        if not users_coll:
             return jsonify({'exists': False, 'error': 'Database connection failed'}), 500
-            
-        with conn.cursor() as cursor:
-            cursor.execute(
-                'SELECT * FROM users WHERE mobile_no = %s AND is_active = TRUE', 
-                (mobile_no,)
-            )
-            existing_mobile = cursor.fetchone()
         
-        conn.close()
+        existing_mobile = users_coll.find_one({"mobile_no": mobile_no, "is_active": True})
         
         return jsonify({
             'exists': existing_mobile is not None,
@@ -1615,8 +1509,7 @@ def check_mobile():
     except Exception as e:
         logger.error(f"Mobile check error: {e}")
         return jsonify({'exists': False, 'error': 'Server error'}), 500
-    
-    
+
 # Practice Set File Serving Routes
 @app.route('/practic_set.html')
 def serve_practice_set_1():
@@ -1684,37 +1577,33 @@ def save_practice_progress(current_user):
         if not practice_set:
             return jsonify({'error': 'Practice set is required'}), 400
         
-        conn = get_db_connection()
-        if not conn:
+        progress_coll = get_user_practice_progress_collection()
+        if not progress_coll:
             return jsonify({'error': 'Database connection failed'}), 500
-            
-        with conn.cursor() as cursor:
-            # Check if progress record exists
-            cursor.execute('''
-                SELECT id FROM user_practice_progress 
-                WHERE username = %s AND practice_set = %s
-            ''', (current_user, practice_set))
-            
-            existing_record = cursor.fetchone()
-            
-            if existing_record:
-                # Update existing record
-                cursor.execute('''
-                    UPDATE user_practice_progress 
-                    SET current_question = %s, user_answers = %s, 
-                        score = %s, completed = %s, last_updated = CURRENT_TIMESTAMP
-                    WHERE username = %s AND practice_set = %s
-                ''', (current_question, json.dumps(user_answers), score, completed, current_user, practice_set))
-            else:
-                # Create new record
-                cursor.execute('''
-                    INSERT INTO user_practice_progress 
-                    (username, practice_set, current_question, user_answers, score, completed)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                ''', (current_user, practice_set, current_question, json.dumps(user_answers), score, completed))
         
-        conn.commit()
-        conn.close()
+        # Upsert practice progress
+        progress_data = {
+            "username": current_user,
+            "practice_set": practice_set,
+            "current_question": current_question,
+            "user_answers": user_answers,
+            "score": score,
+            "completed": completed,
+            "last_updated": datetime.datetime.utcnow(),
+            "created_at": datetime.datetime.utcnow()
+        }
+        
+        result = progress_coll.update_one(
+            {
+                "username": current_user,
+                "practice_set": practice_set
+            },
+            {
+                "$set": progress_data,
+                "$setOnInsert": {"created_at": datetime.datetime.utcnow()}
+            },
+            upsert=True
+        )
         
         return jsonify({
             'success': True,
@@ -1730,31 +1619,24 @@ def save_practice_progress(current_user):
 def get_practice_progress(current_user):
     """Get user progress for all practice sets"""
     try:
-        conn = get_db_connection()
-        if not conn:
+        progress_coll = get_user_practice_progress_collection()
+        if not progress_coll:
             return jsonify({'error': 'Database connection failed'}), 500
-            
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                SELECT practice_set, current_question, user_answers, score, completed, last_updated
-                FROM user_practice_progress 
-                WHERE username = %s
-                ORDER BY practice_set
-            ''', (current_user,))
-            
-            progress_data = cursor.fetchall()
         
-        conn.close()
+        progress_data = list(progress_coll.find(
+            {"username": current_user},
+            {"_id": 0, "username": 0}
+        ).sort("practice_set", 1))
         
         # Format the response
         progress = {}
         for row in progress_data:
             progress[row['practice_set']] = {
-                'current_question': row['current_question'],
-                'user_answers': row['user_answers'] if row['user_answers'] else [],
-                'score': row['score'],
-                'completed': row['completed'],
-                'last_updated': row['last_updated'].isoformat() if row['last_updated'] else None
+                'current_question': row.get('current_question', 1),
+                'user_answers': row.get('user_answers', []),
+                'score': row.get('score', 0),
+                'completed': row.get('completed', False),
+                'last_updated': row.get('last_updated', datetime.datetime.utcnow()).isoformat()
             }
         
         return jsonify({
@@ -1777,18 +1659,14 @@ def reset_practice_progress(current_user):
         if not practice_set:
             return jsonify({'error': 'Practice set is required'}), 400
         
-        conn = get_db_connection()
-        if not conn:
+        progress_coll = get_user_practice_progress_collection()
+        if not progress_coll:
             return jsonify({'error': 'Database connection failed'}), 500
-            
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                DELETE FROM user_practice_progress 
-                WHERE username = %s AND practice_set = %s
-            ''', (current_user, practice_set))
         
-        conn.commit()
-        conn.close()
+        result = progress_coll.delete_one({
+            "username": current_user,
+            "practice_set": practice_set
+        })
         
         return jsonify({
             'success': True,
@@ -1803,15 +1681,21 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
     print(f"🔐 Authentication System: ENABLED")
-    print(f"🗄️ Database: PostgreSQL (psycopg3)")
+    print(f"🗄️ Database: MongoDB (pymongo)")
     print(f"🌐 Server running on port: {port}")
-    print(f"📊 PostgreSQL Available: {POSTGRESQL_AVAILABLE}")
+    
+    # Test MongoDB connection
+    client = get_mongo_client()
+    if client:
+        print("✅ MongoDB Connection: SUCCESS")
+        print(f"📊 Database Name: {client.get_database().name}")
+    else:
+        print("❌ MongoDB Connection: FAILED")
     
     # Print environment status
     print(f"📧 Email Configuration: {'✅ Available' if EMAIL_USER and EMAIL_PASSWORD else '❌ Missing'}")
     print(f"🔑 SECRET_KEY: {'✅ Set' if os.getenv('SECRET_KEY') else '❌ Missing'}")
     print(f"🔑 JWT_SECRET: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
-    print(f"🗄️ DATABASE_URL: {'✅ Set' if os.getenv('DATABASE_URL') else '❌ Missing'}")
+    print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
