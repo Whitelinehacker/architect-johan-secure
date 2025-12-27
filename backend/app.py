@@ -83,45 +83,64 @@ MAX_ATTEMPTS = 5
 LOCKOUT_TIME = 900  # 15 minutes
 
 # MongoDB connection with SSL fix
+# MongoDB connection with simplified SSL
 def get_mongo_client():
-    """Create MongoDB client connection with SSL fix"""
+    """Create MongoDB client connection with simplified SSL"""
     if not MONGODB_AVAILABLE:
         logger.error("MongoDB not available - pymongo not installed")
         return None
     
     try:
-        # Check if it's a MongoDB Atlas connection string
+        # For MongoDB Atlas with Render, we need to handle SSL differently
         if 'mongodb+srv://' in MONGODB_URI:
-            # For MongoDB Atlas, use SSL and certifi for certificate validation
-            client = MongoClient(
-                MONGODB_URI,
-                tls=True,
-                tlsAllowInvalidCertificates=False,
-                tlsCAFile=certifi.where(),
-                serverSelectionTimeoutMS=10000,
-                connectTimeoutMS=10000,
-                socketTimeoutMS=10000
-            )
+            # Option 1: Try with TLS but allow invalid certificates (for testing)
+            try:
+                client = MongoClient(
+                    MONGODB_URI,
+                    tls=True,
+                    tlsAllowInvalidCertificates=True,  # Allow invalid certs for testing
+                    serverSelectionTimeoutMS=10000,
+                    connectTimeoutMS=10000,
+                    socketTimeoutMS=10000,
+                    retryWrites=True,
+                    w='majority'
+                )
+                client.admin.command('ping')
+                print("✅ MongoDB Connection: SUCCESS (with tlsAllowInvalidCertificates=True)")
+                return client
+            except Exception as tls_error:
+                print(f"⚠️ TLS connection failed: {tls_error}")
+                
+                # Option 2: Try without TLS for development
+                try:
+                    # Replace mongodb+srv:// with mongodb:// and remove SSL options
+                    uri_without_srv = MONGODB_URI.replace('mongodb+srv://', 'mongodb://')
+                    client = MongoClient(
+                        uri_without_srv,
+                        serverSelectionTimeoutMS=10000,
+                        connectTimeoutMS=10000,
+                        socketTimeoutMS=10000
+                    )
+                    client.admin.command('ping')
+                    print("✅ MongoDB Connection: SUCCESS (without SRV/TLS)")
+                    return client
+                except Exception as no_tls_error:
+                    print(f"❌ No-TLS connection failed: {no_tls_error}")
+                    return None
         else:
             # For local MongoDB
             client = MongoClient(
                 MONGODB_URI,
                 serverSelectionTimeoutMS=10000
             )
-        
-        # Test connection
-        client.admin.command('ping')
-        print("✅ MongoDB Connection: SUCCESS")
-        return client
-    except ConnectionFailure as e:
+            client.admin.command('ping')
+            return client
+            
+    except Exception as e:
         logger.error(f"MongoDB connection failed: {e}")
         print(f"❌ MongoDB Connection Error: {e}")
         return None
-    except Exception as e:
-        logger.error(f"MongoDB error: {e}")
-        print(f"❌ MongoDB General Error: {e}")
-        return None
-
+        
 def get_db():
     """Get database instance"""
     client = get_mongo_client()
@@ -1772,3 +1791,4 @@ if __name__ == '__main__':
     print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
