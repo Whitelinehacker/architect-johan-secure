@@ -234,7 +234,7 @@ def init_db():
         # Collections are created lazily on first insert
         # Just ensure indexes exist and create admin user
         users_coll = get_users_collection()
-        if not users_coll:
+        if not users_coll is None:
             logger.error("Failed to get users collection")
             return False
         
@@ -287,7 +287,7 @@ def get_user_by_username(username):
     """Get user from database by username"""
     try:
         users_coll = get_users_collection()
-        if not users_coll:
+        if not users_coll is None:
             return None
             
         user = users_coll.find_one({
@@ -307,7 +307,7 @@ def get_user_by_email(email):
     """Get user from database by email"""
     try:
         users_coll = get_users_collection()
-        if not users_coll:
+        if not users_coll is None:
             return None
             
         user = users_coll.find_one({
@@ -326,7 +326,7 @@ def get_user_by_reset_token(reset_token):
     """Get user from database by reset token"""
     try:
         users_coll = get_users_collection()
-        if not users_coll:
+        if not users_coll is None:
             return None
             
         user = users_coll.find_one({
@@ -345,7 +345,7 @@ def update_user(user):
     """Update user in database"""
     try:
         users_coll = get_users_collection()
-        if not users_coll:
+        if not users_coll is None:
             return False
         
         # Create update data excluding username
@@ -365,7 +365,7 @@ def create_user(user_data):
     """Create new user in database"""
     try:
         users_coll = get_users_collection()
-        if not users_coll:
+        if not users_coll is None:
             return False
         
         # Add timestamps and default values
@@ -1791,6 +1791,7 @@ if __name__ == '__main__':
     print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
 
 
