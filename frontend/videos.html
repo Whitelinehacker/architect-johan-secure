@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Architect Johan — Video Resources</title>
+    <title>Architect Johan — Video Courses</title>
     <style>
         * {
             margin: 0;
@@ -12,14 +12,14 @@
         }
 
         body {
-            font-family: 'Courier New', Courier, monospace;
-            background: #02040A;
-            color: #00FFB3;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0f0f0f;
+            color: #ffffff;
             overflow-x: hidden;
             min-height: 100vh;
         }
 
-        /* Matrix background */
+        /* Matrix background - subtle */
         #matrix-canvas {
             position: fixed;
             top: 0;
@@ -27,7 +27,7 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            opacity: 0.3;
+            opacity: 0.05;
         }
 
         /* Main content container */
@@ -39,829 +39,1063 @@
             flex-direction: column;
         }
 
-        /* Navbar */
+        /* Navbar - YouTube style */
         .navbar {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            background: rgba(2, 4, 10, 0.95);
-            backdrop-filter: blur(15px);
-            border-bottom: 2px solid #00FFB3;
-            padding: 20px 40px;
+            background: #0f0f0f;
+            padding: 0 16px;
             z-index: 100;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            box-shadow: 0 0 30px rgba(0, 255, 179, 0.3);
+            justify-content: space-between;
+            height: 56px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .left-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .logo {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px rgba(0, 255, 179, 0.8);
-            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 30px;
-            align-items: center;
-        }
-
-        .nav-links a {
             color: #00FFB3;
-            text-decoration: none;
-            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .center-section {
+            flex: 1;
+            max-width: 640px;
+            margin: 0 80px;
+        }
+
+        .search-container {
+            display: flex;
+            width: 100%;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0 16px;
+            background: #121212;
+            border: 1px solid #303030;
+            border-right: none;
+            border-radius: 40px 0 0 40px;
+            color: #fff;
+            font-size: 16px;
+            height: 40px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #1c62b9;
+        }
+
+        .search-btn {
+            background: #222;
+            border: 1px solid #303030;
+            border-left: none;
+            border-radius: 0 40px 40px 0;
+            color: #fff;
+            padding: 0 20px;
+            cursor: pointer;
+            height: 40px;
+        }
+
+        .search-btn:hover {
+            background: #303030;
+        }
+
+        .right-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-profile {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00FFB3, #2EC6FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
             font-size: 14px;
-            letter-spacing: 2px;
-            padding: 8px 16px;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-            position: relative;
+            cursor: pointer;
         }
 
-        .nav-links a:hover {
-            color: #2EC6FF;
-            text-shadow: 0 0 10px rgba(46, 198, 255, 0.8);
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 56px;
+            width: 240px;
+            height: calc(100vh - 56px);
+            background: #0f0f0f;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 0;
+            overflow-y: auto;
+            z-index: 90;
+            transition: transform 0.3s ease;
         }
 
-        .nav-links a.active {
-            color: #2EC6FF;
-            background: rgba(46, 198, 255, 0.1);
-            box-shadow: 0 0 15px rgba(46, 198, 255, 0.5);
+        .sidebar-hidden {
+            transform: translateX(-100%);
         }
 
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #00FFB3, #2EC6FF);
-            transition: all 0.3s ease;
-            transform: translateX(-50%);
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            height: 40px;
+            color: #fff;
+            text-decoration: none;
+            transition: background 0.2s;
+            cursor: pointer;
         }
 
-        .nav-links a:hover::after {
-            width: 80%;
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
 
-        /* Logout button */
-        .logout-btn {
-            color: #FF6B6B !important;
-            background: rgba(255, 107, 107, 0.1) !important;
-            border: 1px solid rgba(255, 107, 107, 0.3) !important;
+        .sidebar-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 500;
         }
 
-        .logout-btn:hover {
-            color: #FF5252 !important;
-            background: rgba(255, 107, 107, 0.2) !important;
-            text-shadow: 0 0 10px rgba(255, 107, 107, 0.8) !important;
-            border-color: #FF6B6B !important;
+        .sidebar-item i {
+            margin-right: 24px;
+            font-size: 18px;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 12px 24px;
+        }
+
+        .sidebar-section-title {
+            padding: 8px 24px;
+            font-size: 14px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* Main content */
         .main-content {
-            flex: 1;
-            padding: 150px 40px 100px;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
+            margin-left: 240px;
+            margin-top: 56px;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
         }
 
-        .hero {
-            text-align: center;
-            margin-bottom: 80px;
-            animation: float 6s ease-in-out infinite;
+        .sidebar-hidden + .main-content {
+            margin-left: 0;
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-
-        .hero h1 {
-            font-size: 48px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-bottom: 20px;
-            text-shadow: 0 0 25px rgba(0, 255, 179, 0.8),
-                         0 0 50px rgba(0, 255, 179, 0.5);
-            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero p {
-            font-size: 18px;
-            color: #2EC6FF;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            opacity: 0.9;
-        }
-
-        /* Category grid */
-        .category-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 30px;
-            margin-top: 60px;
-        }
-
-        .category-card {
-            background: rgba(2, 4, 10, 0.9);
-            backdrop-filter: blur(15px);
-            border: 2px solid #00FFB3;
-            border-radius: 20px;
-            overflow: hidden;
-            transition: all 0.4s ease;
-            box-shadow: 0 0 30px rgba(0, 255, 179, 0.2),
-                        inset 0 0 30px rgba(0, 255, 179, 0.05);
-            position: relative;
-            cursor: pointer;
-            height: 350px;
+        /* Categories bar */
+        .categories-bar {
             display: flex;
-            flex-direction: column;
+            gap: 12px;
+            padding: 12px 0;
+            overflow-x: auto;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 24px;
+            scrollbar-width: none;
         }
 
-        .category-card:hover {
-            transform: translateY(-10px);
-            border-color: #2EC6FF;
-            box-shadow: 0 0 50px rgba(46, 198, 255, 0.4),
-                        inset 0 0 50px rgba(46, 198, 255, 0.1);
+        .categories-bar::-webkit-scrollbar {
+            display: none;
         }
 
-        .category-thumbnail {
-            height: 200px;
-            width: 100%;
-            background-size: cover;
-            background-position: center;
-            position: relative;
+        .category-chip {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 20px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .category-chip:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .category-chip.active {
+            background: #fff;
+            color: #0f0f0f;
+            font-weight: 500;
+        }
+
+        /* Video grid - YouTube style */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            padding: 0 8px;
+        }
+
+        .video-card {
+            background: transparent;
+            border-radius: 12px;
             overflow: hidden;
-            background-color: rgba(0, 255, 179, 0.1);
+            transition: transform 0.3s ease, background 0.3s ease;
+            cursor: pointer;
         }
 
-        .category-thumbnail::after {
-            content: '';
+        .video-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .video-thumbnail {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .video-thumbnail img {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(to bottom, transparent 0%, rgba(2, 4, 10, 0.8) 100%);
+            object-fit: cover;
         }
 
-        .category-icon {
+        .video-duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .video-info {
+            padding: 0 4px;
+        }
+
+        .video-title {
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .video-channel {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .channel-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00FFB3, #2EC6FF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .channel-name {
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .locked-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 107, 107, 0.9);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .play-btn-overlay {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             width: 60px;
             height: 60px;
-            background: rgba(0, 255, 179, 0.8);
+            background: rgba(0, 255, 179, 0.9);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 2;
+            font-size: 24px;
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: opacity 0.3s ease;
         }
 
-        .category-card:hover .category-icon {
+        .video-card:hover .play-btn-overlay {
             opacity: 1;
         }
 
-        .category-icon::before {
-            content: '📁';
-            font-size: 24px;
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 12px;
         }
 
-        .category-info {
-            padding: 20px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+        .skeleton-thumbnail {
+            width: 100%;
+            padding-bottom: 56.25%;
+            margin-bottom: 12px;
         }
 
-        .category-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .skeleton-title {
+            height: 20px;
+            width: 80%;
+            margin-bottom: 8px;
         }
 
-        .category-description {
-            font-size: 14px;
-            color: #2EC6FF;
-            line-height: 1.5;
-            margin-bottom: 15px;
+        .skeleton-meta {
+            height: 16px;
+            width: 60%;
         }
 
-        .category-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-            color: #2EC6FF;
-            opacity: 0.8;
-        }
-
-        /* Locked category styles */
-        .category-card.locked {
-            border-color: #FF6B6B;
-            opacity: 0.8;
-        }
-
-        .category-card.locked::before {
-            content: '🔒';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 107, 107, 0.9);
-            color: #02040A;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 3;
-            font-size: 14px;
-        }
-
-        .category-card.locked:hover {
-            border-color: #FF5252;
-            box-shadow: 0 0 30px rgba(255, 107, 107, 0.4);
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
         /* Password Modal */
-        .password-prompt {
+        .password-modal-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(2, 4, 10, 0.98);
+            background: rgba(0, 0, 0, 0.8);
             z-index: 1000;
             justify-content: center;
             align-items: center;
         }
 
-        .password-prompt.show {
+        .password-modal-overlay.show {
             display: flex;
         }
 
         .password-modal {
-            background: rgba(2, 4, 10, 0.95);
-            border: 2px solid #00FFB3;
-            border-radius: 20px;
-            padding: 30px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 32px;
             width: 400px;
             max-width: 90%;
-            box-shadow: 0 0 50px rgba(0, 255, 179, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .password-modal h3 {
+            color: #fff;
             margin-bottom: 20px;
             text-align: center;
-            color: #00FFB3;
+            font-size: 20px;
         }
 
         .password-input {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            background: rgba(0, 255, 179, 0.1);
-            border: 1px solid #00FFB3;
-            border-radius: 5px;
-            color: #00FFB3;
-            font-family: 'Courier New', monospace;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            background: #0f0f0f;
+            border: 1px solid #303030;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
         }
 
         .password-input:focus {
             outline: none;
-            border-color: #2EC6FF;
-            box-shadow: 0 0 10px rgba(46, 198, 255, 0.5);
+            border-color: #00FFB3;
         }
 
-        .password-buttons {
+        .modal-buttons {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             justify-content: flex-end;
         }
 
-        .password-btn {
+        .modal-btn {
             padding: 10px 20px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            transition: all 0.3s ease;
+            font-weight: 500;
+            transition: all 0.2s;
         }
 
-        .password-submit {
+        .modal-submit {
             background: #00FFB3;
-            color: #02040A;
+            color: #000;
         }
 
-        .password-submit:hover {
+        .modal-submit:hover {
             background: #2EC6FF;
-            transform: translateY(-2px);
         }
 
-        .password-cancel {
-            background: rgba(255, 107, 107, 0.2);
-            color: #FF6B6B;
-            border: 1px solid #FF6B6B;
+        .modal-cancel {
+            background: transparent;
+            color: #fff;
+            border: 1px solid #303030;
         }
 
-        .password-cancel:hover {
-            background: rgba(255, 107, 107, 0.3);
-            transform: translateY(-2px);
+        .modal-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
 
-        /* Loading and error states */
-        .loading-message {
-            text-align: center;
-            color: #2EC6FF;
-            grid-column: 1 / -1;
-            padding: 40px;
-            font-size: 18px;
+        /* Progress bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #00FFB3, #2EC6FF);
+            transform-origin: 0%;
+            z-index: 101;
         }
 
-        .error-message {
-            color: #FF6B6B;
-            text-align: center;
-            margin: 10px 0;
-            display: none;
-        }
-
-        .error-message.show {
-            display: block;
-        }
-
-        /* Footer */
-        .footer {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-            padding: 30px;
-            margin-top: 80px;
-            border-top: 1px solid rgba(0, 255, 179, 0.2);
-            color: #2EC6FF;
-            font-size: 14px;
-            letter-spacing: 2px;
-            background: rgba(2, 4, 10, 0.9);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            .category-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
+        /* Responsive */
         @media (max-width: 768px) {
-            .navbar {
-                padding: 15px 20px;
+            .sidebar {
+                transform: translateX(-100%);
             }
-
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
             .main-content {
-                padding: 180px 20px 80px;
+                margin-left: 0;
+                padding: 12px;
             }
-
-            .hero h1 {
-                font-size: 36px;
+            
+            .video-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 16px;
             }
-
-            .category-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .category-card {
-                height: 320px;
-            }
-
-            .category-thumbnail {
-                height: 180px;
+            
+            .center-section {
+                margin: 0 16px;
             }
         }
 
         @media (max-width: 480px) {
-            .hero h1 {
-                font-size: 28px;
+            .video-grid {
+                grid-template-columns: 1fr;
             }
-
-            .hero p {
-                font-size: 14px;
+            
+            .search-input {
+                display: none;
             }
-
-            .main-content {
-                padding: 200px 15px 60px;
+            
+            .search-btn {
+                background: transparent;
+                border: none;
+                font-size: 20px;
             }
-        }
-
-        /* Animations */
-        @keyframes fadeIn {
-            from { 
-                opacity: 0; 
-                transform: translateY(20px);
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0);
-            }
-        }
-
-        .main-content > * {
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        .category-card {
-            animation: fadeIn 0.8s ease-out;
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <!-- Matrix background -->
     <canvas id="matrix-canvas"></canvas>
 
-    <!-- Main content wrapper -->
-    <div class="content-wrapper">
-        <!-- Navbar -->
-        <nav class="navbar">
+    <!-- Progress bar -->
+    <div class="progress-bar" id="progress-bar"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="left-section">
+            <button class="menu-btn" id="menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="logo">Architect Johan</div>
-            <div class="nav-links">
-                <a href="home.html">Home</a>
-                <a href="videos.html" class="active">Videos</a>
-                <a href="notes.html">Notes</a>
-                <a href="support.html">Support</a>
-                 <a href="about.html">About</a>
-                <a href="#" id="logout-btn" class="logout-btn">Logout</a>
-            </div>
-        </nav>
-
-        <!-- Password Prompt Modal -->
-        <div class="password-prompt" id="password-prompt">
-            <div class="password-modal">
-                <h3 id="password-title">Enter Password</h3>
-                <input type="password" class="password-input" id="video-password" placeholder="Enter category password">
-                <div class="error-message" id="password-error">
-                    Incorrect password
-                </div>
-                <div class="password-buttons">
-                    <button class="password-btn password-cancel" id="password-cancel">Cancel</button>
-                    <button class="password-btn password-submit" id="password-submit">Submit</button>
-                </div>
+        </div>
+        
+        <div class="center-section">
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Search courses...">
+                <button class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
             </div>
         </div>
-
-        <!-- Main content -->
-        <div class="main-content">
-            <div class="hero">
-                <h1>Video Courses</h1>
-                <p>Select a course to access video modules and content</p>
-            </div>
-
-            <div class="category-grid" id="category-grid">
-                <!-- Categories will be loaded dynamically -->
-                <div class="loading-message">
-                    Loading course categories...
-                </div>
+        
+        <div class="right-section">
+            <div class="user-profile" id="user-profile">
+                AJ
             </div>
         </div>
+    </nav>
 
-        <!-- Footer -->
-        <footer class="footer">
-            © 2025 Architect Johan | All Rights Reserved.
-        </footer>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <a href="home.html" class="sidebar-item">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="videos.html" class="sidebar-item active">
+            <i class="fas fa-play-circle"></i>
+            <span>Videos</span>
+        </a>
+        <a href="notes.html" class="sidebar-item">
+            <i class="fas fa-book"></i>
+            <span>Notes</span>
+        </a>
+        <a href="practice.html" class="sidebar-item">
+            <i class="fas fa-code"></i>
+            <span>Practice</span>
+        </a>
+        <a href="support.html" class="sidebar-item">
+            <i class="fas fa-headset"></i>
+            <span>Support</span>
+        </a>
+        
+        <div class="sidebar-divider"></div>
+        
+        <div class="sidebar-section-title">My Learning</div>
+        <a href="#" class="sidebar-item">
+            <i class="fas fa-history"></i>
+            <span>History</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <i class="fas fa-download"></i>
+            <span>Downloads</span>
+        </a>
+        <a href="#" class="sidebar-item">
+            <i class="fas fa-star"></i>
+            <span>Favorites</span>
+        </a>
+        
+        <div class="sidebar-divider"></div>
+        
+        <div class="sidebar-section-title">Categories</div>
+        <a href="#" class="sidebar-item" data-category="all">
+            <i class="fas fa-globe"></i>
+            <span>All Courses</span>
+        </a>
+        <a href="#" class="sidebar-item" data-category="beginner">
+            <i class="fas fa-arrow-up"></i>
+            <span>Beginner</span>
+        </a>
+        <a href="#" class="sidebar-item" data-category="intermediate">
+            <i class="fas fa-chart-line"></i>
+            <span>Intermediate</span>
+        </a>
+        <a href="#" class="sidebar-item" data-category="advanced">
+            <i class="fas fa-rocket"></i>
+            <span>Advanced</span>
+        </a>
+        
+        <div class="sidebar-divider"></div>
+        
+        <a href="profile.html" class="sidebar-item">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </a>
+        <a href="#" class="sidebar-item" id="sidebar-logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content" id="main-content">
+        <!-- Categories bar -->
+        <div class="categories-bar">
+            <button class="category-chip active" data-category="all">All</button>
+            <button class="category-chip" data-category="ceh">CEH v13</button>
+            <button class="category-chip" data-category="web">Web Security</button>
+            <button class="category-chip" data-category="network">Network Security</button>
+            <button class="category-chip" data-category="linux">Linux Security</button>
+            <button class="category-chip" data-category="tools">Hacking Tools</button>
+            <button class="category-chip" data-category="defense">Cyber Defense</button>
+            <button class="category-chip" data-category="latest">Latest</button>
+        </div>
+
+        <!-- Video grid -->
+        <div class="video-grid" id="video-grid">
+            <!-- Videos will be loaded here -->
+            <div class="skeleton skeleton-thumbnail"></div>
+            <div class="skeleton skeleton-thumbnail"></div>
+            <div class="skeleton skeleton-thumbnail"></div>
+            <div class="skeleton skeleton-thumbnail"></div>
+            <div class="skeleton skeleton-thumbnail"></div>
+            <div class="skeleton skeleton-thumbnail"></div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div class="password-modal-overlay" id="password-modal">
+        <div class="password-modal">
+            <h3 id="password-title">Enter Password</h3>
+            <input type="password" class="password-input" id="video-password" placeholder="Enter course password">
+            <div id="password-error" style="color: #FF6B6B; font-size: 14px; margin-bottom: 16px; display: none;">
+                Incorrect password
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-cancel" id="password-cancel">Cancel</button>
+                <button class="modal-btn modal-submit" id="password-submit">Submit</button>
+            </div>
+        </div>
     </div>
 
     <script>
-     // Matrix Digital Rain Animation (keep this part the same)
-    // ... [matrix animation code] ...
-
-    // Enhanced fetch with token refresh and better error handling
-    async function fetchWithAuth(url, options = {}) {
-        let token = localStorage.getItem('auth_token');
+    // Matrix animation
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$+-*/=%"#&_(),.;:?!\\|{}<>[]^~';
+    const fontSize = 14;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+    
+    function drawMatrix() {
+        ctx.fillStyle = 'rgba(15, 15, 15, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        const headers = {
-            'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json',
-            ...options.headers
-        };
-
-        let response = await fetch(url, { ...options, headers });
-
-        // Check if response is JSON
-        const contentType = response.headers.get('content-type');
-        const isJson = contentType && contentType.includes('application/json');
-
-        // If token expired (401), try to refresh it
-        if (response.status === 401) {
-            console.log('🔄 Token expired, attempting refresh...');
+        ctx.fillStyle = '#00FFB3';
+        ctx.font = `${fontSize}px monospace`;
+        
+        for (let i = 0; i < drops.length; i++) {
+            const text = letters[Math.floor(Math.random() * letters.length)];
+            const x = i * fontSize;
+            const y = drops[i] * fontSize;
             
-            try {
-                const refreshResponse = await fetch('https://architect-johan-secure.onrender.com/api/refresh-token', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + token,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (refreshResponse.ok) {
-                    const refreshData = await refreshResponse.json();
-                    
-                    // Update token in localStorage
-                    localStorage.setItem('auth_token', refreshData.token);
-                    localStorage.setItem('csrf_token', refreshData.csrf_token);
-                    localStorage.setItem('token_timestamp', Date.now().toString());
-                    
-                    // Retry original request with new token
-                    headers['Authorization'] = 'Bearer ' + refreshData.token;
-                    response = await fetch(url, { ...options, headers });
-                } else {
-                    // Refresh failed, redirect to login
-                    console.log('❌ Token refresh failed, redirecting to login');
-                    redirectToLogin();
-                    throw new Error('Authentication failed');
-                }
-            } catch (refreshError) {
-                console.error('❌ Token refresh error:', refreshError);
-                redirectToLogin();
-                throw new Error('Authentication failed');
+            ctx.fillText(text, x, y);
+            
+            if (y > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
             }
-        }
-
-        return response;
-    }
-
-    // Safe JSON parser that handles HTML responses
-    async function parseResponseSafe(response) {
-        const contentType = response.headers.get('content-type');
-        
-        if (contentType && contentType.includes('application/json')) {
-            try {
-                return await response.json();
-            } catch (jsonError) {
-                console.error('❌ JSON parse error:', jsonError);
-                throw new Error('Invalid server response');
-            }
-        } else {
-            // If not JSON, get text and check if it's HTML
-            const text = await response.text();
-            if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<!doctype') || text.trim().startsWith('<html')) {
-                console.error('❌ Server returned HTML instead of JSON');
-                throw new Error('Server error - please try again');
-            }
-            throw new Error(`Unexpected response format: ${contentType}`);
+            drops[i]++;
         }
     }
+    
+    setInterval(drawMatrix, 50);
+    
+    // Window resize handler
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
 
-    // Redirect to login function
-    function redirectToLogin() {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('token_timestamp');
-        localStorage.removeItem('username');
-        localStorage.removeItem('user_role');
-        localStorage.removeItem('csrf_token');
-        sessionStorage.clear();
-        window.location.href = 'index.html';
-    }
+    // DOM Elements
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+    const userProfile = document.getElementById('user-profile');
+    const searchInput = document.querySelector('.search-input');
+    const searchBtn = document.querySelector('.search-btn');
+    const categoryChips = document.querySelectorAll('.category-chip');
+    const videoGrid = document.getElementById('video-grid');
+    const passwordModal = document.getElementById('password-modal');
+    const progressBar = document.getElementById('progress-bar');
 
-    // Check authentication status
+    // Mock video data
+    const videoData = {
+        ceh: [
+            {
+                id: 'ceh1',
+                title: 'CEH v13: Introduction to Ethical Hacking',
+                description: 'Learn the fundamentals of ethical hacking and penetration testing',
+                duration: '2:15:30',
+                views: '15.2K',
+                date: '2 weeks ago',
+                thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=225&fit=crop',
+                locked: false,
+                category: 'ceh',
+                level: 'Beginner',
+                channel: 'Architect Johan'
+            },
+            {
+                id: 'ceh2',
+                title: 'Footprinting and Reconnaissance Techniques',
+                description: 'Master information gathering and OSINT techniques',
+                duration: '3:45:22',
+                views: '8.7K',
+                date: '1 month ago',
+                thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=225&fit=crop',
+                locked: true,
+                category: 'ceh',
+                level: 'Intermediate',
+                channel: 'Architect Johan'
+            }
+        ],
+        web: [
+            {
+                id: 'web1',
+                title: 'Web Application Security Fundamentals',
+                description: 'Understanding OWASP Top 10 vulnerabilities',
+                duration: '1:45:10',
+                views: '22.5K',
+                date: '3 days ago',
+                thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=225&fit=crop',
+                locked: false,
+                category: 'web',
+                level: 'Beginner',
+                channel: 'Architect Johan'
+            }
+        ],
+        network: [
+            {
+                id: 'net1',
+                title: 'Network Scanning and Enumeration',
+                description: 'Complete guide to Nmap and network scanning tools',
+                duration: '4:20:15',
+                views: '12.3K',
+                date: '1 week ago',
+                thumbnail: 'https://images.unsplash.com/photo-1547658719-da2b51169166?w-400&h=225&fit=crop',
+                locked: false,
+                category: 'network',
+                level: 'Intermediate',
+                channel: 'Architect Johan'
+            }
+        ],
+        linux: [
+            {
+                id: 'linux1',
+                title: 'Linux Security Hardening',
+                description: 'Secure your Linux systems from attacks',
+                duration: '2:30:45',
+                views: '9.8K',
+                date: '2 months ago',
+                thumbnail: 'https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=400&h=225&fit=crop',
+                locked: false,
+                category: 'linux',
+                level: 'Advanced',
+                channel: 'Architect Johan'
+            }
+        ]
+    };
+
+    // All videos
+    const allVideos = Object.values(videoData).flat();
+
+    // Current state
+    let currentCategory = 'all';
+    let currentVideo = null;
+
+    // Authentication check
     function checkAuth() {
         const token = localStorage.getItem('auth_token');
         if (!token) {
-            redirectToLogin();
+            window.location.href = 'index.html';
             return false;
         }
         return true;
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Check authentication on page load
-        if (!checkAuth()) {
-            return;
-        }
-
-        // Load categories from backend
-        loadCategories();
-
-        // Setup password modal
-        setupPasswordModal();
-
-        // Logout functionality
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to logout?')) {
-                    redirectToLogin();
-                }
-            });
-        }
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!checkAuth()) return;
+        
+        // Set username
+        const username = localStorage.getItem('username') || 'AJ';
+        const initials = username.substring(0, 2).toUpperCase();
+        userProfile.textContent = initials;
+        
+        // Load videos
+        renderVideos(allVideos);
+        
+        // Setup event listeners
+        setupEventListeners();
+        
+        // Start progress animation
+        simulateProgress();
     });
 
-    async function loadCategories() {
-        try {
-            console.log('🔄 Loading categories from backend...');
-            
-           const response = await fetchWithAuth('https://architect-johan-secure.onrender.com/api/video-categories', {
-                method: 'GET'
-            });
+    function setupEventListeners() {
+        // Menu toggle
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('show');
+        });
 
-            console.log('📡 Response status:', response.status);
-            
-            if (response.ok) {
-                const data = await parseResponseSafe(response);
-                console.log('✅ Categories loaded successfully:', data);
-                renderCategories(data.categories);
-            } else {
-                // Handle non-JSON error responses
-                const errorText = await response.text();
-                console.error('❌ Server error:', errorText);
-                
-                if (response.status === 401) {
-                    throw new Error('Session expired. Please login again.');
-                } else {
-                    throw new Error(`Server error: ${response.status}`);
-                }
+        // Category chips
+        categoryChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                categoryChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                currentCategory = chip.dataset.category;
+                filterVideos(currentCategory);
+            });
+        });
+
+        // Sidebar category filters
+        document.querySelectorAll('.sidebar-item[data-category]').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const category = item.dataset.category;
+                categoryChips.forEach(c => c.classList.remove('active'));
+                document.querySelector(`.category-chip[data-category="${category}"]`)?.classList.add('active');
+                currentCategory = category;
+                filterVideos(category);
+            });
+        });
+
+        // Search functionality
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        // User profile click
+        userProfile.addEventListener('click', () => {
+            window.location.href = 'profile.html';
+        });
+
+        // Sidebar logout
+        document.getElementById('sidebar-logout').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.clear();
+                window.location.href = 'index.html';
             }
-        } catch (error) {
-            console.error('❌ Error loading categories:', error);
-            
-            // Show user-friendly error message
-            const errorMessage = error.message.includes('Authentication failed') || 
-                               error.message.includes('Session expired') 
-                ? 'Session expired. Please login again.' 
-                : 'Error loading course categories: ' + error.message;
-                
-            document.getElementById('category-grid').innerHTML = 
-                '<div class="error-message show">' + errorMessage + '</div>';
-            
-            // If it's an auth error, redirect to login after a delay
-            if (error.message.includes('Authentication failed') || error.message.includes('Session expired')) {
-                setTimeout(redirectToLogin, 2000);
+        });
+
+        // Password modal
+        document.getElementById('password-cancel').addEventListener('click', () => {
+            passwordModal.classList.remove('show');
+            currentVideo = null;
+        });
+
+        document.getElementById('password-submit').addEventListener('click', verifyPassword);
+        document.getElementById('video-password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') verifyPassword();
+        });
+
+        // Close modal on overlay click
+        passwordModal.addEventListener('click', (e) => {
+            if (e.target === passwordModal) {
+                passwordModal.classList.remove('show');
+                currentVideo = null;
             }
-        }
+        });
     }
 
-    function renderCategories(categories) {
-        const categoryGrid = document.getElementById('category-grid');
+    function renderVideos(videos) {
+        videoGrid.innerHTML = '';
         
-        if (!categories || Object.keys(categories).length === 0) {
-            categoryGrid.innerHTML = '<div class="error-message show">No categories found</div>';
+        if (videos.length === 0) {
+            videoGrid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px; color: #aaa;">
+                    <i class="fas fa-video-slash" style="font-size: 48px; margin-bottom: 20px;"></i>
+                    <h3>No videos found</h3>
+                    <p>Try selecting a different category</p>
+                </div>
+            `;
             return;
         }
-
-        categoryGrid.innerHTML = '';
-
-        Object.values(categories).forEach(category => {
-            const categoryCard = document.createElement('div');
-            categoryCard.className = `category-card ${category.locked ? 'locked' : ''}`;
-            categoryCard.setAttribute('data-category-id', category.id);
+        
+        videos.forEach(video => {
+            const videoCard = document.createElement('div');
+            videoCard.className = 'video-card';
+            videoCard.dataset.id = video.id;
             
-            categoryCard.innerHTML = `
-                <div class="category-thumbnail" style="background-image: url('${category.thumbnail}'); background-color: rgba(0, 255, 179, 0.1);">
-                    <div class="category-icon"></div>
-                </div>
-                <div class="category-info">
-                    <div>
-                        <h3 class="category-title">${category.title}</h3>
-                        <p class="category-description">${category.description}</p>
+            videoCard.innerHTML = `
+                <div class="video-thumbnail">
+                    <div style="background: linear-gradient(135deg, ${video.locked ? '#ff6b6b' : '#00FFB3'}, ${video.locked ? '#ff5252' : '#2EC6FF'}); width: 100%; height: 100%;"></div>
+                    <div class="play-btn-overlay">
+                        <i class="fas fa-play"></i>
                     </div>
-                    <div class="category-footer">
-                        <span>${category.level} Level</span>
-                        <span>${category.duration}</span>
+                    ${video.locked ? '<div class="locked-badge"><i class="fas fa-lock"></i> Locked</div>' : ''}
+                    <div class="video-duration">${video.duration}</div>
+                </div>
+                <div class="video-info">
+                    <h3 class="video-title">${video.title}</h3>
+                    <div class="video-meta">
+                        <span>${video.views} views</span>
+                        <span>•</span>
+                        <span>${video.date}</span>
+                    </div>
+                    <div class="video-channel">
+                        <div class="channel-avatar">${video.channel.substring(0, 2)}</div>
+                        <span class="channel-name">${video.channel}</span>
+                    </div>
+                    <div class="video-meta">
+                        <span>${video.level}</span>
+                        <span>•</span>
+                        <span>${video.category.toUpperCase()}</span>
                     </div>
                 </div>
             `;
-
-            categoryCard.addEventListener('click', () => handleCategoryClick(category));
-            categoryGrid.appendChild(categoryCard);
+            
+            videoCard.addEventListener('click', () => handleVideoClick(video));
+            videoGrid.appendChild(videoCard);
         });
     }
 
-    function handleCategoryClick(category) {
-        console.log('🎯 Category clicked:', category.id);
+    function filterVideos(category) {
+        let filteredVideos = [];
         
-        if (category.locked && category.requires_password) {
-            // Show password prompt for locked categories
-            showPasswordPrompt(category);
+        if (category === 'all') {
+            filteredVideos = allVideos;
         } else {
-            // Direct access for unlocked categories
-            accessCategory(category);
+            filteredVideos = allVideos.filter(video => video.category === category);
+        }
+        
+        renderVideos(filteredVideos);
+    }
+
+    function performSearch() {
+        const query = searchInput.value.toLowerCase().trim();
+        
+        if (query === '') {
+            filterVideos(currentCategory);
+            return;
+        }
+        
+        const filteredVideos = allVideos.filter(video => 
+            video.title.toLowerCase().includes(query) ||
+            video.description.toLowerCase().includes(query) ||
+            video.category.toLowerCase().includes(query)
+        );
+        
+        renderVideos(filteredVideos);
+        
+        // Update category chips
+        categoryChips.forEach(chip => chip.classList.remove('active'));
+        document.querySelector('.category-chip[data-category="all"]').classList.add('active');
+    }
+
+    function handleVideoClick(video) {
+        console.log('Video clicked:', video.id);
+        
+        if (video.locked) {
+            currentVideo = video;
+            document.getElementById('password-title').textContent = `Unlock: ${video.title}`;
+            document.getElementById('video-password').value = '';
+            document.getElementById('password-error').style.display = 'none';
+            passwordModal.classList.add('show');
+            document.getElementById('video-password').focus();
+        } else {
+            // Navigate to video player or category page
+            window.location.href = `video-player.html?id=${video.id}`;
         }
     }
 
-    function showPasswordPrompt(category) {
-        currentCategoryId = category.id;
-        document.getElementById('password-title').textContent = `Enter Password for ${category.title}`;
-        document.getElementById('video-password').value = '';
-        document.getElementById('password-error').style.display = 'none';
-        document.getElementById('password-prompt').classList.add('show');
-        document.getElementById('video-password').focus();
-    }
-
-    function setupPasswordModal() {
-        document.getElementById('password-cancel').addEventListener('click', () => {
-            document.getElementById('password-prompt').classList.remove('show');
-            currentCategoryId = null;
-        });
-
-        document.getElementById('password-submit').addEventListener('click', submitPassword);
-
-        document.getElementById('video-password').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                submitPassword();
-            }
-        });
-    }
-
-    async function submitPassword() {
+    async function verifyPassword() {
         const password = document.getElementById('video-password').value;
         const errorElement = document.getElementById('password-error');
-
+        
         if (!password) {
             errorElement.textContent = 'Password is required';
             errorElement.style.display = 'block';
             return;
         }
-
-        try {
-            console.log('🔐 Submitting password for category:', currentCategoryId);
-            const response = await fetchWithAuth(`https://architect-johan-secure.onrender.com/api/categories/${currentCategoryId}/access`, {
-                method: 'POST',
-                body: JSON.stringify({ password: password })
-            });
-
-            // Use safe JSON parsing
-            const data = await parseResponseSafe(response);
-            console.log('🔐 Password response:', data);
-
-            if (response.ok) {
-                document.getElementById('password-prompt').classList.remove('show');
-                // Navigate to category page
-                window.location.href = data.redirect_url;
+        
+        // Simulate API call
+        setTimeout(() => {
+            // Mock password verification (replace with real API call)
+            const mockPassword = 'Arch1t3ch_Joh@N!X#2025';
+            
+            if (password === mockPassword) {
+                passwordModal.classList.remove('show');
+                // Unlock the video and navigate
+                if (currentVideo) {
+                    currentVideo.locked = false;
+                    window.location.href = `video-player.html?id=${currentVideo.id}`;
+                }
             } else {
-                errorElement.textContent = data.error || 'Incorrect password';
+                errorElement.textContent = 'Incorrect password. Please try again.';
                 errorElement.style.display = 'block';
                 document.getElementById('video-password').value = '';
             }
-        } catch (error) {
-            console.error('❌ Error submitting password:', error);
+        }, 1000);
+    }
+
+    function simulateProgress() {
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 5;
+            progressBar.style.transform = `scaleX(${progress / 100})`;
             
-            // More specific error messages
-            if (error.message.includes('Server error') || error.message.includes('Invalid server response')) {
-                errorElement.textContent = 'Server error. Please try again.';
-            } else if (error.message.includes('Authentication failed') || error.message.includes('Session expired')) {
-                errorElement.textContent = 'Session expired. Please login again.';
-                setTimeout(redirectToLogin, 2000);
-            } else {
-                errorElement.textContent = 'Error: ' + error.message;
+            if (progress >= 100) {
+                clearInterval(interval);
+                progressBar.style.transform = 'scaleX(0)';
             }
-            
-            errorElement.style.display = 'block';
-            document.getElementById('video-password').value = '';
-        }
+        }, 50);
     }
 
-    function accessCategory(category) {
-        console.log('🚀 Accessing category:', category.id);
-        
-        // Check authentication before navigating
-        if (!checkAuth()) {
-            return;
-        }
-        
-        // Navigate to category page (which will show sub-sections)
-        window.location.href = category.category_page;
-    }
+    // Scroll progress indicator
+    window.addEventListener('scroll', () => {
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        progressBar.style.transform = `scaleX(${scrolled / 100})`;
+    });
 
-    // Add periodic token check (optional)
-    setInterval(() => {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            redirectToLogin();
+    // Auto-hide sidebar on mobile when clicking outside
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && 
+            !sidebar.contains(e.target) && 
+            !menuBtn.contains(e.target) && 
+            sidebar.classList.contains('show')) {
+            sidebar.classList.remove('show');
         }
-    }, 60000); // Check every minute
+    });
     </script>
 </body>
 </html>
