@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Architect Johan — Video Courses</title>
     <style>
-        /* Keep your existing matrix and navbar styles */
-        
         * {
             margin: 0;
             padding: 0;
@@ -21,6 +19,7 @@
             min-height: 100vh;
         }
 
+        /* Matrix background */
         #matrix-canvas {
             position: fixed;
             top: 0;
@@ -31,6 +30,7 @@
             opacity: 0.05;
         }
 
+        /* Navbar */
         .navbar {
             position: fixed;
             top: 0;
@@ -108,6 +108,7 @@
             max-width: 1400px;
             margin: 0 auto;
             width: 100%;
+            min-height: calc(100vh - 80px);
         }
 
         .hero {
@@ -140,6 +141,113 @@
             text-transform: uppercase;
             letter-spacing: 3px;
             opacity: 0.9;
+        }
+
+        /* Course Grid */
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .course-card {
+            background: rgba(2, 4, 10, 0.8);
+            backdrop-filter: blur(15px);
+            border: 2px solid #00FFB3;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(0, 255, 179, 0.2);
+            position: relative;
+        }
+
+        .course-card:hover {
+            transform: translateY(-10px);
+            border-color: #2EC6FF;
+            box-shadow: 0 0 50px rgba(46, 198, 255, 0.4);
+        }
+
+        .course-thumbnail {
+            width: 100%;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            background-color: rgba(0, 255, 179, 0.1);
+        }
+
+        .course-play-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 255, 179, 0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .course-card:hover .course-play-btn {
+            opacity: 1;
+        }
+
+        .course-play-btn::before {
+            content: '▶';
+            color: #02040A;
+            font-size: 24px;
+            margin-left: 5px;
+        }
+
+        .course-info {
+            padding: 20px;
+        }
+
+        .course-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .course-description {
+            color: #2EC6FF;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .course-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #2EC6FF;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .course-locked {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 107, 107, 0.9);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         /* Video Player Section */
@@ -207,15 +315,6 @@
             font-size: 16px;
         }
 
-        .video-description ul {
-            margin-left: 20px;
-            margin-bottom: 15px;
-        }
-
-        .video-description li {
-            margin-bottom: 8px;
-        }
-
         .video-actions {
             display: flex;
             gap: 15px;
@@ -268,126 +367,12 @@
             box-shadow: 0 5px 20px rgba(0, 255, 179, 0.4);
         }
 
-        /* Course Grid */
-        .course-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 30px;
-            margin-top: 50px;
-        }
-
-        .course-card {
-            background: rgba(2, 4, 10, 0.8);
-            backdrop-filter: blur(15px);
-            border: 2px solid #00FFB3;
-            border-radius: 20px;
-            overflow: hidden;
-            transition: all 0.4s ease;
-            cursor: pointer;
-            box-shadow: 0 0 30px rgba(0, 255, 179, 0.2);
-        }
-
-        .course-card:hover {
-            transform: translateY(-10px);
-            border-color: #2EC6FF;
-            box-shadow: 0 0 50px rgba(46, 198, 255, 0.4);
-        }
-
-        .course-thumbnail {
-            width: 100%;
-            height: 200px;
-            background-size: cover;
-            background-position: center;
-            position: relative;
-        }
-
-        .course-thumbnail::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to bottom, transparent 0%, rgba(2, 4, 10, 0.8) 100%);
-        }
-
-        .course-play-btn {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            background: rgba(0, 255, 179, 0.9);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .course-card:hover .course-play-btn {
-            opacity: 1;
-        }
-
-        .course-play-btn::before {
-            content: '▶';
-            color: #02040A;
-            font-size: 24px;
-            margin-left: 5px;
-        }
-
-        .course-info {
-            padding: 20px;
-        }
-
-        .course-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #fff;
-        }
-
-        .course-description {
-            color: #2EC6FF;
-            font-size: 14px;
-            line-height: 1.6;
-            margin-bottom: 15px;
-            opacity: 0.9;
-        }
-
-        .course-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: #2EC6FF;
-            font-size: 12px;
-            opacity: 0.8;
-        }
-
-        .course-locked {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 107, 107, 0.9);
-            color: #fff;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: bold;
-            z-index: 3;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
         /* Loading State */
         .loading-state {
             text-align: center;
             padding: 100px;
             color: #00FFB3;
+            display: none;
         }
 
         .spinner {
@@ -517,6 +502,7 @@
             padding: 25px;
             margin-top: 30px;
             border: 1px solid rgba(0, 255, 179, 0.3);
+            display: none;
         }
 
         .resources-title {
@@ -563,22 +549,53 @@
             gap: 5px;
         }
 
-        /* Progress Bar */
-        .progress-bar {
-            width: 100%;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
-            margin-top: 10px;
-            overflow: hidden;
+        /* Back Button */
+        .back-button {
+            padding: 15px 30px;
+            background: transparent;
+            border: 2px solid #00FFB3;
+            border-radius: 10px;
+            color: #00FFB3;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 30px auto;
+            display: block;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #00FFB3, #2EC6FF);
-            border-radius: 5px;
-            width: 0%;
-            transition: width 0.3s ease;
+        .back-button:hover {
+            background: rgba(0, 255, 179, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: #00FFB3;
+            color: #02040A;
+            border-radius: 10px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0, 255, 179, 0.5);
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
         }
 
         /* Responsive Design */
@@ -659,6 +676,9 @@
         </div>
     </div>
 
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
     <!-- Main Content -->
     <div class="main-content">
         <!-- Hero Section -->
@@ -678,16 +698,9 @@
             <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 20px;"></i>
             <h3>Failed to Load Videos</h3>
             <p id="error-message"></p>
-            <button id="retry-btn" style="
-                margin-top: 20px;
-                padding: 12px 24px;
-                background: #00FFB3;
-                border: none;
-                border-radius: 8px;
-                color: #02040A;
-                cursor: pointer;
-                font-weight: bold;
-            ">Retry</button>
+            <button id="retry-btn" class="action-btn" style="background: #00FFB3; color: #02040A; margin-top: 20px;">
+                <i class="fas fa-redo"></i> Retry
+            </button>
         </div>
 
         <!-- Course Grid (Initial View) -->
@@ -705,14 +718,11 @@
             <!-- Video Info -->
             <div class="video-info" id="video-info">
                 <h2 class="video-title" id="current-video-title">CEH v13 - Introduction to Ethical Hacking</h2>
-                <div class="video-meta">
+                <div class="video-meta" id="video-meta">
                     <span><i class="fas fa-eye"></i> <span id="video-views">1,250</span> views</span>
                     <span><i class="fas fa-clock"></i> <span id="video-duration">45:30</span></span>
                     <span><i class="fas fa-calendar"></i> <span id="video-date">Jan 15, 2024</span></span>
                     <span><i class="fas fa-user"></i> <span id="video-instructor">Architect Johan</span></span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="video-progress"></div>
                 </div>
                 <div class="video-description" id="video-description">
                     Complete introduction to Certified Ethical Hacker v13 course. Learn the fundamentals of ethical hacking, penetration testing, and cybersecurity.
@@ -741,23 +751,7 @@
             </div>
 
             <!-- Back to Courses Button -->
-            <button id="back-to-courses" style="
-                margin-top: 30px;
-                padding: 15px 30px;
-                background: transparent;
-                border: 2px solid #00FFB3;
-                border-radius: 10px;
-                color: #00FFB3;
-                cursor: pointer;
-                font-weight: bold;
-                font-size: 16px;
-                transition: all 0.3s ease;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                margin: 30px auto;
-                display: block;
-            ">
+            <button class="back-button" id="back-to-courses">
                 <i class="fas fa-arrow-left"></i> Back to All Courses
             </button>
         </div>
@@ -819,6 +813,7 @@
     const passwordModal = document.getElementById('password-modal');
     const passwordInput = document.getElementById('video-password');
     const passwordError = document.getElementById('password-error');
+    const notification = document.getElementById('notification');
 
     // Authentication Check
     function checkAuth() {
@@ -870,6 +865,7 @@
             videoPlayerSection.style.display = 'none';
             courseGrid.style.display = 'grid';
             document.querySelector('.hero').style.display = 'block';
+            document.getElementById('resources-section').style.display = 'none';
         });
         
         // Logout
@@ -887,35 +883,136 @@
             showLoading();
             
             const token = localStorage.getItem('auth_token');
-            const response = await fetch('https://architect-johan-secure.onrender.com/api/video-courses', {
-                method: 'GET',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                }
-            });
+            if (!token) {
+                showError('No authentication token found. Please login again.');
+                setTimeout(() => window.location.href = 'index.html', 2000);
+                return;
+            }
             
-            if (response.ok) {
+            console.log('🔄 Loading video courses...');
+            
+            // Try multiple endpoints for compatibility
+            const endpoints = [
+                'https://architect-johan-secure.onrender.com/api/video-categories',
+                'https://architect-johan-secure.onrender.com/api/video-courses'
+            ];
+            
+            let response = null;
+            let lastError = null;
+            
+            for (const endpoint of endpoints) {
+                try {
+                    response = await fetch(endpoint, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        break;
+                    }
+                } catch (err) {
+                    lastError = err;
+                    continue;
+                }
+            }
+            
+            if (response && response.ok) {
                 const data = await response.json();
-                currentCourses = data.courses;
-                renderCourseGrid();
-                hideLoading();
+                console.log('✅ Courses loaded:', data);
+                
+                if (data.categories || data.courses) {
+                    currentCourses = data.categories || data.courses;
+                    renderCourseGrid();
+                    hideLoading();
+                    showNotification('Courses loaded successfully!', 'success');
+                } else {
+                    throw new Error('Invalid response format');
+                }
             } else {
-                throw new Error(`HTTP ${response.status}`);
+                throw new Error(lastError || `HTTP ${response?.status}`);
             }
         } catch (error) {
-            console.error('Error loading video courses:', error);
-            showError('Failed to load video courses. Please check your connection and try again.');
+            console.error('❌ Error loading video courses:', error);
+            showError('Failed to load video courses. Please try again.');
+            showNotification('Using demo courses', 'info');
+            loadDemoCourses();
         }
+    }
+
+    function loadDemoCourses() {
+        // Demo courses for testing
+        currentCourses = {
+            'ceh_v13': {
+                'id': 'ceh_v13',
+                'title': 'CEH v13 - Certified Ethical Hacker',
+                'description': 'Complete Certified Ethical Hacker v13 training course with hands-on labs',
+                'thumbnail': 'https://img.youtube.com/vi/piz1aVOw_3k/maxresdefault.jpg',
+                'level': 'Advanced',
+                'duration': '45:30',
+                'videos_count': 1,
+                'locked': false,
+                'requires_password': false,
+                'videos': [
+                    {
+                        'id': 'ceh_intro_1',
+                        'title': 'CEH v13 - Introduction to Ethical Hacking',
+                        'description': 'Complete introduction to Certified Ethical Hacker v13 course.',
+                        'embed_code': '<iframe width="560" height="315" src="https://www.youtube.com/embed/piz1aVOw_3k?si=Fr4WDoAHVymf1osH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>',
+                        'duration': '45:30',
+                        'order': 1,
+                        'locked': false,
+                        'views': 1250,
+                        'upload_date': '2024-01-15'
+                    }
+                ]
+            },
+            'web_security': {
+                'id': 'web_security',
+                'title': 'Web Application Security',
+                'description': 'Master web security vulnerabilities and OWASP Top 10',
+                'thumbnail': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=225&fit=crop',
+                'level': 'Intermediate',
+                'duration': '2:15:00',
+                'videos_count': 3,
+                'locked': false,
+                'requires_password': false,
+                'videos': [
+                    {
+                        'id': 'web_security_1',
+                        'title': 'Coming Soon - Web Security',
+                        'description': 'Course in development',
+                        'embed_code': '<div style="padding: 100px; text-align: center; background: #1a1a1a; color: #2EC6FF;"><h3>Coming Soon</h3><p>Web Security Course</p></div>',
+                        'duration': '--:--',
+                        'order': 1,
+                        'locked': false,
+                        'views': 0
+                    }
+                ]
+            }
+        };
+        
+        renderCourseGrid();
+        hideLoading();
     }
 
     function renderCourseGrid() {
         courseGrid.innerHTML = '';
         
+        if (!currentCourses || Object.keys(currentCourses).length === 0) {
+            courseGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 60px; color: #aaa;">No courses available</div>';
+            return;
+        }
+        
         Object.values(currentCourses).forEach(course => {
             const courseCard = document.createElement('div');
             courseCard.className = 'course-card';
             courseCard.dataset.courseId = course.id;
+            
+            // Get first video or create placeholder
+            const firstVideo = course.videos && course.videos.length > 0 ? course.videos[0] : null;
             
             courseCard.innerHTML = `
                 ${course.locked ? '<div class="course-locked"><i class="fas fa-lock"></i> Locked</div>' : ''}
@@ -928,29 +1025,25 @@
                     <div class="course-meta">
                         <span>${course.level}</span>
                         <span>${course.duration}</span>
-                        <span>${course.videos_count} videos</span>
+                        <span>${course.videos_count || 0} videos</span>
                     </div>
                 </div>
             `;
             
-            courseCard.addEventListener('click', () => handleCourseClick(course));
+            courseCard.addEventListener('click', () => handleCourseClick(course, firstVideo));
             courseGrid.appendChild(courseCard);
         });
     }
 
-    function handleCourseClick(course) {
+    function handleCourseClick(course, video) {
         currentCourse = course;
         
         if (course.locked && course.requires_password) {
             showPasswordPrompt(course);
+        } else if (video) {
+            loadVideo(video);
         } else {
-            // Show first video or course overview
-            if (course.videos && course.videos.length > 0) {
-                loadVideo(course.videos[0]);
-            } else {
-                // Show course overview page
-                showCourseOverview(course);
-            }
+            showCourseOverview(course);
         }
     }
 
@@ -964,45 +1057,44 @@
         
         // Update video info
         document.getElementById('current-video-title').textContent = video.title;
-        document.getElementById('video-description').innerHTML = video.description || 'No description available.';
+        document.getElementById('video-description').textContent = video.description;
         document.getElementById('video-views').textContent = video.views?.toLocaleString() || '0';
         document.getElementById('video-duration').textContent = video.duration || '--:--';
         document.getElementById('video-date').textContent = video.upload_date || '--';
-        document.getElementById('like-count').textContent = video.likes || '0';
+        document.getElementById('video-instructor').textContent = 'Architect Johan';
+        document.getElementById('like-count').textContent = '89';
         
         // Load embed code
         const videoPlayer = document.getElementById('video-player');
         videoPlayer.innerHTML = video.embed_code;
         
-        // Load resources if available
+        // Try to load resources
         loadVideoResources(video.id);
-        
-        // Load user progress
-        loadVideoProgress(video.id);
         
         // Log video view
         logActivity(`started_video_${video.id}`);
+        
+        showNotification('Video loaded successfully!', 'success');
     }
 
-    async function showCourseOverview(course) {
-        // Hide course grid, show course overview
+    function showCourseOverview(course) {
         courseGrid.style.display = 'none';
         document.querySelector('.hero').style.display = 'none';
         videoPlayerSection.style.display = 'block';
         
-        // Update UI for course overview
         document.getElementById('current-video-title').textContent = course.title;
         document.getElementById('video-description').textContent = course.description;
         document.getElementById('video-player').innerHTML = `
-            <div style="text-align: center; padding: 100px; color: #2EC6FF;">
-                <i class="fas fa-video" style="font-size: 48px; margin-bottom: 20px;"></i>
-                <h3>Course Overview</h3>
-                <p>${course.title}</p>
-                <p style="margin-top: 20px; color: #00FFB3;">Select a video from the playlist to begin</p>
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #1a1a1a; color: #2EC6FF;">
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-video" style="font-size: 48px; margin-bottom: 20px;"></i>
+                    <h3>Course Overview</h3>
+                    <p>${course.title}</p>
+                    <p style="margin-top: 20px; color: #00FFB3;">Select a video to begin learning</p>
+                </div>
             </div>
         `;
         
-        // Hide resources section
         document.getElementById('resources-section').style.display = 'none';
     }
 
@@ -1025,7 +1117,9 @@
         
         try {
             const token = localStorage.getItem('auth_token');
-            const response = await fetch(`https://architect-johan-secure.onrender.com/api/video/${currentCourse.id}/access`, {
+            const videoId = currentCourse.videos?.[0]?.id || currentCourse.id;
+            
+            const response = await fetch(`https://architect-johan-secure.onrender.com/api/video/${videoId}/access`, {
                 method: 'POST',
                 headers: {
                     'Authorization': 'Bearer ' + token,
@@ -1046,8 +1140,8 @@
                     loadVideo(currentCourse.videos[0]);
                 }
                 
-                // Show success message
                 showNotification('Access granted! Course unlocked.', 'success');
+                logActivity(`unlocked_course_${currentCourse.id}`);
             } else {
                 const data = await response.json();
                 passwordError.textContent = data.error || 'Incorrect password';
@@ -1074,15 +1168,12 @@
             });
             
             if (response.ok) {
-                // Update UI
                 const likeBtn = document.getElementById('like-video');
                 const likeCount = document.getElementById('like-count');
                 
                 likeBtn.innerHTML = '<i class="fas fa-thumbs-up"></i> Liked';
                 likeBtn.style.background = 'rgba(0, 255, 179, 0.3)';
-                likeBtn.style.borderColor = '#00FFB3';
                 
-                // Increment count
                 const currentCount = parseInt(likeCount.textContent) || 0;
                 likeCount.textContent = currentCount + 1;
                 
@@ -1115,7 +1206,6 @@
                 const bookmarkBtn = document.getElementById('bookmark-video');
                 bookmarkBtn.innerHTML = '<i class="fas fa-bookmark"></i> Bookmarked';
                 bookmarkBtn.style.background = 'rgba(46, 198, 255, 0.3)';
-                bookmarkBtn.style.borderColor = '#2EC6FF';
                 
                 showNotification('Video bookmarked!', 'success');
                 logActivity(`bookmarked_video_${currentVideo.id}`);
@@ -1139,8 +1229,9 @@
             
             if (response.ok) {
                 const data = await response.json();
-                if (data.video.resources) {
+                if (data.video && data.video.resources && data.video.resources.length > 0) {
                     renderResources(data.video.resources);
+                    document.getElementById('resources-section').style.display = 'block';
                 }
             }
         } catch (error) {
@@ -1152,19 +1243,10 @@
         const resourcesGrid = document.getElementById('resources-grid');
         resourcesGrid.innerHTML = '';
         
-        if (!resources || resources.length === 0) {
-            resourcesGrid.innerHTML = `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #aaa;">
-                    No resources available for this video
-                </div>
-            `;
-            return;
-        }
-        
         resources.forEach(resource => {
             const resourceCard = document.createElement('div');
             resourceCard.className = 'resource-card';
-            resourceCard.addEventListener('click', () => downloadResource(resource.url));
+            resourceCard.onclick = () => window.open(resource.url, '_blank');
             
             resourceCard.innerHTML = `
                 <div class="resource-name">${resource.name}</div>
@@ -1179,33 +1261,25 @@
 
     function downloadResources() {
         showNotification('Downloading all resources...', 'info');
-        // Implement batch download logic here
     }
 
-    function downloadResource(url) {
-        window.open(url, '_blank');
-        logActivity(`downloaded_resource_${url}`);
-    }
-
-    async function loadVideoProgress(videoId) {
+    async function logActivity(action) {
         try {
             const token = localStorage.getItem('auth_token');
-            const response = await fetch(`https://architect-johan-secure.onrender.com/api/video/${videoId}/progress`, {
-                method: 'GET',
+            await fetch('https://architect-johan-secure.onrender.com/api/track-access', {
+                method: 'POST',
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({
+                    action: action,
+                    section: 'videos',
+                    course: currentCourse?.id
+                })
             });
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.progress) {
-                    document.getElementById('video-progress').style.width = `${data.progress}%`;
-                }
-            }
         } catch (error) {
-            console.error('Error loading progress:', error);
+            console.error('Error logging activity:', error);
         }
     }
 
@@ -1229,66 +1303,26 @@
         videoPlayerSection.style.display = 'none';
     }
 
-    function showNotification(message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            background: ${type === 'success' ? '#00FFB3' : type === 'error' ? '#FF6B6B' : '#2EC6FF'};
-            color: #02040A;
-            border-radius: 10px;
-            font-weight: bold;
-            z-index: 1000;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-            animation: slideIn 0.3s ease;
-        `;
-        
+    function showNotification(message, type = 'success') {
         notification.textContent = message;
-        document.body.appendChild(notification);
+        notification.style.background = type === 'success' ? '#00FFB3' : type === 'error' ? '#FF6B6B' : '#2EC6FF';
+        notification.style.display = 'block';
         
-        // Remove after 3 seconds
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => notification.remove(), 300);
+            setTimeout(() => {
+                notification.style.display = 'none';
+                notification.style.animation = '';
+            }, 300);
         }, 3000);
     }
 
-    async function logActivity(action) {
-        try {
-            const token = localStorage.getItem('auth_token');
-            await fetch('https://architect-johan-secure.onrender.com/api/track-access', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    action: action,
-                    section: 'videos',
-                    course: currentCourse?.id
-                })
-            });
-        } catch (error) {
-            console.error('Error logging activity:', error);
+    // Auto-check token every 5 minutes
+    setInterval(() => {
+        if (!localStorage.getItem('auth_token')) {
+            window.location.href = 'index.html';
         }
-    }
-
-    // Add CSS animations for notifications
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
+    }, 300000);
     </script>
 </body>
 </html>
