@@ -160,7 +160,7 @@ def get_users_collection():
         return None
     
     db = get_db()
-    if db:
+    if db is not none:
         collection = db.users
         # Create indexes if they don't exist
         try:
@@ -178,7 +178,7 @@ def get_user_activity_collection():
         return None
     
     db = get_db()
-    if db:
+    if db is not none:
         return db.user_activity
     return None
 
@@ -188,7 +188,7 @@ def get_practice_access_collection():
         return None
     
     db = get_db()
-    if db:
+    if db is not none:
         return db.practice_access
     return None
 
@@ -198,7 +198,7 @@ def get_video_access_collection():
         return None
     
     db = get_db()
-    if db:
+    if db is not none:
         return db.video_access
     return None
 
@@ -208,7 +208,7 @@ def get_user_practice_progress_collection():
         return None
     
     db = get_db()
-    if db:
+    if db is not none:
         collection = db.user_practice_progress
         try:
             collection.create_index([("username", 1), ("practice_set", 1)], unique=True)
@@ -1791,4 +1791,5 @@ if __name__ == '__main__':
     print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
