@@ -82,13 +82,25 @@ login_attempts = {}
 MAX_ATTEMPTS = 5
 LOCKOUT_TIME = 900  # 15 minutes
 
-# MongoDB connection with SSL fix
-# MongoDB connection with simplified SSL
+# Global MongoClient instance (singleton)
+_mongo_client = None
+
 def get_mongo_client():
     """Create MongoDB client connection with simplified SSL"""
+    global _mongo_client
+    
     if not MONGODB_AVAILABLE:
         logger.error("MongoDB not available - pymongo not installed")
         return None
+    
+    # Return existing client if available
+    if _mongo_client is not None:
+        try:
+            _mongo_client.admin.command('ping')
+            return _mongo_client
+        except:
+            # Connection failed, try to reconnect
+            _mongo_client = None
     
     try:
         # For MongoDB Atlas with Render, we need to handle SSL differently
@@ -107,7 +119,8 @@ def get_mongo_client():
                 )
                 client.admin.command('ping')
                 print("✅ MongoDB Connection: SUCCESS (with tlsAllowInvalidCertificates=True)")
-                return client
+                _mongo_client = client
+                return _mongo_client
             except Exception as tls_error:
                 print(f"⚠️ TLS connection failed: {tls_error}")
                 
@@ -123,7 +136,8 @@ def get_mongo_client():
                     )
                     client.admin.command('ping')
                     print("✅ MongoDB Connection: SUCCESS (without SRV/TLS)")
-                    return client
+                    _mongo_client = client
+                    return _mongo_client
                 except Exception as no_tls_error:
                     print(f"❌ No-TLS connection failed: {no_tls_error}")
                     return None
@@ -134,17 +148,18 @@ def get_mongo_client():
                 serverSelectionTimeoutMS=10000
             )
             client.admin.command('ping')
-            return client
+            _mongo_client = client
+            return _mongo_client
             
     except Exception as e:
         logger.error(f"MongoDB connection failed: {e}")
         print(f"❌ MongoDB Connection Error: {e}")
         return None
-        
+
 def get_db():
     """Get database instance"""
     client = get_mongo_client()
-    if client:
+    if client is not None:
         try:
             db_name = MONGODB_URI.split('/')[-1].split('?')[0]
             if not db_name or db_name == '':
@@ -227,20 +242,20 @@ def init_db():
         
         # Test connection first
         client = get_mongo_client()
-        if not client:
+        if client is None:
             logger.error("Failed to connect to MongoDB")
             return False
         
         # Collections are created lazily on first insert
         # Just ensure indexes exist and create admin user
         users_coll = get_users_collection()
-        if not users_coll is None:
+        if users_coll is None:
             logger.error("Failed to get users collection")
             return False
         
         # Check if admin user exists
         admin_user = users_coll.find_one({"username": "ArchitectJohan"})
-        if not admin_user:
+        if admin_user is None:
             # Create default admin user
             admin_password_hash = bcrypt.hashpw(default_admin_password.encode('utf-8'), bcrypt.gensalt())
             admin_user_data = {
@@ -287,7 +302,7 @@ def get_user_by_username(username):
     """Get user from database by username"""
     try:
         users_coll = get_users_collection()
-        if not users_coll is None:
+        if users_coll is None:
             return None
             
         user = users_coll.find_one({
@@ -307,7 +322,7 @@ def get_user_by_email(email):
     """Get user from database by email"""
     try:
         users_coll = get_users_collection()
-        if not users_coll is None:
+        if users_coll is None:
             return None
             
         user = users_coll.find_one({
@@ -326,7 +341,7 @@ def get_user_by_reset_token(reset_token):
     """Get user from database by reset token"""
     try:
         users_coll = get_users_collection()
-        if not users_coll is None:
+        if users_coll is None:
             return None
             
         user = users_coll.find_one({
@@ -345,7 +360,7 @@ def update_user(user):
     """Update user in database"""
     try:
         users_coll = get_users_collection()
-        if not users_coll is None:
+        if users_coll is None:
             return False
         
         # Create update data excluding username
@@ -365,7 +380,7 @@ def create_user(user_data):
     """Create new user in database"""
     try:
         users_coll = get_users_collection()
-        if not users_coll is None:
+        if users_coll is None:
             return False
         
         # Add timestamps and default values
@@ -530,7 +545,7 @@ def log_user_activity(username, action, ip_address=None, user_agent=None):
     """Log user activities for security monitoring"""
     try:
         activity_coll = get_user_activity_collection()
-        if not activity_coll:
+        if activity_coll is None:
             return
             
         activity_data = {
@@ -549,7 +564,7 @@ def log_practice_access(username, practice_set, ip_address=None, status='success
     """Log practice set access attempts"""
     try:
         practice_coll = get_practice_access_collection()
-        if not practice_coll:
+        if practice_coll is None:
             return
             
         access_data = {
@@ -568,7 +583,7 @@ def log_video_access(username, video_id, ip_address=None, status='success'):
     """Log video access attempts"""
     try:
         video_coll = get_video_access_collection()
-        if not video_coll:
+        if video_coll is None:
             return
             
         access_data = {
@@ -600,7 +615,7 @@ def token_required(f):
             current_user = data['username']
             
             user = get_user_by_username(current_user)
-            if not user:
+            if user is None:
                 return jsonify({'error': 'User not found'}), 401
                 
             if user.get('locked_until'):
@@ -638,7 +653,7 @@ def admin_required(f):
             current_user = data['username']
             
             user = get_user_by_username(current_user)
-            if not user:
+            if user is None:
                 return jsonify({'error': 'User not found'}), 401
             
             if user['role'] != 'admin':
@@ -658,7 +673,7 @@ def get_user_profile(current_user):
     """Get complete user profile data"""
     try:
         user = get_user_by_username(current_user)
-        if not user:
+        if user is None:
             return jsonify({'error': 'User not found'}), 404
         
         # Calculate progress statistics
@@ -669,13 +684,13 @@ def get_user_profile(current_user):
         video_coll = get_video_access_collection()
         practice_coll = get_practice_access_collection()
         
-        if video_coll:
+        if video_coll is not None:
             videos_watched = video_coll.count_documents({
                 "username": current_user,
                 "status": "success"
             })
         
-        if practice_coll:
+        if practice_coll is not None:
             distinct_practices = practice_coll.distinct("practice_set", {
                 "username": current_user,
                 "status": "success"
@@ -683,7 +698,7 @@ def get_user_profile(current_user):
             practice_completed = len(distinct_practices)
         
         # Calculate streak (simplified)
-        if video_coll:
+        if video_coll is not None:
             seven_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=7)
             try:
                 pipeline = [
@@ -737,7 +752,7 @@ def calculate_daily_progress(username):
     """Calculate daily progress percentage"""
     try:
         activity_coll = get_user_activity_collection()
-        if not activity_coll:
+        if activity_coll is None:
             return 25
         
         today = datetime.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -759,7 +774,7 @@ def calculate_weekly_progress(username):
     """Calculate weekly progress percentage"""
     try:
         activity_coll = get_user_activity_collection()
-        if not activity_coll:
+        if activity_coll is None:
             return 65
         
         seven_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=7)
@@ -794,7 +809,7 @@ def calculate_monthly_progress(username):
     """Calculate monthly progress percentage"""
     try:
         activity_coll = get_user_activity_collection()
-        if not activity_coll:
+        if activity_coll is None:
             return 45
         
         thirty_days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=30)
@@ -838,7 +853,7 @@ def update_user_profile(current_user):
         
         # Get current user
         user = get_user_by_username(current_user)
-        if not user:
+        if user is None:
             return jsonify({'error': 'User not found'}), 404
         
         # Update user data
@@ -893,7 +908,7 @@ def upload_profile_image(current_user):
             
             # Update user profile image in database
             users_coll = get_users_collection()
-            if users_coll:
+            if users_coll is not None:
                 users_coll.update_one(
                     {"username": current_user},
                     {"$set": {"profile_image": image_base64}}
@@ -954,7 +969,7 @@ def validate_token():
         
         # Check if user exists and is active
         user = get_user_by_username(username)
-        if not user:
+        if user is None:
             return jsonify({'error': 'User not found'}), 401
         
         if user.get('locked_until'):
@@ -1043,7 +1058,7 @@ def signup():
         
         # Check if username, email or mobile already exists with separate error messages
         users_coll = get_users_collection()
-        if not users_coll:
+        if users_coll is None:
             return jsonify({'error': 'Database connection failed'}), 500
         
         # Check username
@@ -1055,13 +1070,13 @@ def signup():
         # Check mobile number
         existing_mobile = users_coll.find_one({"mobile_no": mobile_no})
         
-        if existing_username:
+        if existing_username is not None:
             return jsonify({'error': 'Username already taken. Please choose a different username.'}), 400
         
-        if existing_email:
+        if existing_email is not None:
             return jsonify({'error': 'Email address is already registered. Please use a different email or try logging in.'}), 400
         
-        if existing_mobile:
+        if existing_mobile is not None:
             return jsonify({'error': 'Mobile number is already registered. Please use a different mobile number.'}), 400
         
         # Hash password with stronger salt rounds
@@ -1128,7 +1143,7 @@ def login():
         print(f"🔍 Searching for user: {username}")
         user = get_user_by_username(username)
         
-        if not user:
+        if user is None:
             # Simulate password check to prevent timing attacks
             print(f"❌ User not found: {username}")
             bcrypt.checkpw(password.encode('utf-8'), bcrypt.gensalt())
@@ -1283,7 +1298,7 @@ def forgot_password():
         
         # Find user by email
         user = get_user_by_email(email)
-        if not user:
+        if user is None:
             # Don't reveal whether email exists
             return jsonify({
                 'message': 'If the email exists, a password reset link has been sent.'
@@ -1334,7 +1349,7 @@ def reset_password():
         
         # Find user by reset token
         user = get_user_by_reset_token(reset_token)
-        if not user:
+        if user is None:
             return jsonify({'error': 'Invalid or expired reset token'}), 400
         
         # Check if token is expired
@@ -1443,7 +1458,7 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.datetime.utcnow().isoformat(),
-        'database': 'connected' if get_mongo_client() else 'disconnected'
+        'database': 'connected' if get_mongo_client() is not None else 'disconnected'
     }), 200
 
 # DEBUG ENDPOINTS (Remove in production)
@@ -1478,7 +1493,7 @@ def debug_password():
         
         user = get_user_by_username(username)
         
-        if not user:
+        if user is None:
             return jsonify({
                 'user_exists': False,
                 'password_match': False
@@ -1582,7 +1597,7 @@ def check_mobile():
         
         # Check if mobile exists in database
         users_coll = get_users_collection()
-        if not users_coll:
+        if users_coll is None:
             return jsonify({'exists': False, 'error': 'Database connection failed'}), 500
         
         existing_mobile = users_coll.find_one({"mobile_no": mobile_no, "is_active": True})
@@ -1664,7 +1679,7 @@ def save_practice_progress(current_user):
             return jsonify({'error': 'Practice set is required'}), 400
         
         progress_coll = get_user_practice_progress_collection()
-        if not progress_coll:
+        if progress_coll is None:
             return jsonify({'error': 'Database connection failed'}), 500
         
         # Upsert practice progress
@@ -1705,7 +1720,7 @@ def get_practice_progress(current_user):
     """Get user progress for all practice sets"""
     try:
         progress_coll = get_user_practice_progress_collection()
-        if not progress_coll:
+        if progress_coll is None:
             return jsonify({'error': 'Database connection failed'}), 500
         
         cursor = progress_coll.find(
@@ -1749,7 +1764,7 @@ def reset_practice_progress(current_user):
             return jsonify({'error': 'Practice set is required'}), 400
         
         progress_coll = get_user_practice_progress_collection()
-        if not progress_coll:
+        if progress_coll is None:
             return jsonify({'error': 'Database connection failed'}), 500
         
         result = progress_coll.delete_one({
@@ -1776,7 +1791,7 @@ if __name__ == '__main__':
     
     # Test MongoDB connection
     client = get_mongo_client()
-    if client:
+    if client is not None:
         print("✅ MongoDB Connection: SUCCESS")
         print(f"📊 Database Name: {client.get_database().name}")
     else:
@@ -1791,7 +1806,3 @@ if __name__ == '__main__':
     print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
-
-
-
