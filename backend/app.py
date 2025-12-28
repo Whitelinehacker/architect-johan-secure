@@ -1781,6 +1781,323 @@ def reset_practice_progress(current_user):
         logger.error(f"Reset progress error: {e}")
         return jsonify({'error': 'Failed to reset progress'}), 500
 
+
+
+# Add this to your existing app.py
+
+# Video Management Routes
+@app.route('/api/video-courses', methods=['GET'])
+@token_required
+def get_video_courses(current_user):
+    """Get all video courses with embed links"""
+    try:
+        # Course structure with your video embed
+        courses = {
+            'ceh_v13': {
+                'id': 'ceh_v13',
+                'title': 'CEH v13 - Certified Ethical Hacker',
+                'description': 'Complete Certified Ethical Hacker v13 training course with hands-on labs',
+                'thumbnail': 'https://img.youtube.com/vi/piz1aVOw_3k/maxresdefault.jpg',
+                'level': 'Advanced',
+                'duration': '45:30',
+                'videos_count': 1,
+                'locked': False,
+                'requires_password': False,
+                'videos': [
+                    {
+                        'id': 'ceh_intro_1',
+                        'title': 'CEH v13 - Introduction to Ethical Hacking',
+                        'description': 'Complete introduction to Certified Ethical Hacker v13 course. Learn the fundamentals of ethical hacking, penetration testing, and cybersecurity.',
+                        'embed_code': '<iframe width="560" height="315" src="https://www.youtube.com/embed/piz1aVOw_3k?si=Fr4WDoAHVymf1osH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>',
+                        'duration': '45:30',
+                        'order': 1,
+                        'locked': False,
+                        'views': 1250,
+                        'upload_date': '2024-01-15',
+                        'category': 'ceh',
+                        'tags': ['ethical hacking', 'ceh', 'cybersecurity', 'penetration testing']
+                    }
+                ]
+            },
+            'web_security': {
+                'id': 'web_security',
+                'title': 'Web Application Security',
+                'description': 'Master web security vulnerabilities and OWASP Top 10',
+                'thumbnail': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=225&fit=crop',
+                'level': 'Intermediate',
+                'duration': '2:15:00',
+                'videos_count': 3,
+                'locked': True,
+                'requires_password': True,
+                'password_hint': 'Contact admin for access',
+                'videos': [
+                    {
+                        'id': 'web_security_1',
+                        'title': 'OWASP Top 10 - Introduction',
+                        'description': 'Understanding the most critical web application security risks',
+                        'embed_code': '<iframe width="560" height="315" src="https://www.youtube.com/embed/SAMPLE_VIDEO_1" title="Web Security" frameborder="0" allowfullscreen></iframe>',
+                        'duration': '45:00',
+                        'order': 1,
+                        'locked': True,
+                        'views': 890,
+                        'category': 'web'
+                    }
+                ]
+            },
+            'network_security': {
+                'id': 'network_security',
+                'title': 'Network Security Fundamentals',
+                'description': 'Learn network security, firewalls, and intrusion detection',
+                'thumbnail': 'https://images.unsplash.com/photo-1547658719-da2b51169166?w=400&h=225&fit=crop',
+                'level': 'Intermediate',
+                'duration': '3:30:00',
+                'videos_count': 5,
+                'locked': False,
+                'requires_password': False,
+                'videos': []
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'courses': courses
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error getting video courses: {e}")
+        return jsonify({'error': 'Failed to load video courses'}), 500
+
+@app.route('/api/video/<video_id>', methods=['GET'])
+@token_required
+def get_video_details(current_user, video_id):
+    """Get details of a specific video"""
+    try:
+        # Mock video data - replace with database lookup
+        videos_database = {
+            'ceh_intro_1': {
+                'id': 'ceh_intro_1',
+                'title': 'CEH v13 - Introduction to Ethical Hacking',
+                'description': '''
+                <strong>Course Overview:</strong><br>
+                Welcome to the Certified Ethical Hacker v13 course!<br><br>
+                
+                <strong>What you'll learn:</strong>
+                <ul>
+                    <li>Introduction to Ethical Hacking</li>
+                    <li>Footprinting and Reconnaissance</li>
+                    <li>Scanning Networks</li>
+                    <li>Enumeration Techniques</li>
+                    <li>Vulnerability Analysis</li>
+                    <li>System Hacking</li>
+                    <li>Malware Threats</li>
+                    <li>Social Engineering</li>
+                </ul>
+                
+                <strong>Prerequisites:</strong>
+                <ul>
+                    <li>Basic understanding of networking</li>
+                    <li>Familiarity with operating systems</li>
+                    <li>Passion for cybersecurity</li>
+                </ul>
+                
+                <strong>Course Materials:</strong>
+                <ul>
+                    <li>Video Lectures</li>
+                    <li>Practice Labs</li>
+                    <li>Study Notes</li>
+                    <li>Practice Exams</li>
+                </ul>
+                ''',
+                'embed_code': '<iframe width="560" height="315" src="https://www.youtube.com/embed/piz1aVOw_3k?si=Fr4WDoAHVymf1osH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>',
+                'duration': '45:30',
+                'views': 1250,
+                'likes': 89,
+                'upload_date': '2024-01-15',
+                'instructor': 'Architect Johan',
+                'category': 'CEH v13',
+                'tags': ['ethical hacking', 'ceh', 'cybersecurity', 'penetration testing', 'hacking'],
+                'resources': [
+                    {'name': 'Course Slides', 'url': '/downloads/ceh-intro-slides.pdf'},
+                    {'name': 'Lab Guide', 'url': '/downloads/ceh-lab-guide.pdf'},
+                    {'name': 'Practice Questions', 'url': '/downloads/ceh-practice-questions.pdf'}
+                ],
+                'next_video': 'ceh_footprinting',
+                'prev_video': None
+            }
+        }
+        
+        if video_id in videos_database:
+            # Log video view
+            log_video_access(current_user, video_id, request.remote_addr, 'viewed')
+            
+            return jsonify({
+                'success': True,
+                'video': videos_database[video_id]
+            }), 200
+        else:
+            return jsonify({'error': 'Video not found'}), 404
+            
+    except Exception as e:
+        logger.error(f"Error getting video details: {e}")
+        return jsonify({'error': 'Failed to get video details'}), 500
+
+@app.route('/api/video/<video_id>/access', methods=['POST'])
+@token_required
+def verify_video_access(current_user, video_id):
+    """Verify password for locked video access"""
+    try:
+        data = request.get_json()
+        password = data.get('password', '')
+        
+        # Define passwords for locked videos
+        video_passwords = {
+            'web_security_1': 'WebSec@2025',
+            'network_scanning_1': 'NetScan#2025',
+            'advanced_hacking_1': 'AdvHack!2025'
+        }
+        
+        if video_id in video_passwords:
+            if password == video_passwords[video_id]:
+                # Log successful access
+                log_video_access(current_user, video_id, request.remote_addr, 'accessed')
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Access granted',
+                    'embed_code': get_video_embed_code(video_id)  # Function to get embed code
+                }), 200
+            else:
+                # Log failed attempt
+                log_video_access(current_user, video_id, request.remote_addr, 'failed_access')
+                return jsonify({'error': 'Incorrect password'}), 401
+        else:
+            # Video doesn't require password
+            log_video_access(current_user, video_id, request.remote_addr, 'accessed')
+            return jsonify({
+                'success': True,
+                'message': 'Access granted',
+                'embed_code': get_video_embed_code(video_id)
+            }), 200
+            
+    except Exception as e:
+        logger.error(f"Video access error: {e}")
+        return jsonify({'error': 'Access verification failed'}), 500
+
+def get_video_embed_code(video_id):
+    """Get embed code for video"""
+    embed_codes = {
+        'ceh_intro_1': '<iframe width="560" height="315" src="https://www.youtube.com/embed/piz1aVOw_3k?si=Fr4WDoAHVymf1osH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>',
+        'web_security_1': '<iframe width="560" height="315" src="https://www.youtube.com/embed/SAMPLE_1" frameborder="0" allowfullscreen></iframe>'
+    }
+    return embed_codes.get(video_id, '')
+
+@app.route('/api/video/<video_id>/progress', methods=['POST'])
+@token_required
+def save_video_progress(current_user, video_id):
+    """Save user's video progress"""
+    try:
+        data = request.get_json()
+        progress = data.get('progress', 0)  # Percentage 0-100
+        current_time = data.get('current_time', 0)  # Current time in seconds
+        
+        # Save to database
+        db = get_db()
+        if db is not None:
+            db.video_progress.update_one(
+                {
+                    'username': current_user,
+                    'video_id': video_id
+                },
+                {
+                    '$set': {
+                        'progress': progress,
+                        'current_time': current_time,
+                        'last_updated': datetime.datetime.utcnow(),
+                        'completed': progress >= 95  # Mark as completed if >95%
+                    }
+                },
+                upsert=True
+            )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progress saved'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error saving progress: {e}")
+        return jsonify({'error': 'Failed to save progress'}), 500
+
+@app.route('/api/video/<video_id>/like', methods=['POST'])
+@token_required
+def like_video(current_user, video_id):
+    """Like a video"""
+    try:
+        db = get_db()
+        if db is not None:
+            # Add like
+            db.video_likes.update_one(
+                {
+                    'video_id': video_id,
+                    'username': current_user
+                },
+                {
+                    '$set': {
+                        'liked_at': datetime.datetime.utcnow()
+                    }
+                },
+                upsert=True
+            )
+            
+            # Increment like count
+            db.videos.update_one(
+                {'video_id': video_id},
+                {'$inc': {'likes': 1}}
+            )
+        
+        log_user_activity(current_user, f'liked_video_{video_id}', request.remote_addr)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Video liked'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error liking video: {e}")
+        return jsonify({'error': 'Failed to like video'}), 500
+
+@app.route('/api/video/<video_id>/bookmark', methods=['POST'])
+@token_required
+def bookmark_video(current_user, video_id):
+    """Bookmark a video"""
+    try:
+        db = get_db()
+        if db is not None:
+            db.video_bookmarks.update_one(
+                {
+                    'username': current_user,
+                    'video_id': video_id
+                },
+                {
+                    '$set': {
+                        'bookmarked_at': datetime.datetime.utcnow(),
+                        'notes': request.get_json().get('notes', '')
+                    }
+                },
+                upsert=True
+            )
+        
+        log_user_activity(current_user, f'bookmarked_video_{video_id}', request.remote_addr)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Video bookmarked'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error bookmarking video: {e}")
+        return jsonify({'error': 'Failed to bookmark video'}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -1806,3 +2123,4 @@ if __name__ == '__main__':
     print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
