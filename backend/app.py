@@ -2066,6 +2066,244 @@ def check_mobile():
         logger.error(f"Mobile check error: {e}")
         return jsonify({'exists': False}), 200
 
+# ===========================================
+# SECURITY ENDPOINTS
+# ===========================================
+
+# Security configuration storage
+security_logs = {}
+
+@app.route('/api/security/log-event', methods=['POST'])
+@token_required
+def log_security_event(current_user):
+    """Log security events from client"""
+    try:
+        data = request.get_json()
+        event_type = data.get('event_type', 'unknown')
+        event_data = data.get('event_data', {})
+        user_agent = data.get('user_agent', request.headers.get('User-Agent'))
+        ip_address = request.remote_addr
+        
+        # Create log entry
+        log_entry = {
+            'username': current_user,
+            'event_type': event_type,
+            'event_data': event_data,
+            'user_agent': user_agent,
+            'ip_address': ip_address,
+            'timestamp': datetime.datetime.utcnow(),
+            'severity': data.get('severity', 'low')
+        }
+        
+        # Store in MongoDB if available
+        db = get_db()
+        if db is not None:
+            security_collection = db.security_logs
+            security_collection.insert_one(log_entry)
+        else:
+            # Store in memory as fallback
+            security_id = f"{current_user}_{datetime.datetime.utcnow().timestamp()}"
+            security_logs[security_id] = log_entry
+            
+            # Keep only last 1000 logs
+            if len(security_logs) > 1000:
+                # Remove oldest
+                oldest = sorted(security_logs.keys())[:100]
+                for key in oldest:
+                    del security_logs[key]
+        
+        # Log user activity
+        log_user_activity(current_user, f'security_event_{event_type}', ip_address, user_agent)
+        
+        return jsonify({'success': True, 'message': 'Event logged'}), 200
+        
+    except Exception as e:
+        logger.error(f"Security log error: {e}")
+        return jsonify({'error': 'Failed to log event'}), 500
+
+@app.route('/api/security/verify-video-access', methods=['POST'])
+@token_required
+def verify_video_access(current_user):
+    """Verify video password and log access"""
+    try:
+        data = request.get_json()
+        video_id = data.get('video_id', 'default')
+        password = data.get('password', '')
+        
+        # Get video passwords from environment
+        VIDEO_PASSWORDS = {
+            'ceh_v13_main': os.getenv('VIDEO_PASSWORD_CEH', 'CEH_V13_2024_SECURE'),
+            'premium_content': os.getenv('VIDEO_PASSWORD_PREMIUM', 'SECURE_ACCESS_2024')
+        }
+        
+        expected_password = VIDEO_PASSWORDS.get(video_id)
+        
+        if expected_password and password == expected_password:
+            # Log successful access
+            log_entry = {
+                'username': current_user,
+                'video_id': video_id,
+                'access_type': 'password_verified',
+                'timestamp': datetime.datetime.utcnow(),
+                'ip_address': request.remote_addr,
+                'user_agent': request.headers.get('User-Agent')
+            }
+            
+            db = get_db()
+            if db is not None:
+                video_access_collection = db.video_access_logs
+                video_access_collection.insert_one(log_entry)
+            
+            # Generate access token
+            access_token = secrets.token_urlsafe(32)
+            access_expiry = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            
+            # Store access token
+            users_coll = get_users_collection()
+            if users_coll is not None:
+                users_coll.update_one(
+                    {'username': current_user},
+                    {'$set': {
+                        'video_access_token': access_token,
+                        'video_access_expiry': access_expiry,
+                        f'video_{video_id}_accessed': True
+                    }}
+                )
+            
+            return jsonify({
+                'success': True,
+                'access_token': access_token,
+                'expires_at': access_expiry.isoformat(),
+                'video_embed': get_encrypted_video_embed(video_id)
+            }), 200
+        else:
+            # Log failed attempt
+            log_security_attempt(current_user, video_id, 'failed_password')
+            return jsonify({'error': 'Invalid password'}), 401
+            
+    except Exception as e:
+        logger.error(f"Video access verification error: {e}")
+        return jsonify({'error': 'Access verification failed'}), 500
+
+@app.route('/api/security/get-video-token', methods=['POST'])
+@token_required
+def get_video_token(current_user):
+    """Get video embed with access token"""
+    try:
+        data = request.get_json()
+        video_id = data.get('video_id', 'default')
+        access_token = data.get('access_token', '')
+        
+        # Verify access token
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return jsonify({'error': 'Database error'}), 500
+        
+        user = users_coll.find_one({
+            'username': current_user,
+            'video_access_token': access_token
+        })
+        
+        if user and user.get('video_access_expiry', datetime.datetime.utcnow()) > datetime.datetime.utcnow():
+            # Token is valid
+            embed = get_encrypted_video_embed(video_id)
+            return jsonify({'success': True, 'embed': embed}), 200
+        else:
+            return jsonify({'error': 'Invalid or expired access token'}), 401
+            
+    except Exception as e:
+        logger.error(f"Get video token error: {e}")
+        return jsonify({'error': 'Failed to get video'}), 500
+
+def get_encrypted_video_embed(video_id):
+    """Return encrypted video embed code"""
+    # Map video IDs to embed codes
+    video_embeds = {
+        'ceh_v13_main': {
+            'embed': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+                <iframe src="https://geo.dailymotion.com/player.html?video=k3GVPS1YgJ0NZGExqG2"
+                        style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;"
+                        allowfullscreen title="Dailymotion Video Player"
+                        allow="web-share"></iframe></div>''',
+            'encryption_key': os.getenv('VIDEO_ENCRYPTION_KEY', 'default_key_123')
+        }
+    }
+    
+    video_data = video_embeds.get(video_id, video_embeds['ceh_v13_main'])
+    
+    # Simple XOR encryption (for demonstration)
+    def simple_encrypt(text, key):
+        import base64
+        encrypted = []
+        for i, char in enumerate(text):
+            key_char = key[i % len(key)]
+            encrypted_char = chr(ord(char) ^ ord(key_char))
+            encrypted.append(encrypted_char)
+        return base64.b64encode(''.join(encrypted).encode()).decode()
+    
+    encrypted_embed = simple_encrypt(video_data['embed'], video_data['encryption_key'])
+    
+    return {
+        'encrypted': encrypted_embed,
+        'key': video_data['encryption_key']
+    }
+
+def log_security_attempt(username, resource, attempt_type):
+    """Log security attempts"""
+    try:
+        log_entry = {
+            'username': username,
+            'resource': resource,
+            'attempt_type': attempt_type,
+            'timestamp': datetime.datetime.utcnow(),
+            'ip_address': request.remote_addr if 'request' in locals() else 'unknown',
+            'user_agent': request.headers.get('User-Agent') if 'request' in locals() else 'unknown'
+        }
+        
+        db = get_db()
+        if db is not None:
+            security_attempts = db.security_attempts
+            security_attempts.insert_one(log_entry)
+            
+            # Check for suspicious activity
+            recent_attempts = security_attempts.count_documents({
+                'username': username,
+                'timestamp': {'$gte': datetime.datetime.utcnow() - datetime.timedelta(hours=1)}
+            })
+            
+            if recent_attempts > 5:
+                # Flag suspicious activity
+                users_coll = get_users_collection()
+                users_coll.update_one(
+                    {'username': username},
+                    {'$set': {'suspicious_activity': True}}
+                )
+                
+    except Exception as e:
+        logger.error(f"Security attempt logging error: {e}")
+
+@app.route('/api/security/check-suspicious', methods=['GET'])
+@token_required
+def check_suspicious(current_user):
+    """Check if user has suspicious activity"""
+    try:
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return jsonify({'suspicious': False}), 200
+        
+        user = users_coll.find_one({'username': current_user})
+        suspicious = user.get('suspicious_activity', False) if user else False
+        
+        return jsonify({'suspicious': suspicious}), 200
+        
+    except Exception as e:
+        logger.error(f"Suspicious check error: {e}")
+        return jsonify({'suspicious': False}), 200
+
+# Add to your environment variables in Render:
+# VIDEO_PASSWORD_CEH=your_secure_password_here
+# VIDEO_ENCRYPTION_KEY=your_encryption_key_here
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -2092,4 +2330,5 @@ if __name__ == '__main__':
     print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
