@@ -14,8 +14,6 @@ import logging
 import re
 import json
 import base64
-import ssl
-import certifi
 
 # Try to import MongoDB modules
 try:
@@ -49,6 +47,9 @@ EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USER = os.getenv('EMAIL_USER', 'your-email@gmail.com')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', 'your-app-password')
+
+# Video security configuration
+VIDEO_PASSWORD = os.getenv('VIDEO_PASSWORD', 'CEH_V13_2024_SECURE')
 
 # Default admin user
 default_admin_password = 'Arch1t3ch_Joh@N!X#2025'
@@ -1431,94 +1432,22 @@ def get_video_categories(current_user):
                 'level': 'Advanced',
                 'duration': '45:30',
                 'videos_count': 1,
-                'locked': False,
-                'requires_password': False,
+                'locked': True,
+                'requires_password': True,
+                'password_hint': 'CEH v13 Course Access',
                 'videos': [
                     {
                         'id': 'ceh_intro_1',
                         'title': 'CEH v13 - Introduction to Ethical Hacking',
                         'description': 'Complete introduction to Certified Ethical Hacker v13 course. Learn the fundamentals of ethical hacking, penetration testing, and cybersecurity.',
-                        'embed_code': '<iframe width="560" height="315" src="https://www.youtube.com/embed/piz1aVOw_3k?si=Fr4WDoAHVymf1osH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
                         'duration': '45:30',
                         'order': 1,
-                        'locked': False,
+                        'locked': True,
                         'views': 1250,
                         'upload_date': '2024-01-15',
                         'category': 'ceh',
                         'tags': ['ethical hacking', 'ceh', 'cybersecurity', 'penetration testing']
-                    }
-                ]
-            },
-            'web_security': {
-                'id': 'web_security',
-                'title': 'Web Application Security',
-                'description': 'Master web security vulnerabilities and OWASP Top 10',
-                'thumbnail': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=225&fit=crop',
-                'level': 'Intermediate',
-                'duration': '2:15:00',
-                'videos_count': 3,
-                'locked': False,
-                'requires_password': False,
-                'videos': [
-                    {
-                        'id': 'web_security_1',
-                        'title': 'Coming Soon - Web Security Course',
-                        'description': 'Web security course will be available soon',
-                        'embed_code': '<div style="padding: 100px; text-align: center; background: #1a1a1a; color: #2EC6FF; border-radius: 10px;"><h3>Course Coming Soon</h3><p>Web Application Security course is in development</p></div>',
-                        'duration': '--:--',
-                        'order': 1,
-                        'locked': False,
-                        'views': 0,
-                        'category': 'web'
-                    }
-                ]
-            },
-            'network_security': {
-                'id': 'network_security',
-                'title': 'Network Security Fundamentals',
-                'description': 'Learn network security, firewalls, and intrusion detection',
-                'thumbnail': 'https://images.unsplash.com/photo-1547658719-da2b51169166?w=400&h=225&fit=crop',
-                'level': 'Intermediate',
-                'duration': '3:30:00',
-                'videos_count': 5,
-                'locked': False,
-                'requires_password': False,
-                'videos': [
-                    {
-                        'id': 'network_security_1',
-                        'title': 'Coming Soon - Network Security',
-                        'description': 'Network security course will be available soon',
-                        'embed_code': '<div style="padding: 100px; text-align: center; background: #1a1a1a; color: #2EC6FF; border-radius: 10px;"><h3>Course Coming Soon</h3><p>Network Security course is in development</p></div>',
-                        'duration': '--:--',
-                        'order': 1,
-                        'locked': False,
-                        'views': 0,
-                        'category': 'network'
-                    }
-                ]
-            },
-            'linux_security': {
-                'id': 'linux_security',
-                'title': 'Linux Security & Hardening',
-                'description': 'Secure Linux systems and servers from attacks',
-                'thumbnail': 'https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=400&h=225&fit=crop',
-                'level': 'Advanced',
-                'duration': '4:00:00',
-                'videos_count': 8,
-                'locked': True,
-                'requires_password': True,
-                'password_hint': 'Contact admin for access',
-                'videos': [
-                    {
-                        'id': 'linux_security_1',
-                        'title': 'Linux Security Fundamentals',
-                        'description': 'Linux security basics and hardening techniques',
-                        'embed_code': '<div style="padding: 100px; text-align: center; background: #1a1a1a; color: #ff6b6b; border-radius: 10px;"><h3>🔒 Locked Content</h3><p>This course requires password access</p></div>',
-                        'duration': '--:--',
-                        'order': 1,
-                        'locked': True,
-                        'views': 0,
-                        'category': 'linux'
                     }
                 ]
             }
@@ -1560,7 +1489,7 @@ def get_video_details(current_user, video_id):
                     <li>Social Engineering</li>
                 </ul>
                 ''',
-                'embed_code': '<iframe width="560" height="315" src="https://www.youtube.com/embed/piz1aVOw_3k?si=Fr4WDoAHVymf1osH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>',
+                'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
                 'duration': '45:30',
                 'views': 1250,
                 'likes': 89,
@@ -1574,23 +1503,8 @@ def get_video_details(current_user, video_id):
                     {'name': 'Practice Questions', 'url': '/downloads/ceh-questions.pdf'}
                 ],
                 'next_video': None,
-                'prev_video': None
-            },
-            'web_security_1': {
-                'id': 'web_security_1',
-                'title': 'Coming Soon - Web Security Course',
-                'description': 'Web Application Security course is currently in development and will be available soon.',
-                'embed_code': '<div style="padding: 100px; text-align: center; background: #1a1a1a; color: #2EC6FF; border-radius: 10px;"><h3>Course Coming Soon</h3><p>Web Application Security course is in development</p></div>',
-                'duration': '--:--',
-                'views': 0,
-                'likes': 0,
-                'upload_date': 'Coming Soon',
-                'instructor': 'Architect Johan',
-                'category': 'Web Security',
-                'tags': ['web security', 'owasp', 'coming soon'],
-                'resources': [],
-                'next_video': None,
-                'prev_video': None
+                'prev_video': None,
+                'requires_password': True
             }
         }
         
@@ -1620,33 +1534,46 @@ def verify_video_access(current_user, video_id):
         data = request.get_json()
         password = data.get('password', '')
         
-        # Define passwords for locked videos
-        video_passwords = {
-            'linux_security_1': 'LinuxSec@2025',
-            'advanced_hacking_1': 'AdvHack!2025'
-        }
-        
-        if video_id in video_passwords:
-            if password == video_passwords[video_id]:
-                log_video_access(current_user, video_id, request.remote_addr, 'accessed')
-                return jsonify({
-                    'success': True,
-                    'message': 'Access granted',
-                    'embed_code': '<div style="padding: 100px; text-align: center; background: #1a1a1a; color: #00FFB3; border-radius: 10px;"><h3>Access Granted!</h3><p>Password verified successfully</p></div>'
-                }), 200
-            else:
-                log_video_access(current_user, video_id, request.remote_addr, 'failed_access')
-                return jsonify({'error': 'Incorrect password'}), 401
-        else:
-            # Video doesn't require password
+        # Check password
+        if password == VIDEO_PASSWORD:
+            log_video_access(current_user, video_id, request.remote_addr, 'accessed')
+            
+            # Generate session token for this video
+            session_token = secrets.token_urlsafe(32)
+            
+            # Store in database
+            users_coll = get_users_collection()
+            if users_coll is not None:
+                users_coll.update_one(
+                    {'username': current_user},
+                    {'$set': {
+                        'video_session': session_token,
+                        'video_session_expiry': datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+                    }}
+                )
+            
             return jsonify({
                 'success': True,
-                'message': 'Access granted'
+                'message': 'Access granted',
+                'session_token': session_token,
+                'embed_code': get_video_embed_code()
             }), 200
+        else:
+            log_video_access(current_user, video_id, request.remote_addr, 'failed_access')
+            return jsonify({'error': 'Incorrect password'}), 401
             
     except Exception as e:
         logger.error(f"Video access error: {e}")
         return jsonify({'error': 'Access verification failed'}), 500
+
+def get_video_embed_code():
+    """Return the secure video embed code"""
+    embed = '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+        <iframe src="https://geo.dailymotion.com/player.html?video=k3GVPS1YgJ0NZGExqG2"
+                style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;"
+                allowfullscreen title="Dailymotion Video Player"
+                allow="web-share"></iframe></div>'''
+    return embed
 
 @app.route('/api/video/<video_id>/like', methods=['POST'])
 @token_required
@@ -1770,7 +1697,118 @@ def get_video_progress(current_user, video_id):
             'progress': 0
         }), 200
 
+# ===========================================
+# SECURE VIDEO ENDPOINTS
+# ===========================================
+
+@app.route('/api/secure-video/verify', methods=['POST'])
+@token_required
+def verify_video_access_secure(current_user):
+    """Secure video password verification"""
+    try:
+        data = request.get_json()
+        password = data.get('password', '')
+        
+        if password == VIDEO_PASSWORD:
+            # Generate session token
+            session_token = secrets.token_urlsafe(32)
+            
+            # Store in database
+            users_coll = get_users_collection()
+            if users_coll is not None:
+                users_coll.update_one(
+                    {'username': current_user},
+                    {'$set': {
+                        'secure_video_session': session_token,
+                        'secure_video_expiry': datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+                    }}
+                )
+            
+            # Log successful access
+            log_user_activity(current_user, 'video_access_granted', request.remote_addr)
+            
+            return jsonify({
+                'success': True,
+                'session_token': session_token,
+                'message': 'Access granted'
+            }), 200
+        else:
+            # Log failed attempt
+            log_user_activity(current_user, 'video_access_failed', request.remote_addr)
+            return jsonify({'error': 'Invalid password'}), 401
+            
+    except Exception as e:
+        logger.error(f"Secure video verification error: {e}")
+        return jsonify({'error': 'Server error'}), 500
+
+@app.route('/api/secure-video/get-embed', methods=['GET'])
+@token_required
+def get_video_embed_secure(current_user):
+    """Get encrypted video embed"""
+    try:
+        # Verify session token
+        token = request.headers.get('X-Session-Token')
+        
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return jsonify({'error': 'Database error'}), 500
+        
+        user = users_coll.find_one({'username': current_user})
+        
+        if user and user.get('secure_video_session') == token and \
+           user.get('secure_video_expiry', datetime.datetime.utcnow()) > datetime.datetime.utcnow():
+            
+            # Your Dailymotion embed
+            embed = '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+                <iframe src="https://geo.dailymotion.com/player.html?video=k3GVPS1YgJ0NZGExqG2"
+                        style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;"
+                        allowfullscreen title="Dailymotion Video Player"
+                        allow="web-share"></iframe></div>'''
+            
+            # Log embed access
+            log_user_activity(current_user, 'video_embed_accessed', request.remote_addr)
+            
+            return jsonify({
+                'success': True,
+                'embed': embed
+            }), 200
+        else:
+            return jsonify({'error': 'Invalid or expired session'}), 401
+            
+    except Exception as e:
+        logger.error(f"Get embed error: {e}")
+        return jsonify({'error': 'Server error'}), 500
+
+@app.route('/api/security/log', methods=['POST'])
+def log_security_event():
+    """Log security events from frontend"""
+    try:
+        data = request.get_json()
+        event = data.get('event', 'unknown')
+        
+        # Simple logging
+        logger.warning(f"SECURITY EVENT: {event}")
+        
+        # Store in MongoDB if available
+        db = get_db()
+        if db is not None:
+            db.security_logs.insert_one({
+                'event': event,
+                'timestamp': datetime.datetime.utcnow(),
+                'user_agent': request.headers.get('User-Agent'),
+                'ip': request.remote_addr
+            })
+        
+        return jsonify({'success': True}), 200
+        
+    except Exception as e:
+        logger.error(f"Security log error: {e}")
+        return jsonify({'error': 'Logging failed'}), 500
+
+# ===========================================
 # FILE SERVING ROUTES
+# ===========================================
+
 @app.route('/')
 def serve_index():
     return send_from_directory('../frontend', 'index.html')
@@ -1859,6 +1897,11 @@ def serve_practice_set_8():
 @app.route('/video-player.html')
 def serve_video_player():
     return send_from_directory('../frontend', 'video-player.html')
+
+# Serve videos.html
+@app.route('/videos.html')
+def serve_videos():
+    return send_from_directory('../frontend', 'videos.html')
 
 # Catch-all for any other HTML files
 @app.route('/<filename>.html')
@@ -1987,323 +2030,6 @@ def reset_practice_progress(current_user):
         logger.error(f"Reset progress error: {e}")
         return jsonify({'error': 'Failed to reset progress'}), 500
 
-@app.route('/api/check-username', methods=['POST'])
-def check_username():
-    """Check if username is available"""
-    try:
-        data = request.get_json()
-        username = data.get('username', '').strip()
-        
-        if not username:
-            return jsonify({'exists': False}), 200
-        
-        if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
-            return jsonify({'exists': True}), 200  # Invalid format considered as taken
-        
-        users_coll = get_users_collection()
-        if users_coll is None:
-            return jsonify({'exists': False}), 200
-        
-        existing_user = users_coll.find_one({"username": username})
-        
-        return jsonify({'exists': existing_user is not None}), 200
-        
-    except Exception as e:
-        logger.error(f"Username check error: {e}")
-        return jsonify({'exists': False}), 200
-
-@app.route('/api/check-email', methods=['POST'])
-def check_email():
-    """Check if email is available"""
-    try:
-        data = request.get_json()
-        email = data.get('email', '').strip().lower()
-        
-        if not email:
-            return jsonify({'exists': False}), 200
-        
-        # Validate Gmail format
-        gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
-        if not re.match(gmail_regex, email):
-            return jsonify({'exists': True}), 200  # Invalid email considered as taken
-        
-        users_coll = get_users_collection()
-        if users_coll is None:
-            return jsonify({'exists': False}), 200
-        
-        existing_user = users_coll.find_one({"email": email})
-        
-        return jsonify({'exists': existing_user is not None}), 200
-        
-    except Exception as e:
-        logger.error(f"Email check error: {e}")
-        return jsonify({'exists': False}), 200
-
-@app.route('/api/check-mobile', methods=['POST'])
-def check_mobile():
-    """Check if mobile number is available"""
-    try:
-        data = request.get_json()
-        mobile_no = data.get('mobile_no', '')
-        
-        if not mobile_no:
-            return jsonify({'exists': False}), 200
-        
-        # Validate Indian mobile format
-        mobile_regex = r'^[6-9]\d{9}$'
-        if not re.match(mobile_regex, mobile_no):
-            return jsonify({'exists': True}), 200  # Invalid format considered as taken
-        
-        users_coll = get_users_collection()
-        if users_coll is None:
-            return jsonify({'exists': False}), 200
-        
-        existing_user = users_coll.find_one({"mobile_no": f"+91{mobile_no}"})
-        
-        return jsonify({'exists': existing_user is not None}), 200
-        
-    except Exception as e:
-        logger.error(f"Mobile check error: {e}")
-        return jsonify({'exists': False}), 200
-
-# ===========================================
-# SECURITY ENDPOINTS
-# ===========================================
-
-# Security configuration storage
-security_logs = {}
-
-@app.route('/api/security/log-event', methods=['POST'])
-@token_required
-def log_security_event(current_user):
-    """Log security events from client"""
-    try:
-        data = request.get_json()
-        event_type = data.get('event_type', 'unknown')
-        event_data = data.get('event_data', {})
-        user_agent = data.get('user_agent', request.headers.get('User-Agent'))
-        ip_address = request.remote_addr
-        
-        # Create log entry
-        log_entry = {
-            'username': current_user,
-            'event_type': event_type,
-            'event_data': event_data,
-            'user_agent': user_agent,
-            'ip_address': ip_address,
-            'timestamp': datetime.datetime.utcnow(),
-            'severity': data.get('severity', 'low')
-        }
-        
-        # Store in MongoDB if available
-        db = get_db()
-        if db is not None:
-            security_collection = db.security_logs
-            security_collection.insert_one(log_entry)
-        else:
-            # Store in memory as fallback
-            security_id = f"{current_user}_{datetime.datetime.utcnow().timestamp()}"
-            security_logs[security_id] = log_entry
-            
-            # Keep only last 1000 logs
-            if len(security_logs) > 1000:
-                # Remove oldest
-                oldest = sorted(security_logs.keys())[:100]
-                for key in oldest:
-                    del security_logs[key]
-        
-        # Log user activity
-        log_user_activity(current_user, f'security_event_{event_type}', ip_address, user_agent)
-        
-        return jsonify({'success': True, 'message': 'Event logged'}), 200
-        
-    except Exception as e:
-        logger.error(f"Security log error: {e}")
-        return jsonify({'error': 'Failed to log event'}), 500
-
-@app.route('/api/security/verify-video-access', methods=['POST'])
-@token_required
-def verify_video_access(current_user):
-    """Verify video password and log access"""
-    try:
-        data = request.get_json()
-        video_id = data.get('video_id', 'default')
-        password = data.get('password', '')
-        
-        # Get video passwords from environment
-        VIDEO_PASSWORDS = {
-            'ceh_v13_main': os.getenv('VIDEO_PASSWORD_CEH', 'CEH_V13_2024_SECURE'),
-            'premium_content': os.getenv('VIDEO_PASSWORD_PREMIUM', 'SECURE_ACCESS_2024')
-        }
-        
-        expected_password = VIDEO_PASSWORDS.get(video_id)
-        
-        if expected_password and password == expected_password:
-            # Log successful access
-            log_entry = {
-                'username': current_user,
-                'video_id': video_id,
-                'access_type': 'password_verified',
-                'timestamp': datetime.datetime.utcnow(),
-                'ip_address': request.remote_addr,
-                'user_agent': request.headers.get('User-Agent')
-            }
-            
-            db = get_db()
-            if db is not None:
-                video_access_collection = db.video_access_logs
-                video_access_collection.insert_one(log_entry)
-            
-            # Generate access token
-            access_token = secrets.token_urlsafe(32)
-            access_expiry = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-            
-            # Store access token
-            users_coll = get_users_collection()
-            if users_coll is not None:
-                users_coll.update_one(
-                    {'username': current_user},
-                    {'$set': {
-                        'video_access_token': access_token,
-                        'video_access_expiry': access_expiry,
-                        f'video_{video_id}_accessed': True
-                    }}
-                )
-            
-            return jsonify({
-                'success': True,
-                'access_token': access_token,
-                'expires_at': access_expiry.isoformat(),
-                'video_embed': get_encrypted_video_embed(video_id)
-            }), 200
-        else:
-            # Log failed attempt
-            log_security_attempt(current_user, video_id, 'failed_password')
-            return jsonify({'error': 'Invalid password'}), 401
-            
-    except Exception as e:
-        logger.error(f"Video access verification error: {e}")
-        return jsonify({'error': 'Access verification failed'}), 500
-
-@app.route('/api/security/get-video-token', methods=['POST'])
-@token_required
-def get_video_token(current_user):
-    """Get video embed with access token"""
-    try:
-        data = request.get_json()
-        video_id = data.get('video_id', 'default')
-        access_token = data.get('access_token', '')
-        
-        # Verify access token
-        users_coll = get_users_collection()
-        if users_coll is None:
-            return jsonify({'error': 'Database error'}), 500
-        
-        user = users_coll.find_one({
-            'username': current_user,
-            'video_access_token': access_token
-        })
-        
-        if user and user.get('video_access_expiry', datetime.datetime.utcnow()) > datetime.datetime.utcnow():
-            # Token is valid
-            embed = get_encrypted_video_embed(video_id)
-            return jsonify({'success': True, 'embed': embed}), 200
-        else:
-            return jsonify({'error': 'Invalid or expired access token'}), 401
-            
-    except Exception as e:
-        logger.error(f"Get video token error: {e}")
-        return jsonify({'error': 'Failed to get video'}), 500
-
-def get_encrypted_video_embed(video_id):
-    """Return encrypted video embed code"""
-    # Map video IDs to embed codes
-    video_embeds = {
-        'ceh_v13_main': {
-            'embed': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
-                <iframe src="https://geo.dailymotion.com/player.html?video=k3GVPS1YgJ0NZGExqG2"
-                        style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;"
-                        allowfullscreen title="Dailymotion Video Player"
-                        allow="web-share"></iframe></div>''',
-            'encryption_key': os.getenv('VIDEO_ENCRYPTION_KEY', 'default_key_123')
-        }
-    }
-    
-    video_data = video_embeds.get(video_id, video_embeds['ceh_v13_main'])
-    
-    # Simple XOR encryption (for demonstration)
-    def simple_encrypt(text, key):
-        import base64
-        encrypted = []
-        for i, char in enumerate(text):
-            key_char = key[i % len(key)]
-            encrypted_char = chr(ord(char) ^ ord(key_char))
-            encrypted.append(encrypted_char)
-        return base64.b64encode(''.join(encrypted).encode()).decode()
-    
-    encrypted_embed = simple_encrypt(video_data['embed'], video_data['encryption_key'])
-    
-    return {
-        'encrypted': encrypted_embed,
-        'key': video_data['encryption_key']
-    }
-
-def log_security_attempt(username, resource, attempt_type):
-    """Log security attempts"""
-    try:
-        log_entry = {
-            'username': username,
-            'resource': resource,
-            'attempt_type': attempt_type,
-            'timestamp': datetime.datetime.utcnow(),
-            'ip_address': request.remote_addr if 'request' in locals() else 'unknown',
-            'user_agent': request.headers.get('User-Agent') if 'request' in locals() else 'unknown'
-        }
-        
-        db = get_db()
-        if db is not None:
-            security_attempts = db.security_attempts
-            security_attempts.insert_one(log_entry)
-            
-            # Check for suspicious activity
-            recent_attempts = security_attempts.count_documents({
-                'username': username,
-                'timestamp': {'$gte': datetime.datetime.utcnow() - datetime.timedelta(hours=1)}
-            })
-            
-            if recent_attempts > 5:
-                # Flag suspicious activity
-                users_coll = get_users_collection()
-                users_coll.update_one(
-                    {'username': username},
-                    {'$set': {'suspicious_activity': True}}
-                )
-                
-    except Exception as e:
-        logger.error(f"Security attempt logging error: {e}")
-
-@app.route('/api/security/check-suspicious', methods=['GET'])
-@token_required
-def check_suspicious(current_user):
-    """Check if user has suspicious activity"""
-    try:
-        users_coll = get_users_collection()
-        if users_coll is None:
-            return jsonify({'suspicious': False}), 200
-        
-        user = users_coll.find_one({'username': current_user})
-        suspicious = user.get('suspicious_activity', False) if user else False
-        
-        return jsonify({'suspicious': suspicious}), 200
-        
-    except Exception as e:
-        logger.error(f"Suspicious check error: {e}")
-        return jsonify({'suspicious': False}), 200
-
-# Add to your environment variables in Render:
-# VIDEO_PASSWORD_CEH=your_secure_password_here
-# VIDEO_ENCRYPTION_KEY=your_encryption_key_here
-
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -2312,6 +2038,7 @@ if __name__ == '__main__':
     print(f"🌐 Server running on port: {port}")
     print(f"📊 MongoDB Available: {MONGODB_AVAILABLE}")
     print(f"🎥 Video Routes: ENABLED")
+    print(f"🔒 Video Password: {VIDEO_PASSWORD}")
     
     # Test MongoDB connection
     client = get_mongo_client()
@@ -2328,7 +2055,6 @@ if __name__ == '__main__':
     print(f"🔑 SECRET_KEY: {'✅ Set' if os.getenv('SECRET_KEY') else '❌ Missing'}")
     print(f"🔑 JWT_SECRET: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
     print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
+    print(f"🎥 VIDEO_PASSWORD: {'✅ Set' if os.getenv('VIDEO_PASSWORD') else '❌ Using Default'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
-
