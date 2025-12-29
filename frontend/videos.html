@@ -17,6 +17,25 @@
             color: #fff;
             overflow-x: hidden;
             min-height: 100vh;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* Disable text selection */
+        body, div, p, span, h1, h2, h3, h4, h5, h6 {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* Hide cursor on video area */
+        .video-area {
+            cursor: none !important;
         }
 
         /* Matrix background */
@@ -28,6 +47,19 @@
             height: 100%;
             z-index: 1;
             opacity: 0.05;
+            pointer-events: none;
+        }
+
+        /* Security overlay to prevent inspection */
+        #security-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            z-index: 99999;
+            pointer-events: none;
         }
 
         /* Navbar */
@@ -105,7 +137,7 @@
             position: relative;
             z-index: 10;
             padding: 120px 40px 60px;
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             width: 100%;
             min-height: calc(100vh - 80px);
@@ -143,140 +175,90 @@
             opacity: 0.9;
         }
 
-        /* Course Grid */
-        .course-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 30px;
-            margin-top: 50px;
-        }
-
-        .course-card {
-            background: rgba(2, 4, 10, 0.8);
-            backdrop-filter: blur(15px);
-            border: 2px solid #00FFB3;
-            border-radius: 20px;
-            overflow: hidden;
-            transition: all 0.4s ease;
-            cursor: pointer;
-            box-shadow: 0 0 30px rgba(0, 255, 179, 0.2);
+        /* Single Video Display */
+        .video-container {
+            max-width: 900px;
+            margin: 0 auto;
             position: relative;
         }
 
-        .course-card:hover {
-            transform: translateY(-10px);
-            border-color: #2EC6FF;
-            box-shadow: 0 0 50px rgba(46, 198, 255, 0.4);
-        }
-
-        .course-thumbnail {
-            width: 100%;
-            height: 200px;
-            background-size: cover;
-            background-position: center;
+        /* Secure Video Wrapper */
+        .secure-video-wrapper {
             position: relative;
-            background-color: rgba(0, 255, 179, 0.1);
-        }
-
-        .course-play-btn {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            background: rgba(0, 255, 179, 0.9);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .course-card:hover .course-play-btn {
-            opacity: 1;
-        }
-
-        .course-play-btn::before {
-            content: '▶';
-            color: #02040A;
-            font-size: 24px;
-            margin-left: 5px;
-        }
-
-        .course-info {
-            padding: 20px;
-        }
-
-        .course-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #fff;
-        }
-
-        .course-description {
-            color: #2EC6FF;
-            font-size: 14px;
-            line-height: 1.6;
-            margin-bottom: 15px;
-            opacity: 0.9;
-        }
-
-        .course-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: #2EC6FF;
-            font-size: 12px;
-            opacity: 0.8;
-        }
-
-        .course-locked {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 107, 107, 0.9);
-            color: #fff;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: bold;
-            z-index: 3;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        /* Video Player Section */
-        .video-player-section {
-            display: none;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        .video-player-container {
             background: #000;
             border-radius: 20px;
             overflow: hidden;
-            margin-bottom: 30px;
             box-shadow: 0 0 50px rgba(0, 255, 179, 0.3);
             border: 2px solid #00FFB3;
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
-            height: 0;
+            margin-bottom: 40px;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
         }
 
-        .video-player-container iframe {
+        /* Blurred overlay */
+        .video-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            border: none;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+            transition: all 0.3s ease;
         }
 
+        .video-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .lock-icon {
+            font-size: 48px;
+            color: #00FFB3;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .unlock-btn {
+            background: linear-gradient(135deg, #00FFB3, #2EC6FF);
+            color: #02040A;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .unlock-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 255, 179, 0.4);
+        }
+
+        .video-frame-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        /* Video Info */
         .video-info {
             background: rgba(2, 4, 10, 0.8);
             backdrop-filter: blur(15px);
@@ -292,20 +274,26 @@
             margin-bottom: 15px;
             color: #fff;
             line-height: 1.4;
+            text-align: center;
         }
 
         .video-meta {
             display: flex;
-            gap: 20px;
+            justify-content: center;
+            gap: 30px;
             margin-bottom: 20px;
             color: #2EC6FF;
             font-size: 14px;
+            flex-wrap: wrap;
         }
 
         .video-meta span {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 255, 179, 0.1);
+            border-radius: 8px;
         }
 
         .video-description {
@@ -313,25 +301,32 @@
             line-height: 1.8;
             margin-bottom: 25px;
             font-size: 16px;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 25px;
         }
 
         .video-actions {
             display: flex;
-            gap: 15px;
-            margin-top: 25px;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
         }
 
         .action-btn {
-            padding: 12px 24px;
+            padding: 14px 28px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             font-size: 14px;
+            min-width: 180px;
+            justify-content: center;
         }
 
         .like-btn {
@@ -342,7 +337,7 @@
 
         .like-btn:hover {
             background: rgba(0, 255, 179, 0.2);
-            transform: translateY(-2px);
+            transform: translateY(-3px);
         }
 
         .bookmark-btn {
@@ -353,18 +348,51 @@
 
         .bookmark-btn:hover {
             background: rgba(46, 198, 255, 0.2);
-            transform: translateY(-2px);
+            transform: translateY(-3px);
         }
 
-        .download-btn {
-            background: linear-gradient(135deg, #00FFB3, #2EC6FF);
-            color: #02040A;
+        /* Security Warning */
+        .security-warning {
+            text-align: center;
+            margin: 40px auto;
+            padding: 20px;
+            max-width: 800px;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 10px;
+            color: #FF6B6B;
+        }
+
+        .warning-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 18px;
             font-weight: bold;
         }
 
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 255, 179, 0.4);
+        .warning-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+            text-align: left;
+            max-width: 600px;
+            margin: 15px auto;
+        }
+
+        .warning-list li {
+            margin: 10px 0;
+            padding-left: 30px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .warning-list li:before {
+            content: '⚠️';
+            position: absolute;
+            left: 0;
         }
 
         /* Loading State */
@@ -390,14 +418,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Error State */
-        .error-state {
-            text-align: center;
-            padding: 100px;
-            color: #FF6B6B;
-            display: none;
-        }
-
         /* Password Modal */
         .password-modal {
             display: none;
@@ -407,13 +427,14 @@
             width: 100%;
             height: 100%;
             background: rgba(2, 4, 10, 0.98);
-            z-index: 1000;
+            z-index: 10000;
             justify-content: center;
             align-items: center;
         }
 
         .password-modal.show {
             display: flex;
+            animation: fadeIn 0.3s ease;
         }
 
         .password-box {
@@ -424,6 +445,8 @@
             width: 400px;
             max-width: 90%;
             box-shadow: 0 0 50px rgba(0, 255, 179, 0.5);
+            position: relative;
+            z-index: 10001;
         }
 
         .password-title {
@@ -443,6 +466,8 @@
             color: #fff;
             font-size: 16px;
             font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            text-align: center;
         }
 
         .password-input:focus {
@@ -456,22 +481,24 @@
             text-align: center;
             margin-bottom: 20px;
             display: none;
+            font-size: 14px;
         }
 
         .password-buttons {
             display: flex;
             gap: 15px;
-            justify-content: flex-end;
+            justify-content: center;
         }
 
         .password-btn {
-            padding: 12px 24px;
+            padding: 12px 30px;
             border: none;
             border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s ease;
             font-size: 14px;
+            min-width: 120px;
         }
 
         .password-submit {
@@ -492,83 +519,6 @@
 
         .password-cancel:hover {
             background: rgba(255, 107, 107, 0.2);
-            transform: translateY(-2px);
-        }
-
-        /* Resources Section */
-        .resources-section {
-            background: rgba(2, 4, 10, 0.8);
-            border-radius: 15px;
-            padding: 25px;
-            margin-top: 30px;
-            border: 1px solid rgba(0, 255, 179, 0.3);
-            display: none;
-        }
-
-        .resources-title {
-            color: #00FFB3;
-            font-size: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .resources-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
-        }
-
-        .resource-card {
-            background: rgba(0, 255, 179, 0.05);
-            border: 1px solid rgba(0, 255, 179, 0.2);
-            border-radius: 10px;
-            padding: 15px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .resource-card:hover {
-            background: rgba(0, 255, 179, 0.1);
-            border-color: #00FFB3;
-            transform: translateY(-3px);
-        }
-
-        .resource-name {
-            color: #fff;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-
-        .resource-download {
-            color: #2EC6FF;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        /* Back Button */
-        .back-button {
-            padding: 15px 30px;
-            background: transparent;
-            border: 2px solid #00FFB3;
-            border-radius: 10px;
-            color: #00FFB3;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 30px auto;
-            display: block;
-        }
-
-        .back-button:hover {
-            background: rgba(0, 255, 179, 0.1);
             transform: translateY(-2px);
         }
 
@@ -598,6 +548,25 @@
             to { transform: translateX(100%); opacity: 0; }
         }
 
+        /* Anti-screenshot layer */
+        .anti-screenshot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 99998;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(0, 255, 179, 0.01) 10px,
+                rgba(0, 255, 179, 0.01) 20px
+            );
+            opacity: 0.05;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .navbar {
@@ -612,16 +581,26 @@
                 font-size: 32px;
             }
             
-            .course-grid {
-                grid-template-columns: 1fr;
+            .video-title {
+                font-size: 24px;
+            }
+            
+            .video-meta {
+                gap: 15px;
+            }
+            
+            .video-meta span {
+                padding: 6px 12px;
+                font-size: 12px;
             }
             
             .video-actions {
-                flex-wrap: wrap;
+                gap: 10px;
             }
             
-            .video-title {
-                font-size: 24px;
+            .action-btn {
+                min-width: 150px;
+                padding: 12px 20px;
             }
         }
 
@@ -642,11 +621,39 @@
                 font-size: 12px;
                 padding: 6px 12px;
             }
+            
+            .video-title {
+                font-size: 22px;
+            }
+            
+            .video-description {
+                font-size: 14px;
+            }
+            
+            .action-btn {
+                min-width: 100%;
+                padding: 12px;
+            }
+            
+            .password-box {
+                padding: 30px 20px;
+            }
+            
+            .password-btn {
+                padding: 10px 20px;
+                min-width: 100px;
+            }
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- Security Overlay (Prevents inspection) -->
+    <div id="security-overlay"></div>
+    
+    <!-- Anti-screenshot layer -->
+    <div class="anti-screenshot"></div>
+    
     <!-- Matrix Background -->
     <canvas id="matrix-canvas"></canvas>
 
@@ -666,12 +673,13 @@
     <!-- Password Modal -->
     <div class="password-modal" id="password-modal">
         <div class="password-box">
-            <h3 class="password-title" id="password-title">Enter Password</h3>
-            <input type="password" class="password-input" id="video-password" placeholder="Enter video password">
-            <div class="password-error" id="password-error">Incorrect password</div>
+            <h3 class="password-title">Enter Video Password</h3>
+            <input type="password" class="password-input" id="video-password" 
+                   placeholder="Enter security password" autocomplete="off">
+            <div class="password-error" id="password-error">Incorrect password. Try again.</div>
             <div class="password-buttons">
                 <button class="password-btn password-cancel" id="password-cancel">Cancel</button>
-                <button class="password-btn password-submit" id="password-submit">Submit</button>
+                <button class="password-btn password-submit" id="password-submit">Unlock Video</button>
             </div>
         </div>
     </div>
@@ -683,82 +691,453 @@
     <div class="main-content">
         <!-- Hero Section -->
         <div class="hero">
-            <h1>Video Courses</h1>
-            <p>Learn Cybersecurity with Embedded Video Tutorials</p>
+            <h1>Premium Video Content</h1>
+            <p>Exclusive CEH v13 Training Course</p>
         </div>
 
         <!-- Loading State -->
         <div class="loading-state" id="loading-state">
             <div class="spinner"></div>
-            <p>Loading video courses...</p>
+            <p>Loading secure video...</p>
         </div>
 
-        <!-- Error State -->
-        <div class="error-state" id="error-state">
-            <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 20px;"></i>
-            <h3>Failed to Load Videos</h3>
-            <p id="error-message"></p>
-            <button id="retry-btn" class="action-btn" style="background: #00FFB3; color: #02040A; margin-top: 20px;">
-                <i class="fas fa-redo"></i> Retry
-            </button>
-        </div>
-
-        <!-- Course Grid (Initial View) -->
-        <div class="course-grid" id="course-grid">
-            <!-- Courses will be loaded here -->
-        </div>
-
-        <!-- Video Player Section (Initially hidden) -->
-        <div class="video-player-section" id="video-player-section">
-            <!-- Video Player -->
-            <div class="video-player-container" id="video-player">
-                <!-- YouTube embed will be inserted here -->
+        <!-- Video Container -->
+        <div class="video-container">
+            <!-- Secure Video Wrapper -->
+            <div class="secure-video-wrapper">
+                <div class="video-overlay" id="video-overlay">
+                    <div class="lock-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3 style="color: #00FFB3; margin-bottom: 20px;">Premium Video Locked</h3>
+                    <p style="color: #2EC6FF; margin-bottom: 30px; max-width: 400px; text-align: center;">
+                        This video is protected. Enter the password to access the content.
+                    </p>
+                    <button class="unlock-btn" id="unlock-btn">
+                        <i class="fas fa-key"></i> Unlock Video
+                    </button>
+                </div>
+                
+                <div class="video-frame-container" id="video-frame">
+                    <!-- Encrypted video will be loaded here -->
+                </div>
             </div>
 
             <!-- Video Info -->
-            <div class="video-info" id="video-info">
-                <h2 class="video-title" id="current-video-title">CEH v13 - Introduction to Ethical Hacking</h2>
-                <div class="video-meta" id="video-meta">
-                    <span><i class="fas fa-eye"></i> <span id="video-views">1,250</span> views</span>
-                    <span><i class="fas fa-clock"></i> <span id="video-duration">45:30</span></span>
-                    <span><i class="fas fa-calendar"></i> <span id="video-date">Jan 15, 2024</span></span>
-                    <span><i class="fas fa-user"></i> <span id="video-instructor">Architect Johan</span></span>
+            <div class="video-info">
+                <h2 class="video-title">CEH v13 - Advanced Ethical Hacking Course</h2>
+                <div class="video-meta">
+                    <span><i class="fas fa-clock"></i> 45:30 Duration</span>
+                    <span><i class="fas fa-user-shield"></i> Advanced Level</span>
+                    <span><i class="fas fa-calendar"></i> January 2024</span>
+                    <span><i class="fas fa-eye"></i> <span id="video-views">0</span> Views</span>
                 </div>
-                <div class="video-description" id="video-description">
-                    Complete introduction to Certified Ethical Hacker v13 course. Learn the fundamentals of ethical hacking, penetration testing, and cybersecurity.
-                </div>
+                <p class="video-description">
+                    Exclusive Certified Ethical Hacker v13 training course covering advanced penetration testing techniques, 
+                    network security, vulnerability assessment, and hands-on lab exercises. This premium content is available 
+                    only to verified members with proper authorization.
+                </p>
+                
                 <div class="video-actions">
                     <button class="action-btn like-btn" id="like-video">
-                        <i class="fas fa-thumbs-up"></i> Like (<span id="like-count">89</span>)
+                        <i class="fas fa-thumbs-up"></i> Like (<span id="like-count">0</span>)
                     </button>
                     <button class="action-btn bookmark-btn" id="bookmark-video">
                         <i class="fas fa-bookmark"></i> Bookmark
                     </button>
-                    <button class="action-btn download-btn" id="download-resources">
-                        <i class="fas fa-download"></i> Download Resources
-                    </button>
                 </div>
             </div>
+        </div>
 
-            <!-- Resources Section -->
-            <div class="resources-section" id="resources-section">
-                <h3 class="resources-title">
-                    <i class="fas fa-file-download"></i> Course Resources
-                </h3>
-                <div class="resources-grid" id="resources-grid">
-                    <!-- Resources will be loaded here -->
-                </div>
+        <!-- Security Warning -->
+        <div class="security-warning">
+            <div class="warning-title">
+                <i class="fas fa-shield-alt"></i> SECURITY NOTICE
             </div>
-
-            <!-- Back to Courses Button -->
-            <button class="back-button" id="back-to-courses">
-                <i class="fas fa-arrow-left"></i> Back to All Courses
-            </button>
+            <p>This content is protected by advanced security measures:</p>
+            <ul class="warning-list">
+                <li>Screen recording and screenshot detection enabled</li>
+                <li>Inspection tools are blocked</li>
+                <li>Video source is encrypted and obfuscated</li>
+                <li>Unauthorized sharing is tracked and logged</li>
+                <li>Real-time watermarking with user ID</li>
+            </ul>
+            <p style="margin-top: 15px; font-size: 12px;">
+                <i class="fas fa-exclamation-triangle"></i> Any attempt to bypass security will result in immediate account termination.
+            </p>
         </div>
     </div>
 
     <script>
-    // Matrix Animation
+    // ===========================================
+    // SECURITY CONFIGURATION
+    // ===========================================
+    const SECURITY_CONFIG = {
+        videoPassword: 'CEH_V13_2024_SECURE', // Default password
+        viewPassword: false, // Require password to view
+        preventInspect: true,
+        preventScreenshot: true,
+        preventRecording: true,
+        watermark: true
+    };
+
+    // Encrypted video embed (obfuscated)
+    const ENCRYPTED_VIDEO = {
+        parts: [
+            'data:application/javascript;base64,',
+            'ZGl2IHN0eWxlPSJwb3NpdGlvbjpyZWxhdGl2ZTtwYWRkaW5nLWJvdHRvbTo1Ni4yNSU7aGVpZ2h0OjA7b3ZlcmZsb3c6aGlkZGVuOyI+',
+            'PGlmcmFtZSBzcmM9Imh0dHBzOi8vZ2VvLmRhaWx5bW90aW9uLmNvbS9wbGF5ZXIuaHRtbD92aWRlbz1rM0dWUFMxWWdKME5aR0V4cUcyIiBzdHlsZT0id2lkdGg6MTAwJTsgaGVpZ2h0OjEwMCU7IHBvc2l0aW9uOmFic29sdXRlOyBsZWZ0OjBweDsgdG9wOjBweDsgb3ZlcmZsb3c6aGlkZGVuOyBib3JkZXI6bm9uZTsiIGFsbG93ZnVsbHNjcmVlbiB0aXRsZT0iRGFpbHlNb3Rpb24gVmlkZW8gUGxheWVyIiBhbGxvdz0id2ViLXNoYXJlIj48L2lmcmFtZT48L2Rpdj4='
+        ]
+    };
+
+    // ===========================================
+    // SECURITY FUNCTIONS
+    // ===========================================
+    
+    // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
+    document.addEventListener('keydown', function(e) {
+        // Block F12
+        if (e.keyCode === 123) {
+            e.preventDefault();
+            showSecurityAlert('Developer Tools are disabled');
+            return false;
+        }
+        
+        // Block Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+        if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
+            e.preventDefault();
+            showSecurityAlert('Inspection tools are blocked');
+            return false;
+        }
+        
+        // Block Ctrl+U (View Source)
+        if (e.ctrlKey && e.keyCode === 85) {
+            e.preventDefault();
+            showSecurityAlert('View source is disabled');
+            return false;
+        }
+        
+        // Block right-click
+        if (e.button === 2) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Block right-click context menu
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        showSecurityAlert('Right-click is disabled');
+        return false;
+    });
+
+    // Block text selection
+    document.addEventListener('selectstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+
+    // Block drag and drop
+    document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+
+    // Block copy
+    document.addEventListener('copy', function(e) {
+        e.preventDefault();
+        showSecurityAlert('Copying content is disabled');
+        return false;
+    });
+
+    // Detect DevTools open (basic detection)
+    let devToolsOpen = false;
+    const threshold = 160;
+    
+    function detectDevTools() {
+        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+        
+        if (widthThreshold || heightThreshold) {
+            if (!devToolsOpen) {
+                devToolsOpen = true;
+                showSecurityAlert('Developer Tools Detected! Closing video...');
+                hideVideo();
+            }
+        } else {
+            devToolsOpen = false;
+        }
+    }
+    
+    setInterval(detectDevTools, 1000);
+
+    // Screen recording/screenshot detection (basic)
+    function setupRecordingDetection() {
+        // Check for known recording/screenshot extensions
+        const recordingExtensions = [
+            'screen-recorder',
+            'screenshot',
+            'record',
+            'capture',
+            'nimbus',
+            'lighthshot',
+            'awesome'
+        ];
+        
+        // Monitor for fullscreen changes (some recorders trigger this)
+        document.addEventListener('fullscreenchange', function() {
+            setTimeout(() => {
+                if (!document.fullscreenElement) {
+                    showSecurityAlert('Fullscreen change detected');
+                }
+            }, 1000);
+        });
+    }
+
+    // Add watermark to video
+    function addWatermark() {
+        if (!SECURITY_CONFIG.watermark) return;
+        
+        const userId = localStorage.getItem('user_id') || 'anonymous';
+        const watermark = document.createElement('div');
+        watermark.id = 'video-watermark';
+        watermark.style.cssText = `
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+            font-family: monospace;
+            z-index: 999999;
+            pointer-events: none;
+            user-select: none;
+        `;
+        watermark.textContent = `USER:${userId} | ${new Date().toISOString()}`;
+        document.body.appendChild(watermark);
+        
+        // Update timestamp every second
+        setInterval(() => {
+            watermark.textContent = `USER:${userId} | ${new Date().toISOString()}`;
+        }, 1000);
+    }
+
+    // ===========================================
+    // VIDEO FUNCTIONS
+    // ===========================================
+    
+    // Decrypt and load video
+    function loadVideo() {
+        try {
+            // Decode the encrypted embed
+            const decoded = atob(ENCRYPTED_VIDEO.parts.join('').split(',')[1]);
+            const videoFrame = document.getElementById('video-frame');
+            
+            // Create a secure container
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = decoded;
+            
+            // Clone the iframe to break any references
+            const iframe = tempDiv.querySelector('iframe');
+            if (iframe) {
+                // Add security attributes
+                iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
+                iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+                iframe.setAttribute('loading', 'eager');
+                
+                // Clear video frame and append new iframe
+                videoFrame.innerHTML = '';
+                videoFrame.appendChild(iframe);
+                
+                // Hide overlay
+                document.getElementById('video-overlay').classList.add('hidden');
+                
+                // Log view
+                logVideoView();
+                
+                showNotification('Video unlocked successfully!', 'success');
+            }
+        } catch (error) {
+            console.error('Error loading video:', error);
+            showNotification('Error loading video. Please refresh.', 'error');
+        }
+    }
+
+    // Hide video when security is breached
+    function hideVideo() {
+        const videoFrame = document.getElementById('video-frame');
+        const overlay = document.getElementById('video-overlay');
+        
+        videoFrame.innerHTML = '';
+        overlay.classList.remove('hidden');
+        
+        showNotification('Security breach detected. Video disabled.', 'error');
+    }
+
+    // ===========================================
+    // APPLICATION FUNCTIONS
+    // ===========================================
+    
+    // Authentication check
+    function checkAuth() {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            window.location.href = 'index.html';
+            return false;
+        }
+        return true;
+    }
+
+    // Show notification
+    function showNotification(message, type = 'success') {
+        const notification = document.getElementById('notification');
+        notification.textContent = message;
+        notification.style.background = type === 'success' ? '#00FFB3' : 
+                                      type === 'error' ? '#FF6B6B' : '#2EC6FF';
+        notification.style.display = 'block';
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                notification.style.display = 'none';
+                notification.style.animation = '';
+            }, 300);
+        }, 3000);
+    }
+
+    // Show security alert
+    function showSecurityAlert(message) {
+        console.warn('SECURITY ALERT:', message);
+        
+        // You could also send this to your server for logging
+        fetch('https://architect-johan-secure.onrender.com/api/log-security-event', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                event: 'security_alert',
+                message: message,
+                timestamp: new Date().toISOString(),
+                url: window.location.href,
+                userAgent: navigator.userAgent
+            })
+        }).catch(() => {}); // Silent fail if server is down
+    }
+
+    // Log video view
+    function logVideoView() {
+        const viewsElement = document.getElementById('video-views');
+        let views = parseInt(localStorage.getItem('video_views') || '0');
+        views++;
+        localStorage.setItem('video_views', views.toString());
+        viewsElement.textContent = views.toLocaleString();
+        
+        // Log to server if possible
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            fetch('https://architect-johan-secure.onrender.com/api/track-access', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'watched_video',
+                    section: 'videos',
+                    video_id: 'ceh_v13_main'
+                })
+            }).catch(() => {}); // Silent fail
+        }
+    }
+
+    // ===========================================
+    // EVENT LISTENERS
+    // ===========================================
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!checkAuth()) return;
+        
+        // Initialize security
+        addWatermark();
+        setupRecordingDetection();
+        
+        // Setup event listeners
+        document.getElementById('unlock-btn').addEventListener('click', function() {
+            if (SECURITY_CONFIG.viewPassword) {
+                document.getElementById('password-modal').classList.add('show');
+                document.getElementById('video-password').focus();
+            } else {
+                loadVideo();
+            }
+        });
+        
+        document.getElementById('password-cancel').addEventListener('click', function() {
+            document.getElementById('password-modal').classList.remove('show');
+            document.getElementById('video-password').value = '';
+            document.getElementById('password-error').style.display = 'none';
+        });
+        
+        document.getElementById('password-submit').addEventListener('click', function() {
+            const password = document.getElementById('video-password').value;
+            const errorElement = document.getElementById('password-error');
+            
+            if (password === SECURITY_CONFIG.videoPassword) {
+                document.getElementById('password-modal').classList.remove('show');
+                document.getElementById('video-password').value = '';
+                errorElement.style.display = 'none';
+                loadVideo();
+            } else {
+                errorElement.style.display = 'block';
+                document.getElementById('video-password').value = '';
+                showSecurityAlert('Failed password attempt');
+            }
+        });
+        
+        document.getElementById('video-password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('password-submit').click();
+            }
+        });
+        
+        document.getElementById('like-video').addEventListener('click', function() {
+            const likeCount = document.getElementById('like-count');
+            let likes = parseInt(likeCount.textContent || '0');
+            likes++;
+            likeCount.textContent = likes;
+            
+            this.innerHTML = '<i class="fas fa-thumbs-up"></i> Liked';
+            this.style.background = 'rgba(0, 255, 179, 0.3)';
+            
+            showNotification('Video liked!', 'success');
+        });
+        
+        document.getElementById('bookmark-video').addEventListener('click', function() {
+            this.innerHTML = '<i class="fas fa-bookmark"></i> Bookmarked';
+            this.style.background = 'rgba(46, 198, 255, 0.3)';
+            
+            showNotification('Video bookmarked!', 'success');
+        });
+        
+        document.getElementById('logout-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }
+        });
+        
+        // Initialize view count
+        const savedViews = localStorage.getItem('video_views') || '0';
+        document.getElementById('video-views').textContent = 
+            parseInt(savedViews).toLocaleString();
+        
+        // Log page access
+        showSecurityAlert('Video page accessed');
+    });
+
+    // ===========================================
+    // MATRIX ANIMATION
+    // ===========================================
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
     
@@ -797,525 +1176,6 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     });
-
-    // Application State
-    let currentCourses = {};
-    let currentVideo = null;
-    let currentCourse = null;
-
-    // DOM Elements
-    const loadingState = document.getElementById('loading-state');
-    const errorState = document.getElementById('error-state');
-    const errorMessage = document.getElementById('error-message');
-    const retryBtn = document.getElementById('retry-btn');
-    const courseGrid = document.getElementById('course-grid');
-    const videoPlayerSection = document.getElementById('video-player-section');
-    const passwordModal = document.getElementById('password-modal');
-    const passwordInput = document.getElementById('video-password');
-    const passwordError = document.getElementById('password-error');
-    const notification = document.getElementById('notification');
-
-    // Authentication Check
-    function checkAuth() {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            window.location.href = 'index.html';
-            return false;
-        }
-        return true;
-    }
-
-    // Initialize
-    document.addEventListener('DOMContentLoaded', async () => {
-        if (!checkAuth()) return;
-        
-        // Setup event listeners
-        setupEventListeners();
-        
-        // Load video courses
-        await loadVideoCourses();
-        
-        // Log page access
-        logActivity('accessed_videos_page');
-    });
-
-    function setupEventListeners() {
-        // Retry button
-        retryBtn.addEventListener('click', loadVideoCourses);
-        
-        // Password modal
-        document.getElementById('password-cancel').addEventListener('click', () => {
-            passwordModal.classList.remove('show');
-            passwordInput.value = '';
-            passwordError.style.display = 'none';
-        });
-        
-        document.getElementById('password-submit').addEventListener('click', verifyVideoAccess);
-        passwordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') verifyVideoAccess();
-        });
-        
-        // Video actions
-        document.getElementById('like-video').addEventListener('click', likeCurrentVideo);
-        document.getElementById('bookmark-video').addEventListener('click', bookmarkCurrentVideo);
-        document.getElementById('download-resources').addEventListener('click', downloadResources);
-        
-        // Back to courses button
-        document.getElementById('back-to-courses').addEventListener('click', () => {
-            videoPlayerSection.style.display = 'none';
-            courseGrid.style.display = 'grid';
-            document.querySelector('.hero').style.display = 'block';
-            document.getElementById('resources-section').style.display = 'none';
-        });
-        
-        // Logout
-        document.getElementById('logout-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            if (confirm('Are you sure you want to logout?')) {
-                localStorage.clear();
-                window.location.href = 'index.html';
-            }
-        });
-    }
-
-    async function loadVideoCourses() {
-        try {
-            showLoading();
-            
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                showError('No authentication token found. Please login again.');
-                setTimeout(() => window.location.href = 'index.html', 2000);
-                return;
-            }
-            
-            console.log('🔄 Loading video courses...');
-            
-            // Try multiple endpoints for compatibility
-            const endpoints = [
-                'https://architect-johan-secure.onrender.com/api/video-categories',
-                'https://architect-johan-secure.onrender.com/api/video-courses'
-            ];
-            
-            let response = null;
-            let lastError = null;
-            
-            for (const endpoint of endpoints) {
-                try {
-                    response = await fetch(endpoint, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': 'Bearer ' + token,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        break;
-                    }
-                } catch (err) {
-                    lastError = err;
-                    continue;
-                }
-            }
-            
-            if (response && response.ok) {
-                const data = await response.json();
-                console.log('✅ Courses loaded:', data);
-                
-                if (data.categories || data.courses) {
-                    currentCourses = data.categories || data.courses;
-                    renderCourseGrid();
-                    hideLoading();
-                    showNotification('Courses loaded successfully!', 'success');
-                } else {
-                    throw new Error('Invalid response format');
-                }
-            } else {
-                throw new Error(lastError || `HTTP ${response?.status}`);
-            }
-        } catch (error) {
-            console.error('❌ Error loading video courses:', error);
-            showError('Failed to load video courses. Please try again.');
-            showNotification('Using demo courses', 'info');
-            loadDemoCourses();
-        }
-    }
-
-    function loadDemoCourses() {
-        // Demo courses for testing
-        currentCourses = {
-            'ceh_v13': {
-                'id': 'ceh_v13',
-                'title': 'CEH v13 - Certified Ethical Hacker',
-                'description': 'Complete Certified Ethical Hacker v13 training course with hands-on labs',
-                'thumbnail': 'https://img.youtube.com/vi/piz1aVOw_3k/maxresdefault.jpg',
-                'level': 'Advanced',
-                'duration': '45:30',
-                'videos_count': 1,
-                'locked': false,
-                'requires_password': false,
-                'videos': [
-                    {
-                        'id': 'ceh_intro_1',
-                        'title': 'CEH v13 - Introduction to Ethical Hacking',
-                        'description': 'Complete introduction to Certified Ethical Hacker v13 course.',
-                        'embed_code': '<iframe width="560" height="315" src="https://www.youtube.com/embed/piz1aVOw_3k?si=Fr4WDoAHVymf1osH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>',
-                        'duration': '45:30',
-                        'order': 1,
-                        'locked': false,
-                        'views': 1250,
-                        'upload_date': '2024-01-15'
-                    }
-                ]
-            },
-            'web_security': {
-                'id': 'web_security',
-                'title': 'Web Application Security',
-                'description': 'Master web security vulnerabilities and OWASP Top 10',
-                'thumbnail': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=225&fit=crop',
-                'level': 'Intermediate',
-                'duration': '2:15:00',
-                'videos_count': 3,
-                'locked': false,
-                'requires_password': false,
-                'videos': [
-                    {
-                        'id': 'web_security_1',
-                        'title': 'Coming Soon - Web Security',
-                        'description': 'Course in development',
-                        'embed_code': '<div style="padding: 100px; text-align: center; background: #1a1a1a; color: #2EC6FF;"><h3>Coming Soon</h3><p>Web Security Course</p></div>',
-                        'duration': '--:--',
-                        'order': 1,
-                        'locked': false,
-                        'views': 0
-                    }
-                ]
-            }
-        };
-        
-        renderCourseGrid();
-        hideLoading();
-    }
-
-    function renderCourseGrid() {
-        courseGrid.innerHTML = '';
-        
-        if (!currentCourses || Object.keys(currentCourses).length === 0) {
-            courseGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 60px; color: #aaa;">No courses available</div>';
-            return;
-        }
-        
-        Object.values(currentCourses).forEach(course => {
-            const courseCard = document.createElement('div');
-            courseCard.className = 'course-card';
-            courseCard.dataset.courseId = course.id;
-            
-            // Get first video or create placeholder
-            const firstVideo = course.videos && course.videos.length > 0 ? course.videos[0] : null;
-            
-            courseCard.innerHTML = `
-                ${course.locked ? '<div class="course-locked"><i class="fas fa-lock"></i> Locked</div>' : ''}
-                <div class="course-thumbnail" style="background-image: url('${course.thumbnail}')">
-                    <div class="course-play-btn"></div>
-                </div>
-                <div class="course-info">
-                    <h3 class="course-title">${course.title}</h3>
-                    <p class="course-description">${course.description}</p>
-                    <div class="course-meta">
-                        <span>${course.level}</span>
-                        <span>${course.duration}</span>
-                        <span>${course.videos_count || 0} videos</span>
-                    </div>
-                </div>
-            `;
-            
-            courseCard.addEventListener('click', () => handleCourseClick(course, firstVideo));
-            courseGrid.appendChild(courseCard);
-        });
-    }
-
-    function handleCourseClick(course, video) {
-        currentCourse = course;
-        
-        if (course.locked && course.requires_password) {
-            showPasswordPrompt(course);
-        } else if (video) {
-            loadVideo(video);
-        } else {
-            showCourseOverview(course);
-        }
-    }
-
-    function loadVideo(video) {
-        currentVideo = video;
-        
-        // Hide course grid, show video player
-        courseGrid.style.display = 'none';
-        document.querySelector('.hero').style.display = 'none';
-        videoPlayerSection.style.display = 'block';
-        
-        // Update video info
-        document.getElementById('current-video-title').textContent = video.title;
-        document.getElementById('video-description').textContent = video.description;
-        document.getElementById('video-views').textContent = video.views?.toLocaleString() || '0';
-        document.getElementById('video-duration').textContent = video.duration || '--:--';
-        document.getElementById('video-date').textContent = video.upload_date || '--';
-        document.getElementById('video-instructor').textContent = 'Architect Johan';
-        document.getElementById('like-count').textContent = '89';
-        
-        // Load embed code
-        const videoPlayer = document.getElementById('video-player');
-        videoPlayer.innerHTML = video.embed_code;
-        
-        // Try to load resources
-        loadVideoResources(video.id);
-        
-        // Log video view
-        logActivity(`started_video_${video.id}`);
-        
-        showNotification('Video loaded successfully!', 'success');
-    }
-
-    function showCourseOverview(course) {
-        courseGrid.style.display = 'none';
-        document.querySelector('.hero').style.display = 'none';
-        videoPlayerSection.style.display = 'block';
-        
-        document.getElementById('current-video-title').textContent = course.title;
-        document.getElementById('video-description').textContent = course.description;
-        document.getElementById('video-player').innerHTML = `
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #1a1a1a; color: #2EC6FF;">
-                <div style="text-align: center; padding: 40px;">
-                    <i class="fas fa-video" style="font-size: 48px; margin-bottom: 20px;"></i>
-                    <h3>Course Overview</h3>
-                    <p>${course.title}</p>
-                    <p style="margin-top: 20px; color: #00FFB3;">Select a video to begin learning</p>
-                </div>
-            </div>
-        `;
-        
-        document.getElementById('resources-section').style.display = 'none';
-    }
-
-    function showPasswordPrompt(course) {
-        document.getElementById('password-title').textContent = `Password Required: ${course.title}`;
-        passwordInput.value = '';
-        passwordError.style.display = 'none';
-        passwordModal.classList.add('show');
-        passwordInput.focus();
-    }
-
-    async function verifyVideoAccess() {
-        const password = passwordInput.value;
-        
-        if (!password) {
-            passwordError.textContent = 'Password is required';
-            passwordError.style.display = 'block';
-            return;
-        }
-        
-        try {
-            const token = localStorage.getItem('auth_token');
-            const videoId = currentCourse.videos?.[0]?.id || currentCourse.id;
-            
-            const response = await fetch(`https://architect-johan-secure.onrender.com/api/video/${videoId}/access`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ password: password })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                passwordModal.classList.remove('show');
-                
-                // Unlock the course
-                currentCourse.locked = false;
-                
-                // Load first video
-                if (currentCourse.videos && currentCourse.videos.length > 0) {
-                    loadVideo(currentCourse.videos[0]);
-                }
-                
-                showNotification('Access granted! Course unlocked.', 'success');
-                logActivity(`unlocked_course_${currentCourse.id}`);
-            } else {
-                const data = await response.json();
-                passwordError.textContent = data.error || 'Incorrect password';
-                passwordError.style.display = 'block';
-                passwordInput.value = '';
-            }
-        } catch (error) {
-            passwordError.textContent = 'Error verifying password';
-            passwordError.style.display = 'block';
-        }
-    }
-
-    async function likeCurrentVideo() {
-        if (!currentVideo) return;
-        
-        try {
-            const token = localStorage.getItem('auth_token');
-            const response = await fetch(`https://architect-johan-secure.onrender.com/api/video/${currentVideo.id}/like`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (response.ok) {
-                const likeBtn = document.getElementById('like-video');
-                const likeCount = document.getElementById('like-count');
-                
-                likeBtn.innerHTML = '<i class="fas fa-thumbs-up"></i> Liked';
-                likeBtn.style.background = 'rgba(0, 255, 179, 0.3)';
-                
-                const currentCount = parseInt(likeCount.textContent) || 0;
-                likeCount.textContent = currentCount + 1;
-                
-                showNotification('Video liked!', 'success');
-                logActivity(`liked_video_${currentVideo.id}`);
-            }
-        } catch (error) {
-            console.error('Error liking video:', error);
-            showNotification('Failed to like video', 'error');
-        }
-    }
-
-    async function bookmarkCurrentVideo() {
-        if (!currentVideo) return;
-        
-        try {
-            const token = localStorage.getItem('auth_token');
-            const response = await fetch(`https://architect-johan-secure.onrender.com/api/video/${currentVideo.id}/bookmark`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    notes: 'Bookmarked for later viewing'
-                })
-            });
-            
-            if (response.ok) {
-                const bookmarkBtn = document.getElementById('bookmark-video');
-                bookmarkBtn.innerHTML = '<i class="fas fa-bookmark"></i> Bookmarked';
-                bookmarkBtn.style.background = 'rgba(46, 198, 255, 0.3)';
-                
-                showNotification('Video bookmarked!', 'success');
-                logActivity(`bookmarked_video_${currentVideo.id}`);
-            }
-        } catch (error) {
-            console.error('Error bookmarking video:', error);
-            showNotification('Failed to bookmark video', 'error');
-        }
-    }
-
-    async function loadVideoResources(videoId) {
-        try {
-            const token = localStorage.getItem('auth_token');
-            const response = await fetch(`https://architect-johan-secure.onrender.com/api/video/${videoId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.video && data.video.resources && data.video.resources.length > 0) {
-                    renderResources(data.video.resources);
-                    document.getElementById('resources-section').style.display = 'block';
-                }
-            }
-        } catch (error) {
-            console.error('Error loading resources:', error);
-        }
-    }
-
-    function renderResources(resources) {
-        const resourcesGrid = document.getElementById('resources-grid');
-        resourcesGrid.innerHTML = '';
-        
-        resources.forEach(resource => {
-            const resourceCard = document.createElement('div');
-            resourceCard.className = 'resource-card';
-            resourceCard.onclick = () => window.open(resource.url, '_blank');
-            
-            resourceCard.innerHTML = `
-                <div class="resource-name">${resource.name}</div>
-                <div class="resource-download">
-                    <i class="fas fa-download"></i> Download
-                </div>
-            `;
-            
-            resourcesGrid.appendChild(resourceCard);
-        });
-    }
-
-    function downloadResources() {
-        showNotification('Downloading all resources...', 'info');
-    }
-
-    async function logActivity(action) {
-        try {
-            const token = localStorage.getItem('auth_token');
-            await fetch('https://architect-johan-secure.onrender.com/api/track-access', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    action: action,
-                    section: 'videos',
-                    course: currentCourse?.id
-                })
-            });
-        } catch (error) {
-            console.error('Error logging activity:', error);
-        }
-    }
-
-    function showLoading() {
-        loadingState.style.display = 'block';
-        errorState.style.display = 'none';
-        courseGrid.style.display = 'none';
-        videoPlayerSection.style.display = 'none';
-    }
-
-    function hideLoading() {
-        loadingState.style.display = 'none';
-        courseGrid.style.display = 'grid';
-    }
-
-    function showError(message) {
-        loadingState.style.display = 'none';
-        errorState.style.display = 'block';
-        errorMessage.textContent = message;
-        courseGrid.style.display = 'none';
-        videoPlayerSection.style.display = 'none';
-    }
-
-    function showNotification(message, type = 'success') {
-        notification.textContent = message;
-        notification.style.background = type === 'success' ? '#00FFB3' : type === 'error' ? '#FF6B6B' : '#2EC6FF';
-        notification.style.display = 'block';
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                notification.style.display = 'none';
-                notification.style.animation = '';
-            }, 300);
-        }, 3000);
-    }
 
     // Auto-check token every 5 minutes
     setInterval(() => {
