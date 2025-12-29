@@ -6,39 +6,32 @@
     <title>Architect Johan — Secure Video Player</title>
     <style>
         /* ===========================================
-           SECURITY BASE STYLES
+           RESET & BASE STYLES
         =========================================== */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-touch-callout: none;
             -webkit-user-select: none;
-            -khtml-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
         }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
+        body {
             background: #000;
+            color: #fff;
             font-family: 'Courier New', monospace;
-            cursor: default;
-        }
-
-        /* Prevent all text selection */
-        *::selection {
-            background: transparent;
-        }
-        *::-moz-selection {
-            background: transparent;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+            top: 0;
+            left: 0;
         }
 
         /* ===========================================
-           SECURITY OVERLAYS
+           SECURITY SCREEN
         =========================================== */
         #security-screen {
             position: fixed;
@@ -47,97 +40,106 @@
             width: 100%;
             height: 100%;
             background: #000;
-            z-index: 2147483647; /* Maximum z-index */
-            display: flex;
+            color: #ff0000;
+            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: #ff0000;
-            font-size: 24px;
+            z-index: 10000;
             text-align: center;
             padding: 20px;
         }
 
-        #security-screen.hidden {
-            display: none;
+        #security-screen.active {
+            display: flex;
+            animation: fadeIn 0.5s ease;
         }
 
-        #invisible-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2147483646;
-            background: transparent;
-            pointer-events: none;
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
-        #watermark-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2147483645;
-            pointer-events: none;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 50px,
-                rgba(255, 0, 0, 0.02) 50px,
-                rgba(255, 0, 0, 0.02) 51px
-            );
-            opacity: 0.1;
+        #security-screen h2 {
+            margin-bottom: 20px;
+            font-size: 28px;
+            color: #ff0000;
+        }
+
+        #security-screen p {
+            margin: 10px 0;
+            font-size: 16px;
+            color: #ff6666;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        #security-screen button {
+            margin-top: 30px;
+            padding: 12px 30px;
+            background: #00ff00;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        #security-screen button:hover {
+            background: #00cc00;
+            transform: scale(1.05);
         }
 
         /* ===========================================
-           VIDEO CONTAINER
+           SECURITY ALERT
         =========================================== */
-        #video-container {
+        #security-alert {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 100;
+            display: none;
+            animation: slideIn 0.3s ease;
+            max-width: 300px;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
         }
 
-        #video-wrapper {
-            width: 100%;
-            height: 100%;
-            max-width: 1280px;
-            max-height: 720px;
-            position: relative;
-            background: #000;
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
         /* ===========================================
            LOADING SCREEN
         =========================================== */
-        #loading-screen {
+        #loading {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: #000;
-            z-index: 1000;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            z-index: 1000;
             color: #00ff00;
         }
 
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #00ff00;
-            border-top: 3px solid transparent;
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(0, 255, 0, 0.3);
+            border-top: 4px solid #00ff00;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin-bottom: 20px;
@@ -148,65 +150,10 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* ===========================================
-           CONTROLS
-        =========================================== */
-        #video-controls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #00ff00;
-            border-radius: 10px;
-            padding: 10px 20px;
-            z-index: 100;
-            display: flex;
-            gap: 15px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        #video-controls:hover {
-            opacity: 1;
-        }
-
-        .control-btn {
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid #00ff00;
+        #loading p {
+            font-size: 18px;
+            margin-top: 10px;
             color: #00ff00;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            transition: all 0.3s;
-        }
-
-        .control-btn:hover {
-            background: rgba(0, 255, 0, 0.2);
-        }
-
-        /* ===========================================
-           SECURITY WARNINGS
-        =========================================== */
-        .security-warning {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 0, 0, 0.8);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-size: 12px;
-            z-index: 100;
-            display: none;
-            animation: warning-blink 1s infinite;
-        }
-
-        @keyframes warning-blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
         }
 
         /* ===========================================
@@ -218,741 +165,957 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 2147483640;
+            background: rgba(0, 0, 0, 0.97);
             display: flex;
             justify-content: center;
             align-items: center;
+            z-index: 2000;
             backdrop-filter: blur(10px);
         }
 
         .password-box {
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(10, 10, 10, 0.95);
             border: 2px solid #00ff00;
             border-radius: 15px;
-            padding: 40px;
-            width: 400px;
+            padding: 50px 40px;
+            width: 450px;
             max-width: 90%;
-            box-shadow: 0 0 50px rgba(0, 255, 0, 0.3);
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
+            animation: scaleIn 0.5s ease;
         }
 
-        .password-title {
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .password-box h2 {
             color: #00ff00;
-            text-align: center;
             margin-bottom: 30px;
             font-size: 24px;
             text-transform: uppercase;
             letter-spacing: 2px;
         }
 
+        .password-box p {
+            color: #00cc00;
+            margin-bottom: 25px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
         .password-input {
             width: 100%;
-            padding: 15px;
-            margin-bottom: 20px;
+            padding: 16px 20px;
+            margin: 20px 0;
             background: rgba(0, 255, 0, 0.1);
             border: 1px solid #00ff00;
             border-radius: 8px;
             color: #00ff00;
-            font-size: 16px;
             font-family: 'Courier New', monospace;
+            font-size: 18px;
             text-align: center;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
+            outline: none;
+            transition: all 0.3s;
         }
 
         .password-input:focus {
-            outline: none;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            background: rgba(0, 255, 0, 0.15);
+            border-color: #00cc00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
         }
 
-        .password-error {
+        .password-input::placeholder {
+            color: rgba(0, 255, 0, 0.5);
+        }
+
+        .error {
             color: #ff0000;
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 14px;
+            margin: 15px 0;
             display: none;
+            font-size: 14px;
+            min-height: 20px;
         }
 
         .password-buttons {
             display: flex;
-            gap: 15px;
             justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
         }
 
         .password-btn {
-            padding: 12px 30px;
+            padding: 14px 35px;
             border: none;
             border-radius: 8px;
-            cursor: pointer;
             font-family: 'Courier New', monospace;
             font-weight: bold;
-            font-size: 14px;
-            min-width: 120px;
+            font-size: 16px;
+            cursor: pointer;
             transition: all 0.3s;
+            min-width: 140px;
         }
 
-        .password-submit {
+        #submit-btn {
             background: #00ff00;
             color: #000;
         }
 
-        .password-submit:hover {
+        #submit-btn:hover {
             background: #00cc00;
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
         }
 
-        .password-cancel {
+        #cancel-btn {
             background: rgba(255, 0, 0, 0.1);
             color: #ff0000;
             border: 1px solid #ff0000;
         }
 
-        .password-cancel:hover {
+        #cancel-btn:hover {
             background: rgba(255, 0, 0, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.2);
         }
 
         /* ===========================================
-           INFO DISPLAY
+           VIDEO CONTAINER
         =========================================== */
-        #video-info {
+        #video-container {
             position: fixed;
-            top: 10px;
-            left: 10px;
-            color: #00ff00;
-            font-size: 12px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            z-index: 100;
+        }
+
+        #video-container.active {
+            display: flex;
+        }
+
+        .video-wrapper {
+            width: 95%;
+            max-width: 1400px;
+            height: 85vh;
+            position: relative;
+            background: #000;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+        }
+
+        /* ===========================================
+           CONTROLS
+        =========================================== */
+        #controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 1px solid #00ff00;
+            display: none;
+            gap: 15px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 200;
+            backdrop-filter: blur(10px);
+        }
+
+        #controls.active {
+            display: flex;
+        }
+
+        #controls:hover {
+            opacity: 1;
+        }
+
+        .control-btn {
+            background: rgba(0, 255, 0, 0.9);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            background: #00cc00;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.3);
+        }
+
+        /* ===========================================
+           WATERMARK
+        =========================================== */
+        #watermark {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            color: rgba(255, 255, 255, 0.08);
+            font-size: 11px;
             z-index: 50;
+            pointer-events: none;
+            font-family: monospace;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ===========================================
+           PROGRESS INDICATOR
+        =========================================== */
+        #progress-indicator {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(0, 255, 0, 0.7);
+            font-size: 12px;
+            z-index: 150;
             background: rgba(0, 0, 0, 0.5);
             padding: 5px 10px;
             border-radius: 3px;
             display: none;
         }
+
+        /* ===========================================
+           RESPONSIVE DESIGN
+        =========================================== */
+        @media (max-width: 768px) {
+            .password-box {
+                padding: 40px 25px;
+                width: 90%;
+            }
+            
+            .password-box h2 {
+                font-size: 20px;
+            }
+            
+            .password-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .password-btn {
+                width: 100%;
+                min-width: auto;
+            }
+            
+            #controls {
+                bottom: 20px;
+                padding: 12px 20px;
+                gap: 10px;
+            }
+            
+            .control-btn {
+                padding: 10px 18px;
+                font-size: 13px;
+            }
+            
+            .video-wrapper {
+                width: 98%;
+                height: 75vh;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .password-box {
+                padding: 30px 20px;
+            }
+            
+            .password-box h2 {
+                font-size: 18px;
+                margin-bottom: 20px;
+            }
+            
+            .password-input {
+                padding: 14px 16px;
+                font-size: 16px;
+            }
+            
+            #controls {
+                flex-direction: column;
+                bottom: 15px;
+                padding: 10px 15px;
+            }
+            
+            .control-btn {
+                padding: 10px;
+                font-size: 12px;
+                justify-content: center;
+            }
+            
+            #security-alert {
+                left: 10px;
+                right: 10px;
+                top: 10px;
+                text-align: center;
+            }
+        }
+
+        /* ===========================================
+           HIDDEN ELEMENTS
+        =========================================== */
+        .hidden {
+            display: none !important;
+        }
     </style>
-    <!-- No external dependencies -->
 </head>
 <body>
-    <!-- Security Screen (Shows when recording/screenshot detected) -->
+    <!-- Security Screen (Only shows on confirmed violations) -->
     <div id="security-screen">
-        <div style="margin-bottom: 30px; font-size: 48px;">⚠️</div>
-        <h2 style="margin-bottom: 20px;">SECURITY VIOLATION DETECTED</h2>
-        <p style="margin-bottom: 10px; font-size: 18px;">Screen recording or screenshot detected</p>
-        <p style="font-size: 14px; opacity: 0.8;">Video playback has been suspended</p>
-        <p style="font-size: 12px; margin-top: 30px; opacity: 0.6;">This incident has been logged</p>
+        <div style="font-size: 60px; margin-bottom: 20px;">⚠️</div>
+        <h2>SECURITY ALERT</h2>
+        <p>Potential screen recording activity detected.</p>
+        <p>Video playback has been temporarily suspended.</p>
+        <p style="font-size: 14px; color: #999; margin-top: 20px;">
+            If this is a mistake, click below to resume playback.
+        </p>
+        <button onclick="resetSecurity()">RESUME PLAYBACK</button>
     </div>
 
-    <!-- Invisible overlay for event blocking -->
-    <div id="invisible-overlay"></div>
+    <!-- Security Alert (Small warning notifications) -->
+    <div id="security-alert"></div>
 
-    <!-- Watermark overlay -->
-    <div id="watermark-overlay"></div>
-
-    <!-- Loading screen -->
-    <div id="loading-screen">
-        <div class="loading-spinner"></div>
-        <p>Initializing secure video player...</p>
-        <p style="font-size: 12px; margin-top: 10px; opacity: 0.7;">Security systems: ONLINE</p>
+    <!-- Loading Screen -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Initializing Secure Video Player...</p>
+        <p style="font-size: 14px; color: #00cc00; margin-top: 10px;">
+            Loading encryption protocols...
+        </p>
     </div>
 
-    <!-- Password modal -->
+    <!-- Password Modal -->
     <div id="password-modal">
         <div class="password-box">
-            <h3 class="password-title">Secure Access Required</h3>
-            <input type="password" class="password-input" id="video-password" 
-                   placeholder="Enter security passcode" autocomplete="off" spellcheck="false">
-            <div class="password-error" id="password-error">Access denied</div>
+            <h2>🔒 SECURE VIDEO ACCESS</h2>
+            <p>This content is protected. Enter the security password to continue.</p>
+            <input type="password" 
+                   class="password-input" 
+                   id="password-input" 
+                   placeholder="Enter security password"
+                   autocomplete="off"
+                   spellcheck="false"
+                   autocapitalize="off"
+                   autocorrect="off">
+            <div class="error" id="password-error"></div>
             <div class="password-buttons">
-                <button class="password-btn password-cancel" id="password-cancel">Cancel</button>
-                <button class="password-btn password-submit" id="password-submit">Decrypt Video</button>
+                <button class="password-btn" id="submit-btn">🔓 UNLOCK VIDEO</button>
+                <button class="password-btn" id="cancel-btn">✖ CANCEL</button>
             </div>
         </div>
     </div>
 
-    <!-- Video container -->
+    <!-- Video Container -->
     <div id="video-container">
-        <div id="video-wrapper">
-            <!-- Video will be loaded here -->
+        <div class="video-wrapper" id="video-wrapper">
+            <!-- Video embed will be loaded here -->
         </div>
     </div>
 
-    <!-- Video controls -->
-    <div id="video-controls">
-        <button class="control-btn" id="play-btn">▶ Play</button>
-        <button class="control-btn" id="pause-btn">⏸ Pause</button>
-        <button class="control-btn" id="fullscreen-btn">⛶ Fullscreen</button>
-        <button class="control-btn" id="logout-btn">🚪 Exit</button>
+    <!-- Controls -->
+    <div id="controls">
+        <button class="control-btn" onclick="toggleFullscreen()">
+            <span style="font-size: 16px;">⛶</span> Fullscreen
+        </button>
+        <button class="control-btn" onclick="logout()">
+            <span style="font-size: 16px;">🚪</span> Exit Player
+        </button>
     </div>
 
-    <!-- Security warning -->
-    <div class="security-warning" id="security-warning"></div>
+    <!-- Watermark -->
+    <div id="watermark"></div>
 
-    <!-- Video info -->
-    <div id="video-info"></div>
+    <!-- Progress Indicator -->
+    <div id="progress-indicator">Security: Initializing...</div>
 
     <script>
     // ===========================================
-    // SECURITY CONFIGURATION
+    // CONFIGURATION
     // ===========================================
-    const SECURITY = {
-        API_URL: 'https://architect-johan-secure.onrender.com',
-        VIDEO_ID: 'ceh_v13_main',
-        MAX_ATTEMPTS: 3,
-        SESSION_TIMEOUT: 3600, // 1 hour
-        CHECK_INTERVAL: 1000, // Security checks every second
-        BLACKSCREEN_DELAY: 500 // Delay before black screen
-    };
-
-    // ===========================================
-    // SECURITY STATE
-    // ===========================================
-    let securityState = {
-        violations: 0,
-        recordingDetected: false,
-        screenshotDetected: false,
-        devToolsOpen: false,
-        accessToken: null,
+    const API_URL = 'https://architect-johan-secure.onrender.com';
+    const APP_STATE = {
+        // Security state
+        sessionToken: null,
         videoLoaded: false,
-        lastActivity: Date.now()
+        securityEnabled: false,
+        securityLevel: 0, // 0 = off, 1 = low, 2 = medium, 3 = high
+        violationCount: 0,
+        maxViolations: 5,
+        lastCheckTime: Date.now(),
+        checkInterval: null,
+        
+        // UI state
+        controlsVisible: false,
+        controlsTimeout: null,
+        mouseActivity: true,
+        fullscreen: false,
+        
+        // Performance
+        checksPerformed: 0,
+        lastReset: Date.now()
     };
 
     // ===========================================
-    // CORE SECURITY FUNCTIONS
+    // SECURITY FUNCTIONS (GRADUAL ACTIVATION)
     // ===========================================
     
-    // Block ALL keyboard shortcuts
-    function blockAllShortcuts() {
-        const blockedKeys = new Set([
-            112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, // F1-F12
-            44, 45, 46, // Print Screen, Insert, Delete
-            91, 92, 93, // Windows/Command keys
-            144, 145 // Num Lock, Scroll Lock
-        ]);
+    function initializeSecurity() {
+        console.log("🔒 Initializing security system...");
+        
+        // Phase 1: Basic protection (immediate)
+        setupBasicProtection();
+        
+        // Phase 2: Enhanced protection (after 5 seconds)
+        setTimeout(() => {
+            if (APP_STATE.videoLoaded) {
+                enableEnhancedProtection();
+            }
+        }, 5000);
+        
+        // Phase 3: Full protection (after 30 seconds)
+        setTimeout(() => {
+            if (APP_STATE.videoLoaded) {
+                enableFullProtection();
+            }
+        }, 30000);
+        
+        // Update progress indicator
+        updateProgressIndicator("Security: Basic protection active");
+    }
 
+    function setupBasicProtection() {
+        console.log("🛡️ Setting up basic protection");
+        APP_STATE.securityLevel = 1;
+        
+        // Block common shortcuts
         document.addEventListener('keydown', function(e) {
-            // Block Ctrl, Alt, Shift combinations
-            if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) {
-                e.preventDefault();
-                e.stopPropagation();
-                logSecurityEvent('keyboard_shortcut_blocked', { key: e.key, code: e.keyCode });
-                return false;
+            // Only block when security is at least level 1
+            if (APP_STATE.securityLevel >= 1) {
+                // Block Print Screen
+                if (e.key === 'PrintScreen' || e.keyCode === 44) {
+                    e.preventDefault();
+                    showSecurityAlert("Screenshots are disabled");
+                    return false;
+                }
             }
-
-            // Block specific keys
-            if (blockedKeys.has(e.keyCode)) {
-                e.preventDefault();
-                e.stopPropagation();
-                logSecurityEvent('function_key_blocked', { key: e.key, code: e.keyCode });
-                return false;
-            }
-
-            // Block DevTools shortcuts
-            if ((e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) ||
-                (e.ctrlKey && e.keyCode === 85)) {
-                e.preventDefault();
-                e.stopPropagation();
-                showSecurityAlert('Developer tools are disabled');
-                return false;
-            }
-        }, true);
-    }
-
-    // Block ALL mouse events
-    function blockMouseEvents() {
-        const overlay = document.getElementById('invisible-overlay');
+        });
         
-        overlay.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            logSecurityEvent('right_click_blocked');
-            return false;
-        }, true);
-
-        overlay.addEventListener('mousedown', function(e) {
-            if (e.button === 2) { // Right click
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-        }, true);
+        // Add basic watermark
+        updateWatermark();
+        
+        // Start basic monitoring
+        APP_STATE.checkInterval = setInterval(performSecurityCheck, 10000); // Check every 10 seconds
     }
 
-    // Detect screen recording/screenshots
-    function setupRecordingDetection() {
-        // Method 1: Detect display capture API
-        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-            const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
-            navigator.mediaDevices.getDisplayMedia = function(constraints) {
-                logSecurityEvent('screen_capture_attempted');
-                showBlackScreen();
-                return Promise.reject(new Error('Screen capture not allowed'));
-            };
-        }
+    function enableEnhancedProtection() {
+        if (APP_STATE.securityLevel >= 2) return;
+        
+        console.log("🛡️🔒 Enabling enhanced protection");
+        APP_STATE.securityLevel = 2;
+        
+        // Block more shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (APP_STATE.securityLevel >= 2) {
+                // Block F12
+                if (e.key === 'F12' || e.keyCode === 123) {
+                    e.preventDefault();
+                    showSecurityAlert("Developer tools are restricted");
+                    return false;
+                }
+                
+                // Block Ctrl+Shift+I/J/C
+                if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) {
+                    e.preventDefault();
+                    showSecurityAlert("Inspection tools are blocked");
+                    return false;
+                }
+            }
+        });
+        
+        // Block right-click
+        document.addEventListener('contextmenu', function(e) {
+            if (APP_STATE.securityLevel >= 2) {
+                e.preventDefault();
+                showSecurityAlert("Right-click is disabled");
+                return false;
+            }
+        });
+        
+        updateProgressIndicator("Security: Enhanced protection active");
+    }
 
-        // Method 2: Detect fullscreen changes
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-
-        // Method 3: Visibility API detection
+    function enableFullProtection() {
+        if (APP_STATE.securityLevel >= 3) return;
+        
+        console.log("🛡️🔒🛡️ Enabling full protection");
+        APP_STATE.securityLevel = 3;
+        
+        // Tab switching detection
         document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                logSecurityEvent('tab_hidden');
-                showBlackScreen();
-            }
-        });
-
-        // Method 4: Detect known recording extensions
-        detectRecordingExtensions();
-    }
-
-    function handleFullscreenChange() {
-        if (!document.fullscreenElement && 
-            !document.webkitFullscreenElement && 
-            !document.mozFullScreenElement && 
-            !document.msFullscreenElement) {
-            logSecurityEvent('fullscreen_exit_detected');
-            setTimeout(() => {
-                if (!document.fullscreenElement && securityState.videoLoaded) {
-                    showBlackScreen();
-                }
-            }, 100);
-        }
-    }
-
-    function detectRecordingExtensions() {
-        const knownExtensions = [
-            'screen-recorder',
-            'screenshot',
-            'record',
-            'capture',
-            'nimbus',
-            'lighthshot',
-            'awesome',
-            'picpick',
-            'sharex',
-            'greenshot'
-        ];
-
-        // Check for extension injection
-        knownExtensions.forEach(ext => {
-            const testElement = document.createElement('div');
-            testElement.className = ext + '-test';
-            document.body.appendChild(testElement);
-            
-            setTimeout(() => {
-                const styles = window.getComputedStyle(testElement);
-                if (styles.display === 'none' || styles.visibility === 'hidden') {
-                    logSecurityEvent('recording_extension_detected', { extension: ext });
-                    showBlackScreen();
-                }
-                testElement.remove();
-            }, 100);
-        });
-    }
-
-    // Detect Developer Tools
-    function detectDevTools() {
-        const widthThreshold = window.outerWidth - window.innerWidth > 160;
-        const heightThreshold = window.outerHeight - window.innerHeight > 160;
-        
-        if (widthThreshold || heightThreshold) {
-            if (!securityState.devToolsOpen) {
-                securityState.devToolsOpen = true;
-                logSecurityEvent('devtools_opened');
-                showBlackScreen();
-            }
-        } else {
-            securityState.devToolsOpen = false;
-        }
-    }
-
-    // Show black screen
-    function showBlackScreen() {
-        securityState.recordingDetected = true;
-        const securityScreen = document.getElementById('security-screen');
-        securityScreen.classList.remove('hidden');
-        
-        // Hide video
-        document.getElementById('video-wrapper').innerHTML = '';
-        
-        // Log violation
-        securityState.violations++;
-        logSecurityEvent('security_violation', {
-            type: 'screen_capture',
-            violations: securityState.violations
-        });
-        
-        // Send to server
-        fetch(`${SECURITY.API_URL}/api/security/log-event`, {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                event_type: 'screen_capture_detected',
-                event_data: {
-                    violations: securityState.violations,
-                    timestamp: new Date().toISOString()
-                },
-                severity: 'high'
-            })
-        }).catch(() => {});
-        
-        // Lock further access if too many violations
-        if (securityState.violations >= 3) {
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('video_access_token');
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 3000);
-        }
-    }
-
-    // Hide black screen
-    function hideBlackScreen() {
-        const securityScreen = document.getElementById('security-screen');
-        securityScreen.classList.add('hidden');
-    }
-
-    // Add dynamic watermark
-    function addDynamicWatermark() {
-        const userId = localStorage.getItem('user_id') || 'unknown';
-        const watermark = document.getElementById('watermark-overlay');
-        
-        // Create canvas for dynamic watermark
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        
-        function drawWatermark() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw timestamp
-            const now = new Date();
-            const timestamp = now.toISOString();
-            const text = `USER:${userId} | ${timestamp} | ${window.location.hostname}`;
-            
-            ctx.font = '14px monospace';
-            ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
-            ctx.textAlign = 'center';
-            
-            // Draw text in grid pattern
-            for (let x = 100; x < canvas.width; x += 300) {
-                for (let y = 100; y < canvas.height; y += 100) {
-                    ctx.fillText(text, x, y);
+            if (APP_STATE.securityLevel >= 3 && document.hidden) {
+                APP_STATE.violationCount++;
+                showSecurityAlert(`Tab switch detected (${APP_STATE.violationCount}/${APP_STATE.maxViolations})`);
+                
+                if (APP_STATE.violationCount >= APP_STATE.maxViolations) {
+                    triggerSecurityScreen();
                 }
             }
-            
-            // Update watermark overlay
-            watermark.style.backgroundImage = `url(${canvas.toDataURL()})`;
+        });
+        
+        // Fullscreen exit detection
+        document.addEventListener('fullscreenchange', function() {
+            if (APP_STATE.securityLevel >= 3 && !document.fullscreenElement) {
+                APP_STATE.violationCount += 2; // Fullscreen exit is more serious
+                showSecurityAlert(`Fullscreen exit detected (${APP_STATE.violationCount}/${APP_STATE.maxViolations})`);
+                
+                if (APP_STATE.violationCount >= APP_STATE.maxViolations) {
+                    triggerSecurityScreen();
+                }
+            }
+        });
+        
+        updateProgressIndicator("Security: Full protection active");
+    }
+
+    function performSecurityCheck() {
+        if (APP_STATE.securityLevel === 0 || !APP_STATE.videoLoaded) return;
+        
+        APP_STATE.checksPerformed++;
+        
+        // Occasionally check for DevTools (not too often)
+        if (APP_STATE.checksPerformed % 3 === 0) {
+            checkForDevTools();
         }
         
-        // Update watermark every second
-        setInterval(drawWatermark, 1000);
-        drawWatermark();
+        // Reset violation count over time (forgiveness)
+        if (Date.now() - APP_STATE.lastReset > 60000) { // Every minute
+            if (APP_STATE.violationCount > 0) {
+                APP_STATE.violationCount--;
+                APP_STATE.lastReset = Date.now();
+            }
+        }
+    }
+
+    function checkForDevTools() {
+        // Less sensitive check
+        const threshold = 250;
+        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
         
-        // Update on resize
-        window.addEventListener('resize', function() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            drawWatermark();
+        // Only trigger if both width and height indicate DevTools
+        if (widthThreshold && heightThreshold) {
+            APP_STATE.violationCount += 2;
+            showSecurityAlert(`Potential recording detected (${APP_STATE.violationCount}/${APP_STATE.maxViolations})`);
+            
+            if (APP_STATE.violationCount >= APP_STATE.maxViolations) {
+                triggerSecurityScreen();
+            }
+        }
+    }
+
+    function triggerSecurityScreen() {
+        if (!APP_STATE.videoLoaded || APP_STATE.securityLevel === 0) return;
+        
+        console.log("🚨 Triggering security screen");
+        document.getElementById('security-screen').classList.add('active');
+        document.getElementById('video-container').classList.remove('active');
+        document.getElementById('controls').classList.remove('active');
+        
+        // Log the event
+        logSecurityEvent('security_screen_triggered', {
+            level: APP_STATE.securityLevel,
+            violations: APP_STATE.violationCount,
+            checks: APP_STATE.checksPerformed
         });
+    }
+
+    function resetSecurity() {
+        console.log("🔄 Resetting security");
+        document.getElementById('security-screen').classList.remove('active');
+        document.getElementById('video-container').classList.add('active');
+        document.getElementById('controls').classList.add('active');
+        
+        APP_STATE.violationCount = Math.max(0, APP_STATE.violationCount - 2);
+        showSecurityAlert("Security reset. Violations reduced.");
+        
+        logSecurityEvent('security_reset');
+    }
+
+    function showSecurityAlert(message) {
+        const alert = document.getElementById('security-alert');
+        alert.textContent = message;
+        alert.style.display = 'block';
+        
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 3000);
+        
+        console.log("🔔 Security Alert:", message);
+    }
+
+    function updateProgressIndicator(text) {
+        const indicator = document.getElementById('progress-indicator');
+        indicator.textContent = text;
+        indicator.style.display = 'block';
+        
+        // Hide after 5 seconds
+        setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 5000);
     }
 
     // ===========================================
     // VIDEO FUNCTIONS
     // ===========================================
     
-    // Decrypt video from server
-    async function loadVideoFromServer() {
+    async function verifyPassword() {
+        const passwordInput = document.getElementById('password-input');
+        const password = passwordInput.value.trim();
+        const errorElement = document.getElementById('password-error');
+        
+        // Clear previous error
+        errorElement.style.display = 'none';
+        errorElement.textContent = '';
+        
+        if (!password) {
+            errorElement.textContent = 'Password is required';
+            errorElement.style.display = 'block';
+            passwordInput.focus();
+            return;
+        }
+
         try {
             const token = localStorage.getItem('auth_token');
-            if (!token) throw new Error('No authentication token');
-            
-            // Check if user has access
-            const response = await fetch(`${SECURITY.API_URL}/api/security/get-video-token`, {
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Show loading
+            document.getElementById('password-modal').style.display = 'none';
+            document.getElementById('loading').style.display = 'flex';
+
+            const response = await fetch(`${API_URL}/api/secure-video/verify`, {
                 method: 'POST',
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    video_id: SECURITY.VIDEO_ID,
-                    access_token: localStorage.getItem('video_access_token')
-                })
+                body: JSON.stringify({ password: password })
             });
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.embed) {
-                    // Simple XOR decryption
-                    function simpleDecrypt(encrypted, key) {
-                        const decoded = atob(encrypted);
-                        let decrypted = '';
-                        for (let i = 0; i < decoded.length; i++) {
-                            const keyChar = key[i % key.length];
-                            decrypted += String.fromCharCode(decoded.charCodeAt(i) ^ keyChar.charCodeAt(0));
-                        }
-                        return decrypted;
-                    }
-                    
-                    const decrypted = simpleDecrypt(data.embed.encrypted, data.embed.key);
-                    return decrypted;
-                }
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Store session token
+                APP_STATE.sessionToken = data.session_token;
+                localStorage.setItem('video_session_token', data.session_token);
+                
+                // Load the video
+                await loadVideo();
+            } else {
+                // Show error and reset
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('password-modal').style.display = 'flex';
+                
+                errorElement.textContent = data.error || 'Invalid password. Please try again.';
+                errorElement.style.display = 'block';
+                
+                passwordInput.value = '';
+                passwordInput.focus();
+                
+                // Log failed attempt
+                logSecurityEvent('password_failed');
             }
-            return null;
+        } catch (error) {
+            console.error('Password verification error:', error);
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('password-modal').style.display = 'flex';
+            
+            errorElement.textContent = 'Network error. Please check your connection and try again.';
+            errorElement.style.display = 'block';
+        }
+    }
+
+    async function loadVideo() {
+        try {
+            const token = localStorage.getItem('auth_token');
+            if (!token || !APP_STATE.sessionToken) {
+                throw new Error('No authentication token');
+            }
+
+            const response = await fetch(`${API_URL}/api/secure-video/get-embed`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'X-Session-Token': APP_STATE.sessionToken
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Load the video embed
+                document.getElementById('video-wrapper').innerHTML = data.embed;
+                
+                // Update UI
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('video-container').classList.add('active');
+                document.getElementById('controls').classList.add('active');
+                
+                // Update state
+                APP_STATE.videoLoaded = true;
+                
+                // Start security system
+                initializeSecurity();
+                
+                // Update watermark
+                updateWatermark();
+                
+                // Log success
+                logSecurityEvent('video_loaded_successfully');
+                
+                // Show initial message
+                showSecurityAlert('Video loaded. Security system active.');
+            } else {
+                throw new Error(data.error || 'Failed to load video');
+            }
         } catch (error) {
             console.error('Error loading video:', error);
-            return null;
-        }
-    }
-
-    // Display video
-    async function displayVideo() {
-        const videoWrapper = document.getElementById('video-wrapper');
-        const embedCode = await loadVideoFromServer();
-        
-        if (embedCode) {
-            videoWrapper.innerHTML = embedCode;
-            securityState.videoLoaded = true;
-            hideLoadingScreen();
             
-            // Add event listeners to iframe
-            const iframe = videoWrapper.querySelector('iframe');
-            if (iframe) {
-                iframe.onload = function() {
-                    logSecurityEvent('video_loaded');
-                };
-                
-                // Prevent iframe from being accessed
-                Object.defineProperty(iframe, 'src', {
-                    writable: false,
-                    configurable: false
-                });
-            }
-        } else {
-            showPasswordModal();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('password-modal').style.display = 'flex';
+            
+            const errorElement = document.getElementById('password-error');
+            errorElement.textContent = 'Failed to load video. Please try again.';
+            errorElement.style.display = 'block';
+            
+            // Clear session
+            APP_STATE.sessionToken = null;
+            localStorage.removeItem('video_session_token');
         }
-    }
-
-    // ===========================================
-    // AUTHENTICATION & ACCESS
-    // ===========================================
-    
-    function checkAuthentication() {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            window.location.href = 'index.html';
-            return false;
-        }
-        
-        // Verify token with server
-        fetch(`${SECURITY.API_URL}/api/validate-token`, {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + token,
-                'Content-Type': 'application/json'
-            }
-        }).then(response => {
-            if (!response.ok) {
-                localStorage.clear();
-                window.location.href = 'index.html';
-            }
-        }).catch(() => {
-            localStorage.clear();
-            window.location.href = 'index.html';
-        });
-        
-        return true;
     }
 
     // ===========================================
     // UI FUNCTIONS
     // ===========================================
     
-    function showPasswordModal() {
-        document.getElementById('password-modal').style.display = 'flex';
-        document.getElementById('video-password').focus();
-    }
-
-    function hidePasswordModal() {
-        document.getElementById('password-modal').style.display = 'none';
-        document.getElementById('video-password').value = '';
-        document.getElementById('password-error').style.display = 'none';
-    }
-
-    async function verifyPassword() {
-        const password = document.getElementById('video-password').value;
-        const errorElement = document.getElementById('password-error');
+    function updateWatermark() {
+        const user = localStorage.getItem('username') || 'anonymous';
+        const timestamp = new Date().toLocaleString();
+        const watermark = document.getElementById('watermark');
         
-        if (!password) {
-            errorElement.textContent = 'Password required';
-            errorElement.style.display = 'block';
+        watermark.textContent = `SECURE PLAYER | User: ${user} | ${timestamp}`;
+        
+        // Update every minute
+        setInterval(() => {
+            if (APP_STATE.videoLoaded) {
+                const newTimestamp = new Date().toLocaleString();
+                watermark.textContent = `SECURE PLAYER | User: ${user} | ${newTimestamp}`;
+            }
+        }, 60000);
+    }
+
+    function toggleFullscreen() {
+        const container = document.getElementById('video-container');
+        
+        if (!document.fullscreenElement) {
+            // Enter fullscreen
+            if (container.requestFullscreen) {
+                container.requestFullscreen();
+            } else if (container.webkitRequestFullscreen) {
+                container.webkitRequestFullscreen();
+            } else if (container.mozRequestFullScreen) {
+                container.mozRequestFullScreen();
+            } else if (container.msRequestFullscreen) {
+                container.msRequestFullscreen();
+            }
+            
+            APP_STATE.fullscreen = true;
+            showSecurityAlert('Entered fullscreen mode');
+        } else {
+            // Exit fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+            
+            APP_STATE.fullscreen = false;
+            showSecurityAlert('Exited fullscreen mode');
+        }
+    }
+
+    function logout() {
+        if (confirm('Are you sure you want to exit the secure video player?\n\nYour session will be ended.')) {
+            // Clear session
+            APP_STATE.sessionToken = null;
+            APP_STATE.videoLoaded = false;
+            localStorage.removeItem('video_session_token');
+            
+            // Log the event
+            logSecurityEvent('player_exited');
+            
+            // Redirect to home
+            window.location.href = 'home.html';
+        }
+    }
+
+    function logSecurityEvent(event, data = {}) {
+        const timestamp = new Date().toISOString();
+        const userId = localStorage.getItem('username') || 'anonymous';
+        
+        console.log(`[SECURITY LOG] ${timestamp} - ${userId} - ${event}`, data);
+        
+        // Send to server if available
+        fetch(`${API_URL}/api/security/log`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                event: event,
+                user: userId,
+                timestamp: timestamp,
+                data: data
+            })
+        }).catch(error => {
+            console.warn('Failed to log security event to server:', error);
+        });
+    }
+
+    // ===========================================
+    // INITIALIZATION & EVENT LISTENERS
+    // ===========================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("🚀 Secure Video Player Initializing...");
+        
+        // Check authentication
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            alert('Please login first');
+            window.location.href = 'index.html';
             return;
         }
-        
-        try {
-            const token = localStorage.getItem('auth_token');
-            const response = await fetch(`${SECURITY.API_URL}/api/security/verify-video-access`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    video_id: SECURITY.VIDEO_ID,
-                    password: password
-                })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                localStorage.setItem('video_access_token', data.access_token);
-                hidePasswordModal();
-                await displayVideo();
-            } else {
-                const data = await response.json();
-                errorElement.textContent = data.error || 'Access denied';
-                errorElement.style.display = 'block';
-                logSecurityEvent('password_failed');
-            }
-        } catch (error) {
-            errorElement.textContent = 'Network error';
-            errorElement.style.display = 'block';
-        }
-    }
 
-    function showLoadingScreen() {
-        document.getElementById('loading-screen').style.display = 'flex';
-    }
-
-    function hideLoadingScreen() {
-        document.getElementById('loading-screen').style.display = 'none';
-    }
-
-    function showSecurityAlert(message) {
-        const warning = document.getElementById('security-warning');
-        warning.textContent = message;
-        warning.style.display = 'block';
-        
-        setTimeout(() => {
-            warning.style.display = 'none';
-        }, 3000);
-    }
-
-    // ===========================================
-    // LOGGING
-    // ===========================================
-    
-    function logSecurityEvent(eventType, data = {}) {
-        console.log(`[SECURITY] ${eventType}:`, data);
-        
-        // Send to server
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-            fetch(`${SECURITY.API_URL}/api/security/log-event`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    event_type: eventType,
-                    event_data: data,
-                    user_agent: navigator.userAgent,
-                    severity: ['devtools_opened', 'screen_capture_detected'].includes(eventType) ? 'high' : 'medium'
-                })
-            }).catch(() => {});
-        }
-    }
-
-    // ===========================================
-    // INITIALIZATION
-    // ===========================================
-    
-    document.addEventListener('DOMContentLoaded', async function() {
-        // Check authentication
-        if (!checkAuthentication()) return;
-        
-        // Initialize security systems
-        blockAllShortcuts();
-        blockMouseEvents();
-        setupRecordingDetection();
-        addDynamicWatermark();
-        
-        // Start security monitoring
-        setInterval(detectDevTools, SECURITY.CHECK_INTERVAL);
-        
         // Setup event listeners
-        document.getElementById('password-submit').addEventListener('click', verifyPassword);
-        document.getElementById('password-cancel').addEventListener('click', hidePasswordModal);
-        
-        document.getElementById('video-password').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') verifyPassword();
-        });
-        
-        // Setup control buttons
-        document.getElementById('play-btn').addEventListener('click', function() {
-            const iframe = document.querySelector('iframe');
-            if (iframe) iframe.contentWindow.postMessage('{"event":"command","func":"playVideo"}', '*');
-        });
-        
-        document.getElementById('pause-btn').addEventListener('click', function() {
-            const iframe = document.querySelector('iframe');
-            if (iframe) iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo"}', '*');
-        });
-        
-        document.getElementById('fullscreen-btn').addEventListener('click', function() {
-            const videoContainer = document.getElementById('video-container');
-            if (videoContainer.requestFullscreen) {
-                videoContainer.requestFullscreen();
-            } else if (videoContainer.webkitRequestFullscreen) {
-                videoContainer.webkitRequestFullscreen();
-            } else if (videoContainer.mozRequestFullScreen) {
-                videoContainer.mozRequestFullScreen();
-            } else if (videoContainer.msRequestFullscreen) {
-                videoContainer.msRequestFullscreen();
-            }
-        });
-        
-        document.getElementById('logout-btn').addEventListener('click', function() {
-            if (confirm('Exit secure video player?')) {
-                localStorage.removeItem('video_access_token');
+        document.getElementById('submit-btn').addEventListener('click', verifyPassword);
+        document.getElementById('cancel-btn').addEventListener('click', function() {
+            if (confirm('Cancel video access?')) {
                 window.location.href = 'home.html';
             }
         });
         
-        // Auto-hide controls
-        let controlsTimeout;
-        document.addEventListener('mousemove', function() {
-            const controls = document.getElementById('video-controls');
-            controls.style.opacity = '1';
-            clearTimeout(controlsTimeout);
-            controlsTimeout = setTimeout(() => {
-                controls.style.opacity = '0';
-            }, 3000);
+        // Enter key support for password input
+        document.getElementById('password-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                verifyPassword();
+            }
         });
         
-        // Try to load video
-        await displayVideo();
-        
-        // Log page access
-        logSecurityEvent('secure_video_page_loaded');
-    });
+        // Auto-focus password input
+        document.getElementById('password-input').focus();
 
-    // Prevent leaving page
-    window.addEventListener('beforeunload', function(e) {
-        if (securityState.videoLoaded) {
-            e.preventDefault();
-            e.returnValue = 'Video is playing. Are you sure you want to leave?';
-            return e.returnValue;
+        // Controls auto-hide
+        document.addEventListener('mousemove', function() {
+            const controls = document.getElementById('controls');
+            if (controls.classList.contains('active')) {
+                controls.style.opacity = '1';
+                APP_STATE.mouseActivity = true;
+                
+                // Auto-hide after 3 seconds
+                clearTimeout(APP_STATE.controlsTimeout);
+                APP_STATE.controlsTimeout = setTimeout(() => {
+                    if (APP_STATE.mouseActivity) {
+                        controls.style.opacity = '0.3';
+                        APP_STATE.mouseActivity = false;
+                    }
+                }, 3000);
+            }
+        });
+
+        // Check for existing session
+        const sessionToken = localStorage.getItem('video_session_token');
+        if (sessionToken) {
+            APP_STATE.sessionToken = sessionToken;
+            document.getElementById('password-modal').style.display = 'none';
+            document.getElementById('loading').style.display = 'flex';
+            loadVideo();
+        } else {
+            // Show password modal
+            document.getElementById('password-modal').style.display = 'flex';
         }
+
+        // Prevent accidental page close
+        window.addEventListener('beforeunload', function(e) {
+            if (APP_STATE.videoLoaded && APP_STATE.securityLevel > 0) {
+                e.preventDefault();
+                e.returnValue = 'You are watching a secure video. Are you sure you want to leave?';
+            }
+        });
+
+        // Handle fullscreen changes
+        document.addEventListener('fullscreenchange', function() {
+            APP_STATE.fullscreen = !!document.fullscreenElement;
+        });
+
+        // Prevent drag and drop
+        document.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            return false;
+        });
+        
+        document.addEventListener('drop', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        // Prevent text selection
+        document.addEventListener('selectstart', function(e) {
+            if (APP_STATE.securityLevel > 0) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        console.log("✅ Secure Video Player Ready");
     });
 
-    // Clean up on exit
+    // Cleanup on exit
     window.addEventListener('unload', function() {
-        localStorage.removeItem('video_access_token');
-        logSecurityEvent('session_ended');
+        if (APP_STATE.checkInterval) {
+            clearInterval(APP_STATE.checkInterval);
+        }
+        
+        if (APP_STATE.controlsTimeout) {
+            clearTimeout(APP_STATE.controlsTimeout);
+        }
+        
+        logSecurityEvent('player_closed');
     });
     </script>
 </body>
