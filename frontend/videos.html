@@ -29,6 +29,58 @@
             user-select: none;
         }
 
+        /* BLACK SCREEN OVERLAY */
+        #black-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            z-index: 9999999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: #ff0000;
+            text-align: center;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+        }
+
+        #black-screen.active {
+            display: flex;
+            animation: redFlash 2s infinite;
+        }
+
+        @keyframes redFlash {
+            0%, 100% { background: #000000; }
+            50% { background: #1a0000; }
+        }
+
+        .black-screen-text {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #ff0000;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .black-screen-subtext {
+            font-size: 18px;
+            color: #ff4444;
+            margin-bottom: 30px;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        .black-screen-timer {
+            font-size: 48px;
+            color: #ff0000;
+            margin: 30px 0;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+        }
+
         /* Invisible overlay that captures screenshots */
         #screenshot-protection {
             position: fixed;
@@ -40,12 +92,17 @@
             pointer-events: none;
             background: repeating-linear-gradient(
                 45deg,
-                rgba(255, 0, 0, 0.01),
-                rgba(255, 0, 0, 0.01) 10px,
-                rgba(0, 255, 0, 0.01) 10px,
-                rgba(0, 255, 0, 0.01) 20px
+                rgba(255, 0, 0, 0.02),
+                rgba(255, 0, 0, 0.02) 10px,
+                rgba(0, 255, 0, 0.02) 10px,
+                rgba(0, 255, 0, 0.02) 20px
             );
             mix-blend-mode: difference;
+            display: none;
+        }
+
+        #screenshot-protection.active {
+            display: block;
         }
 
         /* Moving watermark that appears in screenshots */
@@ -58,38 +115,26 @@
             pointer-events: none;
             z-index: 999998;
             overflow: hidden;
+            display: none;
+        }
+
+        #dynamic-watermark.active {
+            display: block;
         }
 
         .watermark-text {
             position: absolute;
-            color: rgba(255, 0, 0, 0.15);
+            color: rgba(255, 0, 0, 0.2);
             font-size: 24px;
             font-weight: bold;
             white-space: nowrap;
             animation: watermarkMove 30s linear infinite;
-            text-shadow: 0 0 5px rgba(255, 0, 0, 0.3);
+            text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
         }
 
         @keyframes watermarkMove {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100vw); }
-        }
-
-        /* Blinking dots that appear in screenshots */
-        .screenshot-dot {
-            position: fixed;
-            width: 2px;
-            height: 2px;
-            background: rgba(255, 0, 0, 0.05);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 999997;
-            animation: dotBlink 2s infinite;
-        }
-
-        @keyframes dotBlink {
-            0%, 100% { opacity: 0.1; }
-            50% { opacity: 0.3; }
         }
 
         /* ===========================================
@@ -174,7 +219,7 @@
             width: 100%;
             height: 100%;
             background: #000;
-            display: none; /* Changed from flex to none */
+            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -215,7 +260,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.98);
-            display: none; /* Changed - will be shown when needed */
+            display: none;
             justify-content: center;
             align-items: center;
             z-index: 800000;
@@ -467,6 +512,18 @@
                 width: 98%;
                 height: 85vh;
             }
+            
+            .black-screen-text {
+                font-size: 28px;
+            }
+            
+            .black-screen-subtext {
+                font-size: 16px;
+            }
+            
+            .black-screen-timer {
+                font-size: 36px;
+            }
         }
 
         @media (max-width: 768px) {
@@ -521,6 +578,19 @@
             #security-screen h2 {
                 font-size: 24px;
             }
+            
+            .black-screen-text {
+                font-size: 24px;
+            }
+            
+            .black-screen-subtext {
+                font-size: 14px;
+                padding: 0 20px;
+            }
+            
+            .black-screen-timer {
+                font-size: 28px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -559,6 +629,19 @@
                 font-size: 12px;
                 padding: 8px 12px;
             }
+            
+            .black-screen-text {
+                font-size: 20px;
+            }
+            
+            .black-screen-subtext {
+                font-size: 12px;
+                padding: 0 15px;
+            }
+            
+            .black-screen-timer {
+                font-size: 24px;
+            }
         }
 
         /* ===========================================
@@ -588,6 +671,19 @@
     </style>
 </head>
 <body>
+    <!-- BLACK SCREEN OVERLAY -->
+    <div id="black-screen">
+        <div class="black-screen-text">🚨 SECURITY BREACH DETECTED</div>
+        <div class="black-screen-subtext">
+            Screen capture attempt detected. Video playback has been terminated.
+            This incident has been logged with your user information.
+        </div>
+        <div class="black-screen-timer" id="black-screen-timer">30</div>
+        <div class="black-screen-subtext">
+            Screen will unlock in <span id="countdown">30</span> seconds
+        </div>
+    </div>
+
     <!-- Screenshot Protection Overlay -->
     <div id="screenshot-protection"></div>
     
@@ -659,7 +755,8 @@
             <p style="font-size: 14px; color: #666; margin-top: 30px;">
                 🔒 Screenshot & Recording Protection: ACTIVE<br>
                 📍 Watermarking: ENABLED<br>
-                ⚠️ Security Logging: ENABLED
+                ⚠️ Security Logging: ENABLED<br>
+                🚫 Black Screen on Detection: ACTIVE
             </p>
         </div>
     </div>
@@ -695,8 +792,256 @@
     const STATE = {
         videoLoaded: false,
         sessionToken: null,
-        securityActive: false
+        securityActive: false,
+        blackScreenActive: false,
+        blackScreenTimer: null,
+        violations: 0,
+        maxViolations: 3,
+        securityChecks: []
     };
+
+    // ===========================================
+    // BLACK SCREEN FUNCTIONS
+    // ===========================================
+    function showBlackScreen() {
+        if (STATE.blackScreenActive) return;
+        
+        STATE.blackScreenActive = true;
+        STATE.violations++;
+        
+        // Show black screen
+        document.getElementById('black-screen').classList.add('active');
+        
+        // Hide everything else
+        document.getElementById('video-container').classList.remove('active');
+        document.getElementById('controls').classList.remove('active');
+        
+        // Clear video
+        document.getElementById('video-wrapper').innerHTML = '';
+        
+        // Start countdown
+        let countdown = 30;
+        const timerElement = document.getElementById('black-screen-timer');
+        const countdownElement = document.getElementById('countdown');
+        
+        timerElement.textContent = countdown;
+        countdownElement.textContent = countdown;
+        
+        STATE.blackScreenTimer = setInterval(() => {
+            countdown--;
+            timerElement.textContent = countdown;
+            countdownElement.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearBlackScreen();
+            }
+        }, 1000);
+        
+        // Log the incident
+        logSecurityIncident('black_screen_triggered', `Violation ${STATE.violations}/${STATE.maxViolations}`);
+        
+        console.log(`🚫 BLACK SCREEN ACTIVATED - Violation ${STATE.violations}/${STATE.maxViolations}`);
+    }
+
+    function clearBlackScreen() {
+        if (!STATE.blackScreenActive) return;
+        
+        STATE.blackScreenActive = false;
+        
+        // Hide black screen
+        document.getElementById('black-screen').classList.remove('active');
+        
+        // Clear timer
+        if (STATE.blackScreenTimer) {
+            clearInterval(STATE.blackScreenTimer);
+            STATE.blackScreenTimer = null;
+        }
+        
+        // If too many violations, show security screen
+        if (STATE.violations >= STATE.maxViolations) {
+            document.getElementById('security-screen').classList.add('active');
+        } else {
+            // Show video again after delay
+            setTimeout(() => {
+                if (STATE.videoLoaded && STATE.sessionToken) {
+                    document.getElementById('video-container').classList.add('active');
+                    document.getElementById('controls').classList.add('active');
+                    showSecurityInfo(`⚠️ Screen unlocked. Violations: ${STATE.violations}/${STATE.maxViolations}`);
+                }
+            }, 1000);
+        }
+    }
+
+    // ===========================================
+    // SCREENSHOT DETECTION
+    // ===========================================
+    function initScreenshotDetection() {
+        console.log("🔍 Initializing screenshot detection...");
+        
+        // 1. Block all screenshot shortcuts
+        blockScreenshotShortcuts();
+        
+        // 2. Detect screen recording attempts
+        detectScreenRecording();
+        
+        // 3. Detect DevTools
+        detectDevTools();
+        
+        // 4. Start periodic security checks
+        startSecurityMonitoring();
+        
+        showSecurityInfo('✅ Screenshot protection active');
+    }
+
+    function blockScreenshotShortcuts() {
+        const blockedKeys = new Set([
+            'PrintScreen', 'Snapshot', 'Print',
+            44, // Print Screen key code
+            'F13' // Some systems use F13
+        ]);
+        
+        document.addEventListener('keydown', function(e) {
+            // Print Screen
+            if (blockedKeys.has(e.key) || e.keyCode === 44) {
+                e.preventDefault();
+                e.stopPropagation();
+                triggerBlackScreen('print_screen_key', e.key);
+                return false;
+            }
+            
+            // Windows + Shift + S (Snipping Tool)
+            if ((e.key === 's' || e.key === 'S') && e.shiftKey && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                e.stopPropagation();
+                triggerBlackScreen('snipping_tool', 'Win+Shift+S');
+                return false;
+            }
+            
+            // Alt + Print Screen
+            if (e.key === 'PrintScreen' && e.altKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                triggerBlackScreen('active_window_screenshot', 'Alt+PrintScreen');
+                return false;
+            }
+            
+            // Mac Screenshot (Cmd + Shift + 3/4)
+            if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4')) {
+                e.preventDefault();
+                e.stopPropagation();
+                triggerBlackScreen('mac_screenshot', `Cmd+Shift+${e.key}`);
+                return false;
+            }
+            
+            // F12 / DevTools
+            if (e.key === 'F12' || e.keyCode === 123 || 
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
+                e.preventDefault();
+                e.stopPropagation();
+                triggerBlackScreen('devtools_shortcut', e.key);
+                return false;
+            }
+        }, true);
+        
+        // Also block context menu
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            triggerBlackScreen('right_click', 'Context menu');
+            return false;
+        });
+    }
+
+    function detectScreenRecording() {
+        // Try to detect screen recording APIs
+        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+            const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
+            navigator.mediaDevices.getDisplayMedia = function() {
+                triggerBlackScreen('screen_recording_api', 'getDisplayMedia');
+                return Promise.reject(new Error('Screen recording blocked by security system'));
+            };
+        }
+        
+        // Monitor visibility changes (some recorders hide the window)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && STATE.videoLoaded) {
+                triggerBlackScreen('tab_hidden', 'Tab switched during playback');
+            }
+        });
+        
+        // Monitor fullscreen exit
+        document.addEventListener('fullscreenchange', function() {
+            if (!document.fullscreenElement && STATE.videoLoaded) {
+                setTimeout(() => {
+                    if (!document.fullscreenElement) {
+                        triggerBlackScreen('fullscreen_exit', 'Possible recording software');
+                    }
+                }, 1000);
+            }
+        });
+    }
+
+    function detectDevTools() {
+        // Monitor for DevTools opening
+        setInterval(() => {
+            const widthDiff = Math.abs(window.outerWidth - window.innerWidth);
+            const heightDiff = Math.abs(window.outerHeight - window.innerHeight);
+            
+            if (widthDiff > 200 || heightDiff > 200) {
+                triggerBlackScreen('devtools_detected', 'Window size difference');
+            }
+            
+            // Debugger detection
+            try {
+                const start = Date.now();
+                debugger;
+                const end = Date.now();
+                if (end - start > 100) {
+                    triggerBlackScreen('debugger_active', 'Debugger detected');
+                }
+            } catch (e) {
+                triggerBlackScreen('debugger_exception', 'Debugger active');
+            }
+        }, 2000);
+    }
+
+    function startSecurityMonitoring() {
+        // Periodic security checks
+        setInterval(() => {
+            // Check if page is embedded in iframe
+            if (window.self !== window.top && STATE.videoLoaded) {
+                triggerBlackScreen('iframe_embedding', 'Page loaded in iframe');
+            }
+            
+            // Check for clipboard access attempts
+            if (navigator.clipboard && STATE.videoLoaded) {
+                // We can't directly monitor clipboard, but we can detect focus changes
+            }
+        }, 3000);
+    }
+
+    function triggerBlackScreen(method, details) {
+        if (!STATE.videoLoaded || STATE.blackScreenActive) return;
+        
+        // Add to security checks log
+        STATE.securityChecks.push({
+            method: method,
+            details: details,
+            timestamp: new Date().toISOString()
+        });
+        
+        // Trigger black screen
+        showBlackScreen();
+        
+        // Send to server log
+        sendSecurityLog({
+            type: 'screenshot_attempt',
+            method: method,
+            details: details,
+            violations: STATE.violations,
+            user: localStorage.getItem('username') || 'unknown',
+            timestamp: new Date().toISOString()
+        });
+    }
 
     // ===========================================
     // MAIN INITIALIZATION
@@ -712,7 +1057,7 @@
             return;
         }
         
-        // 2. Immediately show password modal (NOT loading screen)
+        // 2. Immediately show password modal
         document.getElementById('password-modal').style.display = 'flex';
         
         // 3. Setup event listeners
@@ -901,13 +1246,13 @@
                 // Update state
                 STATE.videoLoaded = true;
                 
-                // Initialize basic protection
-                initBasicProtection();
+                // Initialize screenshot detection
+                initScreenshotDetection();
                 
                 // Log success
                 logEvent('video_loaded');
                 
-                showSecurityInfo('✅ Secure video loaded. Protection active.');
+                showSecurityInfo('✅ Secure video loaded. Black screen protection active.');
                 console.log('✅ Video loaded successfully');
             } else {
                 throw new Error(data.error || 'Failed to load video');
@@ -930,45 +1275,6 @@
     }
 
     // ===========================================
-    // BASIC PROTECTION
-    // ===========================================
-    function initBasicProtection() {
-        console.log("🛡️ Initializing basic protection...");
-        
-        // Block right-click
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            showSecurityInfo('⚠️ Right-click disabled');
-            return false;
-        });
-        
-        // Block copy
-        document.addEventListener('copy', function(e) {
-            e.preventDefault();
-            showSecurityInfo('⚠️ Copy disabled');
-            return false;
-        });
-        
-        // Block Print Screen key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'PrintScreen' || e.keyCode === 44) {
-                e.preventDefault();
-                showSecurityInfo('⚠️ Screenshot disabled');
-                return false;
-            }
-            
-            // Block F12 (DevTools)
-            if (e.key === 'F12' || e.keyCode === 123) {
-                e.preventDefault();
-                showSecurityInfo('⚠️ Developer tools disabled');
-                return false;
-            }
-        });
-        
-        showSecurityInfo('✅ Protection active');
-    }
-
-    // ===========================================
     // UI FUNCTIONS
     // ===========================================
     function showError(message) {
@@ -986,7 +1292,7 @@
             setTimeout(() => {
                 const user = localStorage.getItem('username') || 'User';
                 const time = new Date().toLocaleTimeString();
-                info.textContent = `👤 ${user} | 🕒 ${time} | 🔒 Protected`;
+                info.textContent = `👤 ${user} | 🕒 ${time} | 🚫 Black Screen Active`;
                 info.style.color = 'rgba(255, 255, 255, 0.1)';
             }, 3000);
         }
@@ -1028,16 +1334,41 @@
         document.getElementById('security-screen').classList.remove('active');
         document.getElementById('video-container').classList.add('active');
         document.getElementById('controls').classList.add('active');
-        
+        STATE.violations = Math.max(0, STATE.violations - 2);
         showSecurityInfo('✅ Security resumed');
     }
 
     function logEvent(event) {
-        // Simple logging - can be extended to send to server
         console.log(`📝 Event: ${event}`, {
             user: localStorage.getItem('username') || 'unknown',
             time: new Date().toISOString()
         });
+    }
+
+    function logSecurityIncident(method, details) {
+        console.warn(`🚨 Security Incident: ${method} - ${details}`);
+        
+        // Send to server
+        sendSecurityLog({
+            type: 'security_incident',
+            method: method,
+            details: details,
+            user: localStorage.getItem('username') || 'unknown',
+            timestamp: new Date().toISOString(),
+            violations: STATE.violations
+        });
+    }
+
+    async function sendSecurityLog(data) {
+        try {
+            await fetch(`${API_URL}/api/security/log`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        } catch (error) {
+            console.warn('Failed to send security log:', error);
+        }
     }
 
     // ===========================================
