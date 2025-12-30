@@ -570,9 +570,178 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #444;
         }
+
+
+        /* Anti-Screenshot Overlay */
+        .anti-screenshot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(255, 0, 0, 0.1),
+                rgba(255, 0, 0, 0.1) 10px,
+                rgba(0, 0, 0, 0.1) 10px,
+                rgba(0, 0, 0, 0.1) 20px
+            );
+            pointer-events: none;
+            z-index: 999999;
+            opacity: 0.1;
+            display: none;
+        }
+        
+        /* Watermark Overlay */
+        .watermark {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 50px,
+                rgba(0, 255, 0, 0.02) 50px,
+                rgba(0, 255, 0, 0.02) 100px
+            );
+            pointer-events: none;
+            z-index: 999998;
+            opacity: 0.05;
+            display: none;
+        }
+        
+        .watermark-text {
+            position: absolute;
+            color: rgba(255, 0, 0, 0.1);
+            font-size: 20px;
+            font-weight: bold;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+            transform: rotate(-45deg);
+            white-space: nowrap;
+        }
+        
+        /* Detection Overlay */
+        .detection-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.9);
+            z-index: 9999999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        /* Hidden detection elements */
+        .detection-canvas {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+        }
+        
+        /* Copy protection */
+        .copy-protection {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 99999;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        /* Print protection */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .no-print {
+                display: none !important;
+            }
+            body::after {
+                content: "Copyright Protected Content - Architect Johan";
+                visibility: visible;
+                display: block;
+                text-align: center;
+                font-size: 24px;
+                margin-top: 50vh;
+                color: red;
+            }
+        }
+        
+        /* Add to existing security overlay */
+        .security-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 9999999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+
+
+    <!-- Anti-Screenshot Layer -->
+    <div id="anti-screenshot" class="anti-screenshot"></div>
+    
+    <!-- Watermark Layer -->
+    <div id="watermark" class="watermark"></div>
+    
+    <!-- Copy Protection Layer -->
+    <div class="copy-protection"></div>
+    
+    <!-- Detection Canvas (hidden) -->
+    <canvas id="detection-canvas" class="detection-canvas"></canvas>
+    
+    <!-- Detection Overlay -->
+    <div id="detection-overlay" class="detection-overlay">
+        <div>
+            <div style="font-size: 48px; margin-bottom: 20px;">🚫</div>
+            <div id="detection-message">SECURITY VIOLATION DETECTED</div>
+            <p style="font-size: 16px; margin-top: 20px; opacity: 0.8;">
+                Screenshot/Recording attempt blocked
+            </p>
+            <p style="font-size: 12px; margin-top: 10px; opacity: 0.6;">
+                This incident has been logged
+            </p>
+        </div>
+    </div>
+    
+    <!-- Existing Security Overlay -->
+    <div id="security-overlay" class="security-overlay">
+        <div class="security-content">
+            <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+            <div class="security-message">Security Alert</div>
+            <p style="font-size: 14px; margin-top: 20px; color: #ff4444;">
+                Security violation detected.
+            </p>
+        </div>
+    </div>
     <!-- Security Overlay -->
     <div id="security-overlay" class="security-overlay">
         <div class="security-content">
@@ -721,6 +890,656 @@
 <script>
     // ==================== SECURITY FUNCTIONS ====================
     
+
+     // ==================== SCREENSHOT & RECORDING PROTECTION ====================
+        
+        class ScreenProtection {
+            constructor() {
+                this.protectionEnabled = true;
+                this.detectionInterval = null;
+                this.watermarkInterval = null;
+                this.lastCanvasState = null;
+                this.canvas = document.getElementById('detection-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.detectionCount = 0;
+                this.maxDetections = 3;
+                this.API_BASE = 'https://architect-johan-secure.onrender.com';
+                
+                this.init();
+            }
+            
+            init() {
+                if (!this.protectionEnabled) return;
+                
+                // 1. Enable copy protection
+                this.enableCopyProtection();
+                
+                // 2. Start watermark system
+                this.startWatermarkSystem();
+                
+                // 3. Start screenshot detection
+                this.startScreenshotDetection();
+                
+                // 4. Monitor for recording software
+                this.detectRecordingSoftware();
+                
+                // 5. Detect Print Screen key
+                this.detectPrintScreen();
+                
+                // 6. Detect browser dev tools
+                this.detectDevTools();
+                
+                // 7. Monitor clipboard
+                this.monitorClipboard();
+                
+                // 8. Detect screen capture APIs
+                this.detectScreenCaptureAPIs();
+            }
+            
+            // ========== COPY PROTECTION ==========
+            enableCopyProtection() {
+                // Prevent text selection
+                document.addEventListener('selectstart', (e) => {
+                    e.preventDefault();
+                    this.logAttempt('text_selection');
+                    return false;
+                });
+                
+                // Prevent drag and drop
+                document.addEventListener('dragstart', (e) => {
+                    e.preventDefault();
+                    this.logAttempt('drag_drop');
+                    return false;
+                });
+                
+                // Prevent context menu
+                document.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    this.logAttempt('context_menu');
+                    return false;
+                });
+                
+                // Prevent copy
+                document.addEventListener('copy', (e) => {
+                    e.preventDefault();
+                    this.logAttempt('copy_action');
+                    return false;
+                });
+                
+                // Prevent cut
+                document.addEventListener('cut', (e) => {
+                    e.preventDefault();
+                    this.logAttempt('cut_action');
+                    return false;
+                });
+                
+                // Prevent paste
+                document.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    this.logAttempt('paste_action');
+                    return false;
+                });
+                
+                // Add CSS to prevent selection
+                const style = document.createElement('style');
+                style.textContent = `
+                    * {
+                        -webkit-touch-callout: none;
+                        -webkit-user-select: none;
+                        -khtml-user-select: none;
+                        -moz-user-select: none;
+                        -ms-user-select: none;
+                        user-select: none;
+                        cursor: default !important;
+                    }
+                    
+                    input, textarea {
+                        -webkit-user-select: text !important;
+                        user-select: text !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // ========== WATERMARK SYSTEM ==========
+            startWatermarkSystem() {
+                const watermark = document.getElementById('watermark');
+                watermark.style.display = 'block';
+                
+                // Create dynamic watermarks
+                this.createWatermarks();
+                
+                // Update watermarks periodically
+                this.watermarkInterval = setInterval(() => {
+                    this.createWatermarks();
+                }, 5000);
+                
+                // Add invisible watermark to canvas
+                this.addCanvasWatermark();
+            }
+            
+            createWatermarks() {
+                const watermark = document.getElementById('watermark');
+                watermark.innerHTML = '';
+                
+                const texts = [
+                    `Architect Johan - ${this.getUsername()}`,
+                    `Secure Content - ${new Date().toISOString()}`,
+                    'CONFIDENTIAL - DO NOT COPY',
+                    `IP: ${this.getUserIP() || 'Unknown'}`,
+                    `Session: ${this.getSessionId()}`
+                ];
+                
+                // Create multiple watermarks
+                for (let i = 0; i < 50; i++) {
+                    const text = texts[Math.floor(Math.random() * texts.length)];
+                    const watermarkText = document.createElement('div');
+                    watermarkText.className = 'watermark-text';
+                    watermarkText.textContent = text;
+                    
+                    // Random position
+                    const left = Math.random() * 100;
+                    const top = Math.random() * 100;
+                    const rotation = -45 + (Math.random() * 90);
+                    
+                    watermarkText.style.left = `${left}%`;
+                    watermarkText.style.top = `${top}%`;
+                    watermarkText.style.transform = `rotate(${rotation}deg)`;
+                    watermarkText.style.opacity = `${0.05 + Math.random() * 0.1}`;
+                    watermarkText.style.fontSize = `${15 + Math.random() * 20}px`;
+                    
+                    watermark.appendChild(watermarkText);
+                }
+            }
+            
+            addCanvasWatermark() {
+                // Create hidden canvas with watermark
+                const hiddenCanvas = document.createElement('canvas');
+                hiddenCanvas.width = 1000;
+                hiddenCanvas.height = 100;
+                const hiddenCtx = hiddenCanvas.getContext('2d');
+                
+                hiddenCtx.fillStyle = 'rgba(0, 0, 0, 0.01)';
+                hiddenCtx.font = '20px Arial';
+                hiddenCtx.fillText(`Architect Johan - ${this.getUsername()} - ${new Date().toISOString()}`, 10, 50);
+                
+                // Convert to data URL and add as background
+                const dataUrl = hiddenCanvas.toDataURL();
+                document.body.style.backgroundImage = `url(${dataUrl})`;
+                document.body.style.backgroundRepeat = 'repeat';
+                document.body.style.backgroundSize = '1000px 100px';
+                document.body.style.backgroundAttachment = 'fixed';
+            }
+            
+            // ========== SCREENSHOT DETECTION ==========
+            startScreenshotDetection() {
+                // Method 1: Canvas fingerprinting detection
+                this.canvas.width = 100;
+                this.canvas.height = 100;
+                
+                // Draw unique pattern
+                this.ctx.fillStyle = 'rgb(0, 0, 0)';
+                this.ctx.fillRect(0, 0, 100, 100);
+                this.ctx.fillStyle = 'rgb(1, 1, 1)'; // Almost invisible
+                this.ctx.fillRect(50, 50, 1, 1);
+                
+                this.lastCanvasState = this.canvas.toDataURL();
+                
+                // Check canvas periodically
+                this.detectionInterval = setInterval(() => {
+                    this.checkCanvasManipulation();
+                    this.checkVisibilityState();
+                    this.checkWindowEvents();
+                }, 1000);
+                
+                // Method 2: Monitor visibility changes
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        this.logAttempt('tab_hidden');
+                    }
+                });
+                
+                // Method 3: Monitor window blur/focus
+                window.addEventListener('blur', () => {
+                    this.logAttempt('window_blur');
+                });
+                
+                window.addEventListener('focus', () => {
+                    this.checkForScreenshotTools();
+                });
+            }
+            
+            checkCanvasManipulation() {
+                const currentState = this.canvas.toDataURL();
+                if (currentState !== this.lastCanvasState) {
+                    this.detectScreenshot('canvas_manipulation');
+                    this.lastCanvasState = currentState;
+                }
+            }
+            
+            checkVisibilityState() {
+                // Check if page is partially hidden (screenshot tool overlay)
+                if (document.visibilityState === 'hidden' || 
+                    document.hidden || 
+                    document.webkitHidden) {
+                    this.logAttempt('visibility_hidden');
+                }
+            }
+            
+            checkWindowEvents() {
+                // Check for unexpected window events
+                if (window.outerWidth !== window.innerWidth || 
+                    window.outerHeight !== window.innerHeight) {
+                    this.logAttempt('window_resize_detected');
+                }
+            }
+            
+            // ========== RECORDING SOFTWARE DETECTION ==========
+            detectRecordingSoftware() {
+                // Check for common recording software APIs
+                const recordingIndicators = [
+                    'getDisplayMedia' in navigator.mediaDevices,
+                    'getUserMedia' in navigator.mediaDevices,
+                    typeof window.mediaStream !== 'undefined',
+                    typeof window.MediaRecorder !== 'undefined'
+                ];
+                
+                if (recordingIndicators.some(indicator => indicator)) {
+                    this.monitorMediaDevices();
+                }
+                
+                // Detect OBS, Camtasia, etc. by checking for specific window properties
+                setTimeout(() => {
+                    this.checkForRecordingWindows();
+                }, 3000);
+            }
+            
+            monitorMediaDevices() {
+                if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+                    navigator.mediaDevices.addEventListener('devicechange', () => {
+                        this.logAttempt('media_device_change');
+                    });
+                }
+                
+                // Try to access media devices (will trigger permission prompt)
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: false, audio: false })
+                        .then(stream => {
+                            // If we get here without permission prompt, suspicious
+                            stream.getTracks().forEach(track => track.stop());
+                            this.detectRecording('media_access_granted');
+                        })
+                        .catch(() => {
+                            // Normal behavior - permission denied or not requested
+                        });
+                }
+            }
+            
+            checkForRecordingWindows() {
+                // Some recording software leaves traces in window object
+                const recordingSoftwareHints = [
+                    'obsstudio' in window,
+                    'Bandicam' in window,
+                    'Camtasia' in window,
+                    'Fraps' in window,
+                    'NvidiaShadowPlay' in window,
+                    'gamecaster' in window
+                ];
+                
+                if (recordingSoftwareHints.some(hint => hint)) {
+                    this.detectRecording('recording_software_detected');
+                }
+            }
+            
+            // ========== PRINT SCREEN DETECTION ==========
+            detectPrintScreen() {
+                document.addEventListener('keydown', (e) => {
+                    // Detect Print Screen key (44 in keyCode, 'PrintScreen' in code)
+                    if (e.keyCode === 44 || e.code === 'PrintScreen' || 
+                        (e.ctrlKey && e.key === 'p') || 
+                        (e.ctrlKey && e.shiftKey && (e.key === 'S' || e.key === 's'))) {
+                        e.preventDefault();
+                        this.detectScreenshot('print_screen_key');
+                        return false;
+                    }
+                    
+                    // Detect Windows Snip & Sketch (Win + Shift + S)
+                    if (e.key === 's' && e.shiftKey && 
+                        (navigator.platform.includes('Win') && e.getModifierState('Meta'))) {
+                        e.preventDefault();
+                        this.detectScreenshot('windows_snip_tool');
+                        return false;
+                    }
+                    
+                    // Detect Mac screenshot (Cmd + Shift + 3/4)
+                    if ((e.key === '3' || e.key === '4') && e.shiftKey && 
+                        (navigator.platform.includes('Mac') && e.metaKey)) {
+                        e.preventDefault();
+                        this.detectScreenshot('mac_screenshot');
+                        return false;
+                    }
+                });
+            }
+            
+            // ========== DEV TOOLS DETECTION ==========
+            detectDevTools() {
+                // Check for dev tools opening
+                const element = new Image();
+                Object.defineProperty(element, 'id', {
+                    get: () => {
+                        this.logAttempt('devtools_opened');
+                        return '';
+                    }
+                });
+                console.log('%c', element);
+                
+                // Detect console usage
+                const originalConsoleLog = console.log;
+                console.log = function(...args) {
+                    if (args.some(arg => typeof arg === 'string' && 
+                        (arg.includes('screenshot') || arg.includes('record') || arg.includes('capture')))) {
+                        window.screenProtection?.logAttempt('console_screenshot_detected');
+                    }
+                    originalConsoleLog.apply(console, args);
+                };
+                
+                // Detect debugger
+                setInterval(() => {
+                    const start = performance.now();
+                    (function() {
+                        debugger;
+                    })();
+                    const end = performance.now();
+                    if (end - start > 100) {
+                        this.logAttempt('debugger_detected');
+                    }
+                }, 1000);
+            }
+            
+            // ========== CLIPBOARD MONITORING ==========
+            monitorClipboard() {
+                // Monitor clipboard for image data
+                document.addEventListener('paste', (e) => {
+                    const items = e.clipboardData.items;
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i].type.indexOf('image') !== -1) {
+                            this.detectScreenshot('clipboard_image_paste');
+                            break;
+                        }
+                    }
+                });
+                
+                // Try to read clipboard (requires permission)
+                if (navigator.clipboard && navigator.clipboard.read) {
+                    navigator.clipboard.read().then(data => {
+                        for (const item of data) {
+                            if (item.types.includes('image/png') || 
+                                item.types.includes('image/jpeg')) {
+                                this.detectScreenshot('clipboard_image_detected');
+                            }
+                        }
+                    }).catch(() => {
+                        // Permission denied or clipboard empty
+                    });
+                }
+            }
+            
+            // ========== SCREEN CAPTURE API DETECTION ==========
+            detectScreenCaptureAPIs() {
+                // Check for getDisplayMedia (screen sharing)
+                if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+                    // Override to detect usage
+                    const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
+                    navigator.mediaDevices.getDisplayMedia = function(constraints) {
+                        window.screenProtection?.detectRecording('getDisplayMedia_called');
+                        return originalGetDisplayMedia.call(this, constraints);
+                    };
+                }
+                
+                // Check for chrome.desktopCapture (Chrome extension API)
+                if (typeof chrome !== 'undefined' && chrome.desktopCapture) {
+                    this.logAttempt('chrome_desktopCapture_api');
+                }
+                
+                // Check for Firefox screen capture APIs
+                if (typeof window.mozGetUserMedia !== 'undefined') {
+                    this.logAttempt('firefox_screen_capture_api');
+                }
+            }
+            
+            // ========== DETECTION METHODS ==========
+            detectScreenshot(method) {
+                console.warn(`📸 Screenshot detected via: ${method}`);
+                this.showDetectionOverlay('SCREENSHOT ATTEMPT DETECTED');
+                this.logToServer('screenshot', method);
+                this.incrementDetectionCount();
+            }
+            
+            detectRecording(method) {
+                console.warn(`🎥 Screen recording detected via: ${method}`);
+                this.showDetectionOverlay('SCREEN RECORDING DETECTED');
+                this.logToServer('recording', method);
+                this.incrementDetectionCount();
+            }
+            
+            logAttempt(method) {
+                console.log(`🔒 Security event: ${method}`);
+                // Optional: Log minor attempts without blocking
+            }
+            
+            // ========== UI RESPONSE ==========
+            showDetectionOverlay(message) {
+                const overlay = document.getElementById('detection-overlay');
+                const messageEl = document.getElementById('detection-message');
+                
+                if (overlay && messageEl) {
+                    messageEl.textContent = message;
+                    overlay.style.display = 'flex';
+                    
+                    // Show anti-screenshot pattern
+                    document.getElementById('anti-screenshot').style.display = 'block';
+                    
+                    // Hide after delay
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        document.getElementById('anti-screenshot').style.display = 'none';
+                    }, 5000);
+                }
+            }
+            
+            // ========== SERVER LOGGING ==========
+            async logToServer(type, method) {
+                try {
+                    const token = localStorage.getItem('auth_token');
+                    if (!token) return;
+                    
+                    const endpoint = type === 'screenshot' ? 
+                        '/api/security/screenshot-detected' : 
+                        '/api/security/recording-detected';
+                    
+                    const response = await fetch(`${this.API_BASE}${endpoint}`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            method: method,
+                            page_url: window.location.href,
+                            timestamp: new Date().toISOString(),
+                            action: this.detectionCount >= this.maxDetections ? 'block' : 'warn'
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log(`Logged ${type} attempt:`, data);
+                    }
+                } catch (error) {
+                    console.error('Failed to log to server:', error);
+                }
+            }
+            
+            incrementDetectionCount() {
+                this.detectionCount++;
+                
+                if (this.detectionCount >= this.maxDetections) {
+                    // Take serious action
+                    this.takeSeriousAction();
+                }
+            }
+            
+            takeSeriousAction() {
+                // 1. Clear sensitive data
+                localStorage.removeItem('auth_token');
+                sessionStorage.clear();
+                
+                // 2. Redirect to warning page
+                setTimeout(() => {
+                    window.location.href = 'security-warning.html';
+                }, 3000);
+                
+                // 3. Disable further interactions
+                document.body.innerHTML = `
+                    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                         background: black; color: red; display: flex; justify-content: center; 
+                         align-items: center; text-align: center; font-size: 24px; z-index: 10000000;">
+                        <div>
+                            <h1>🚫 SECURITY BREACH DETECTED</h1>
+                            <p>Multiple screenshot/recording attempts detected</p>
+                            <p>Your session has been terminated for security reasons</p>
+                            <p>Redirecting to login...</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // ========== UTILITY METHODS ==========
+            getUsername() {
+                try {
+                    const token = localStorage.getItem('auth_token');
+                    if (token) {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        return payload.username || 'Unknown';
+                    }
+                } catch (e) {}
+                return 'Unknown User';
+            }
+            
+            getUserIP() {
+                // This would need server-side implementation
+                return 'IP Tracking Enabled';
+            }
+            
+            getSessionId() {
+                return Math.random().toString(36).substr(2, 9);
+            }
+            
+            checkForScreenshotTools() {
+                // Check for common screenshot tool windows
+                const toolNames = [
+                    'SnippingTool', 'Snip & Sketch', 'Lightshot', 
+                    'Greenshot', 'ShareX', 'PicPick'
+                ];
+                
+                // This is a basic check - more sophisticated detection would be needed
+                toolNames.forEach(tool => {
+                    if (document.title.includes(tool) || 
+                        navigator.userAgent.includes(tool)) {
+                        this.detectScreenshot(`screenshot_tool_${tool}`);
+                    }
+                });
+            }
+            
+            // ========== CLEANUP ==========
+            destroy() {
+                if (this.detectionInterval) {
+                    clearInterval(this.detectionInterval);
+                }
+                if (this.watermarkInterval) {
+                    clearInterval(this.watermarkInterval);
+                }
+                this.protectionEnabled = false;
+            }
+        }
+        
+        // ==================== MAIN INITIALIZATION ====================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication first
+            if (!checkAuth()) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Initialize screen protection
+            window.screenProtection = new ScreenProtection();
+            
+            // Load course data
+            loadCourseData();
+            loadUserProgress();
+            
+            // Add extra protection for video elements
+            protectVideoElements();
+        });
+        
+        // Add video element protection
+        function protectVideoElements() {
+            // Monitor video elements for recording
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeName === 'VIDEO' || node.nodeName === 'IFRAME') {
+                            protectMediaElement(node);
+                        }
+                    });
+                });
+            });
+            
+            observer.observe(document.body, { childList: true, subtree: true });
+            
+            // Protect existing media elements
+            document.querySelectorAll('video, iframe').forEach(protectMediaElement);
+        }
+        
+        function protectMediaElement(element) {
+            // Add overlay to prevent right-click
+            element.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                window.screenProtection?.logAttempt('video_context_menu');
+                return false;
+            });
+            
+            // Add invisible watermark to video if it's a canvas-based player
+            if (element.nodeName === 'VIDEO') {
+                const canvas = document.createElement('canvas');
+                canvas.style.position = 'absolute';
+                canvas.style.top = '0';
+                canvas.style.left = '0';
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.pointerEvents = 'none';
+                canvas.style.zIndex = '999';
+                canvas.style.opacity = '0.01';
+                
+                element.parentNode.style.position = 'relative';
+                element.parentNode.appendChild(canvas);
+                
+                // Draw watermark on canvas
+                const ctx = canvas.getContext('2d');
+                function drawWatermark() {
+                    canvas.width = element.offsetWidth;
+                    canvas.height = element.offsetHeight;
+                    
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.01)';
+                    ctx.font = '20px Arial';
+                    ctx.fillText(`Architect Johan - ${new Date().toISOString()}`, 10, 30);
+                }
+                
+                element.addEventListener('loadedmetadata', drawWatermark);
+                window.addEventListener('resize', drawWatermark);
+            }
+        }
     // Security: Prevent right-click, F12, Ctrl+Shift+I, Ctrl+U, etc.
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
