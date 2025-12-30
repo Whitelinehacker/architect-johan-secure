@@ -14,7 +14,6 @@ import logging
 import re
 import json
 import base64
-import time
 
 # Try to import MongoDB modules
 try:
@@ -100,11 +99,6 @@ LOCKOUT_TIME = 900  # 15 minutes
 
 # Global MongoClient instance (singleton)
 _mongo_client = None
-
-# Add this after other global variables (around line 60)
-SCREENSHOT_PROTECTION = True
-RECORDING_PROTECTION = True
-
 
 def get_mongo_client():
     """Create MongoDB client connection with simplified SSL"""
@@ -227,40 +221,6 @@ def get_practice_access_collection():
     if db is not None:
         return db.practice_access
     return None
-
-def detect_screenshot_attempt(username):
-    """Log screenshot attempts"""
-    try:
-        logger.warning(f"⚠️ SCREENSHOT ATTEMPT DETECTED: User: {username}")
-        
-        # Log to MongoDB
-        db = get_db()
-        if db is not None:
-            db.security_logs.insert_one({
-                'event': 'screenshot_attempt',
-                'username': username,
-                'timestamp': datetime.datetime.utcnow(),
-                'ip': request.remote_addr if 'request' in globals() else None
-            })
-    except Exception as e:
-        logger.error(f"Error logging screenshot attempt: {e}")
-
-def detect_recording_attempt(username):
-    """Log screen recording attempts"""
-    try:
-        logger.warning(f"⚠️ SCREEN RECORDING ATTEMPT DETECTED: User: {username}")
-        
-        # Log to MongoDB
-        db = get_db()
-        if db is not None:
-            db.security_logs.insert_one({
-                'event': 'screen_recording_attempt',
-                'username': username,
-                'timestamp': datetime.datetime.utcnow(),
-                'ip': request.remote_addr if 'request' in globals() else None
-            })
-    except Exception as e:
-        logger.error(f"Error logging recording attempt: {e}")
 
 def get_video_access_collection():
     """Get video_access collection"""
@@ -1310,97 +1270,6 @@ def login():
         print(f"💥 TRACEBACK: {traceback.format_exc()}")
         logger.error(f"Login error: {e}")
         return jsonify({'error': 'Login failed due to server error'}), 500
-    
-
-@app.route('/api/security/screenshot-detected', methods=['POST'])
-@token_required
-def screenshot_detected(current_user):
-    """Endpoint to report screenshot attempts"""
-    try:
-        data = request.get_json()
-        detection_method = data.get('method', 'unknown')
-        
-        # Log the screenshot attempt
-        logger.warning(f"📸 SCREENSHOT DETECTED: User: {current_user}, Method: {detection_method}")
-        
-        # Store in security logs
-        db = get_db()
-        if db is not None:
-            db.screenshot_logs.insert_one({
-                'username': current_user,
-                'method': detection_method,
-                'timestamp': datetime.datetime.utcnow(),
-                'ip': request.remote_addr,
-                'user_agent': request.headers.get('User-Agent'),
-                'page_url': data.get('page_url', 'unknown')
-            })
-        
-        # Take action based on severity
-        action = data.get('action', 'log')
-        if action == 'warn':
-            # Log user activity with warning
-            log_user_activity(current_user, 'screenshot_warning', request.remote_addr)
-        elif action == 'block':
-            # Can implement blocking logic here
-            log_user_activity(current_user, 'screenshot_blocked', request.remote_addr)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Screenshot attempt logged',
-            'action_taken': action
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Screenshot detection error: {e}")
-        return jsonify({'error': 'Failed to log screenshot'}), 500
-
-@app.route('/api/security/recording-detected', methods=['POST'])
-@token_required
-def recording_detected(current_user):
-    """Endpoint to report screen recording attempts"""
-    try:
-        data = request.get_json()
-        detection_method = data.get('method', 'unknown')
-        
-        # Log the recording attempt
-        logger.warning(f"🎥 SCREEN RECORDING DETECTED: User: {current_user}, Method: {detection_method}")
-        
-        # Store in security logs
-        db = get_db()
-        if db is not None:
-            db.recording_logs.insert_one({
-                'username': current_user,
-                'method': detection_method,
-                'timestamp': datetime.datetime.utcnow(),
-                'ip': request.remote_addr,
-                'user_agent': request.headers.get('User-Agent'),
-                'page_url': data.get('page_url', 'unknown')
-            })
-        
-        # Take action
-        action = data.get('action', 'log')
-        log_user_activity(current_user, f'screen_recording_{action}', request.remote_addr)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Recording attempt logged',
-            'action_taken': action
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Recording detection error: {e}")
-        return jsonify({'error': 'Failed to log recording'}), 500
-
-@app.route('/api/security/get-protection-status', methods=['GET'])
-@token_required
-def get_protection_status(current_user):
-    """Get screenshot/recording protection status"""
-    return jsonify({
-        'success': True,
-        'screenshot_protection': SCREENSHOT_PROTECTION,
-        'recording_protection': RECORDING_PROTECTION,
-        'timestamp': datetime.datetime.utcnow().isoformat()
-    }), 200
 
 # PRACTICE SET & COURSE PASSWORD VERIFICATION - UPDATED
 @app.route('/api/verify-practice-password', methods=['POST'])
