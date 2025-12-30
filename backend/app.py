@@ -233,6 +233,22 @@ def get_user_practice_progress_collection():
         return collection
     return None
 
+def get_video_progress_collection():
+    """Get video_progress collection with indexes"""
+    if not MONGODB_AVAILABLE:
+        return None
+    
+    db = get_db()
+    if db is not None:
+        collection = db.video_progress
+        try:
+            collection.create_index([("username", 1), ("course_id", 1), ("module_id", 1)], unique=True)
+            collection.create_index([("username", 1), ("video_id", 1)], unique=True)
+        except Exception as e:
+            logger.error(f"Error creating index: {e}")
+        return collection
+    return None
+
 # Initialize MongoDB database
 def init_db():
     """Initialize MongoDB collections and indexes"""
@@ -279,6 +295,7 @@ def init_db():
         get_practice_access_collection()
         get_video_access_collection()
         get_user_practice_progress_collection()
+        get_video_progress_collection()
         
         logger.info("✅ MongoDB database initialized successfully")
         return True
@@ -1670,8 +1687,8 @@ def save_video_progress(current_user, video_id):
 
 @app.route('/api/video/<video_id>/progress', methods=['GET'])
 @token_required
-def get_video_progress(current_user, video_id):
-    """Get user's video progress"""
+def get_single_video_progress(current_user, video_id):
+    """Get user's video progress for specific video"""
     try:
         # Get from database if available
         db = get_db()
@@ -1806,317 +1823,8 @@ def log_security_event():
         return jsonify({'error': 'Logging failed'}), 500
 
 # ===========================================
-# FILE SERVING ROUTES
+# COURSE VIDEO ENDPOINTS (NEW)
 # ===========================================
-
-@app.route('/')
-def serve_index():
-    return send_from_directory('../frontend', 'index.html')
-
-@app.route('/<path:path>')
-def serve_static(path):
-    return send_from_directory('../frontend', path)
-
-# Serve assets from different directories
-@app.route('/assets/<path:path>')
-def serve_assets(path):
-    return send_from_directory('../frontend/assets', path)
-
-@app.route('/js/<path:path>')
-def serve_js(path):
-    return send_from_directory('../frontend/js', path)
-
-@app.route('/css/<path:path>')
-def serve_css(path):
-    return send_from_directory('../frontend/css', path)
-
-@app.route('/downloads/<path:filename>')
-def serve_downloads(filename):
-    return send_from_directory('../frontend/downloads', filename)
-
-# Serve profile.html and reset-password.html
-@app.route('/profile.html')
-def serve_profile():
-    return send_from_directory('../frontend', 'profile.html')
-
-@app.route('/reset-password.html')
-def serve_reset_password():
-    return send_from_directory('../frontend', 'reset-password.html')
-
-# HEALTH CHECK ENDPOINT
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    """Health check endpoint for monitoring"""
-    return jsonify({
-        'status': 'healthy',
-        'timestamp': datetime.datetime.utcnow().isoformat(),
-        'database': 'connected' if get_mongo_client() is not None else 'disconnected',
-        'video_endpoints': 'available'
-    }), 200
-
-# Practice Set File Serving Routes
-@app.route('/practic_set.html')
-def serve_practice_set_1():
-    """Serve practice set 1 (with original spelling)"""
-    return send_from_directory('../frontend', 'practic_set.html')
-
-@app.route('/practice_set_1.html')
-def serve_practice_set_1_correct():
-    """Serve practice set 1 with correct spelling"""
-    return send_from_directory('../frontend', 'practice_set_1.html')
-
-@app.route('/practice_set_2.html')
-def serve_practice_set_2():
-    return send_from_directory('../frontend', 'practice_set_2.html')
-
-@app.route('/practice_set_3.html')
-def serve_practice_set_3():
-    return send_from_directory('../frontend', 'practice_set_3.html')
-
-@app.route('/practice_set_4.html')
-def serve_practice_set_4():
-    return send_from_directory('../frontend', 'practice_set_4.html')
-
-@app.route('/practice_set_5.html')
-def serve_practice_set_5():
-    return send_from_directory('../frontend', 'practice_set_5.html')
-
-@app.route('/practice_set_6.html')
-def serve_practice_set_6():
-    return send_from_directory('../frontend', 'practice_set_6.html')
-
-@app.route('/practice_set_7.html')
-def serve_practice_set_7():
-    return send_from_directory('../frontend', 'practice_set_7.html')
-
-@app.route('/practice_set_8.html')
-def serve_practice_set_8():
-    return send_from_directory('../frontend', 'practice_set_8.html')
-
-# Serve video player page
-@app.route('/video-player.html')
-def serve_video_player():
-    return send_from_directory('../frontend', 'video-player.html')
-
-# Serve videos.html
-@app.route('/videos.html')
-def serve_videos():
-    return send_from_directory('../frontend', 'videos.html')
-
-# Catch-all for any other HTML files
-@app.route('/<filename>.html')
-def serve_html_files(filename):
-    """Serve any HTML file from the frontend directory"""
-    try:
-        return send_from_directory('../frontend', f'{filename}.html')
-    except:
-        return "File not found", 404
-
-@app.route('/api/save-practice-progress', methods=['POST'])
-@token_required
-def save_practice_progress(current_user):
-    """Save user progress for practice sets"""
-    try:
-        data = request.get_json()
-        practice_set = data.get('practice_set')
-        current_question = data.get('current_question', 1)
-        user_answers = data.get('user_answers', [])
-        score = data.get('score', 0)
-        completed = data.get('completed', False)
-        
-        if not practice_set:
-            return jsonify({'error': 'Practice set is required'}), 400
-        
-        progress_coll = get_user_practice_progress_collection()
-        if progress_coll is None:
-            return jsonify({'error': 'Database connection failed'}), 500
-        
-        # Upsert practice progress
-        progress_data = {
-            "username": current_user,
-            "practice_set": practice_set,
-            "current_question": current_question,
-            "user_answers": user_answers,
-            "score": score,
-            "completed": completed,
-            "last_updated": datetime.datetime.utcnow()
-        }
-        
-        result = progress_coll.update_one(
-            {
-                "username": current_user,
-                "practice_set": practice_set
-            },
-            {
-                "$set": progress_data,
-                "$setOnInsert": {"created_at": datetime.datetime.utcnow()}
-            },
-            upsert=True
-        )
-        
-        return jsonify({
-            'success': True,
-            'message': 'Progress saved successfully'
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Save progress error: {e}")
-        return jsonify({'error': 'Failed to save progress'}), 500
-
-@app.route('/api/get-practice-progress', methods=['GET'])
-@token_required
-def get_practice_progress(current_user):
-    """Get user progress for all practice sets"""
-    try:
-        progress_coll = get_user_practice_progress_collection()
-        if progress_coll is None:
-            return jsonify({'error': 'Database connection failed'}), 500
-        
-        cursor = progress_coll.find(
-            {"username": current_user}
-        ).sort("practice_set", 1)
-        
-        progress_data = []
-        for doc in cursor:
-            doc.pop('_id', None)
-            progress_data.append(doc)
-        
-        # Format the response
-        progress = {}
-        for row in progress_data:
-            progress[row['practice_set']] = {
-                'current_question': row.get('current_question', 1),
-                'user_answers': row.get('user_answers', []),
-                'score': row.get('score', 0),
-                'completed': row.get('completed', False),
-                'last_updated': row.get('last_updated', datetime.datetime.utcnow()).isoformat()
-            }
-        
-        return jsonify({
-            'success': True,
-            'progress': progress
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Get progress error: {e}")
-        return jsonify({'error': 'Failed to get progress'}), 500
-
-@app.route('/api/reset-practice-progress', methods=['POST'])
-@token_required
-def reset_practice_progress(current_user):
-    """Reset user progress for a practice set"""
-    try:
-        data = request.get_json()
-        practice_set = data.get('practice_set')
-        
-        if not practice_set:
-            return jsonify({'error': 'Practice set is required'}), 400
-        
-        progress_coll = get_user_practice_progress_collection()
-        if progress_coll is None:
-            return jsonify({'error': 'Database connection failed'}), 500
-        
-        result = progress_coll.delete_one({
-            "username": current_user,
-            "practice_set": practice_set
-        })
-        
-        return jsonify({
-            'success': True,
-            'message': 'Progress reset successfully'
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Reset progress error: {e}")
-        return jsonify({'error': 'Failed to reset progress'}), 500
-
-
-# Add these routes to app.py
-
-@app.route('/api/check-username', methods=['POST'])
-def check_username():
-    """Check if username is available"""
-    try:
-        data = request.get_json()
-        username = data.get('username', '').strip()
-        
-        if not username:
-            return jsonify({'exists': False}), 200
-        
-        # Validate username format
-        if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
-            return jsonify({'exists': False}), 200
-        
-        users_coll = get_users_collection()
-        if users_coll is None:
-            return jsonify({'exists': False}), 200
-        
-        existing_user = users_coll.find_one({"username": username})
-        
-        return jsonify({
-            'exists': existing_user is not None
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Username check error: {e}")
-        return jsonify({'exists': False}), 200
-
-@app.route('/api/check-email', methods=['POST'])
-def check_email():
-    """Check if email is available"""
-    try:
-        data = request.get_json()
-        email = data.get('email', '').strip().lower()
-        
-        if not email:
-            return jsonify({'exists': False}), 200
-        
-        # Validate Gmail format
-        gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
-        if not re.match(gmail_regex, email):
-            return jsonify({'exists': False}), 200
-        
-        users_coll = get_users_collection()
-        if users_coll is None:
-            return jsonify({'exists': False}), 200
-        
-        existing_user = users_coll.find_one({"email": email})
-        
-        return jsonify({
-            'exists': existing_user is not None
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Email check error: {e}")
-        return jsonify({'exists': False}), 200
-
-@app.route('/api/check-mobile', methods=['POST'])
-def check_mobile():
-    """Check if mobile number is available"""
-    try:
-        data = request.get_json()
-        mobile_no = data.get('mobile_no', '').strip()
-        
-        if not mobile_no:
-            return jsonify({'exists': False}), 200
-        
-        # Validate Indian mobile format
-        if not re.match(r'^[6-9]\d{9}$', mobile_no):
-            return jsonify({'exists': False}), 200
-        
-        users_coll = get_users_collection()
-        if users_coll is None:
-            return jsonify({'exists': False}), 200
-        
-        existing_user = users_coll.find_one({"mobile_no": mobile_no})
-        
-        return jsonify({
-            'exists': existing_user is not None
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Mobile check error: {e}")
-        return jsonify({'exists': False}), 200
 
 @app.route('/api/video-library', methods=['GET'])
 @token_required
@@ -2180,62 +1888,6 @@ def get_video_library(current_user):
                     'Web Development',
                     'Automation Scripts'
                 ]
-            },
-            'cybersecurity': {
-                'id': 'cybersecurity',
-                'title': 'Cybersecurity Fundamentals',
-                'description': 'Essential cybersecurity concepts, threats, defenses, and best practices.',
-                'thumbnail': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                'videos_count': 10,
-                'duration': '30 hours',
-                'level': 'Beginner',
-                'locked': False,
-                'requires_password': False,
-                'topics': [
-                    'Security Principles',
-                    'Threat Landscape',
-                    'Cryptography',
-                    'Network Security',
-                    'Incident Response'
-                ]
-            },
-            'linux': {
-                'id': 'linux',
-                'title': 'Linux Administration',
-                'description': 'Complete Linux system administration, command line, and server management.',
-                'thumbnail': 'https://images.unsplash.com/photo-1544654803-b69140b285a1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                'videos_count': 18,
-                'duration': '40 hours',
-                'level': 'Intermediate',
-                'locked': True,
-                'requires_password': True,
-                'password_hint': 'Linux Admin Password',
-                'topics': [
-                    'Linux Basics',
-                    'File Systems',
-                    'User Management',
-                    'Networking',
-                    'Server Administration'
-                ]
-            },
-            'web_security': {
-                'id': 'web_security',
-                'title': 'Web Application Security',
-                'description': 'Web security vulnerabilities, penetration testing, and secure coding practices.',
-                'thumbnail': 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                'videos_count': 14,
-                'duration': '38 hours',
-                'level': 'Advanced',
-                'locked': True,
-                'requires_password': True,
-                'password_hint': 'Web Security Password',
-                'topics': [
-                    'OWASP Top 10',
-                    'SQL Injection',
-                    'XSS Attacks',
-                    'CSRF Protection',
-                    'Secure APIs'
-                ]
             }
         }
         
@@ -2253,7 +1905,7 @@ def get_video_library(current_user):
 def get_course_modules(current_user, course_id):
     """Get all modules for a specific course"""
     try:
-        # Course modules data (you can extend this with MongoDB)
+        # Course modules data
         courses = {
             'ceh_v13': {
                 'id': 'ceh_v13',
@@ -2476,24 +2128,6 @@ def get_course_modules(current_user, course_id):
                 'instructor': 'Architect Johan',
                 'level': 'Advanced',
                 'category': 'Cybersecurity'
-            },
-            'python': {
-                'id': 'python',
-                'title': 'Python Programming Masterclass',
-                'description': 'Complete Python programming course from basics to advanced concepts.',
-                'modules': [
-                    {
-                        'id': 'module_00',
-                        'title': 'Module 00: Python Setup & Introduction',
-                        'description': 'Setting up Python environment and basic concepts.',
-                        'duration': '35:20',
-                        'video_id': 'python_intro',
-                        'order': 0,
-                        'locked': False,
-                        'thumbnail': 'https://img.youtube.com/vi/_uQrJ0TkZlc/maxresdefault.jpg'
-                    }
-                    # Add more Python modules...
-                ]
             }
         }
         
@@ -2509,11 +2143,10 @@ def get_course_modules(current_user, course_id):
     except Exception as e:
         logger.error(f"Course modules error: {e}")
         return jsonify({'error': 'Failed to load course modules'}), 500
-    
 
-@app.route('/api/get-video-progress', methods=['GET'])
+@app.route('/api/course-video-progress', methods=['GET'])
 @token_required
-def get_video_progress(current_user):
+def get_course_video_progress(current_user):
     """Get user's video progress for a course"""
     try:
         course_id = request.args.get('course')
@@ -2521,24 +2154,26 @@ def get_video_progress(current_user):
         # Get from MongoDB
         db = get_db()
         if db is not None:
-            progress_collection = db.video_progress
+            progress_collection = get_video_progress_collection()
             
             # Find user's progress for this course
-            progress_data = progress_collection.find({
-                'username': current_user,
-                'course_id': course_id
-            })
-            
-            completed_modules = []
-            for doc in progress_data:
-                completed_modules.append(doc.get('module_id'))
-            
-            return jsonify({
-                'success': True,
-                'progress': completed_modules
-            }), 200
-        else:
-            return jsonify({'success': True, 'progress': []}), 200
+            if progress_collection is not None:
+                progress_data = progress_collection.find({
+                    'username': current_user,
+                    'course_id': course_id,
+                    'completed': True
+                })
+                
+                completed_modules = []
+                for doc in progress_data:
+                    completed_modules.append(doc.get('module_id'))
+                
+                return jsonify({
+                    'success': True,
+                    'progress': completed_modules
+                }), 200
+        
+        return jsonify({'success': True, 'progress': []}), 200
             
     except Exception as e:
         logger.error(f"Get video progress error: {e}")
@@ -2560,26 +2195,27 @@ def save_module_progress(current_user):
         # Save to MongoDB
         db = get_db()
         if db is not None:
-            progress_collection = db.video_progress
+            progress_collection = get_video_progress_collection()
             
-            progress_collection.update_one(
-                {
-                    'username': current_user,
-                    'course_id': course_id,
-                    'module_id': module_id
-                },
-                {
-                    '$set': {
-                        'completed': completed,
-                        'last_watched': datetime.datetime.utcnow(),
-                        'progress': 100 if completed else 0
+            if progress_collection is not None:
+                progress_collection.update_one(
+                    {
+                        'username': current_user,
+                        'course_id': course_id,
+                        'module_id': module_id
                     },
-                    '$setOnInsert': {
-                        'first_watched': datetime.datetime.utcnow()
-                    }
-                },
-                upsert=True
-            )
+                    {
+                        '$set': {
+                            'completed': completed,
+                            'last_watched': datetime.datetime.utcnow(),
+                            'progress': 100 if completed else 0
+                        },
+                        '$setOnInsert': {
+                            'first_watched': datetime.datetime.utcnow()
+                        }
+                    },
+                    upsert=True
+                )
         
         # Log activity
         log_user_activity(current_user, 
@@ -2609,7 +2245,23 @@ def verify_module_password(current_user):
         module_passwords = {
             'module_02': 'CEH_Module2_2024',
             'module_03': 'CEH_Module3_2024',
-            # Add more module passwords
+            'module_04': 'CEH_Module4_2024',
+            'module_05': 'CEH_Module5_2024',
+            'module_06': 'CEH_Module6_2024',
+            'module_07': 'CEH_Module7_2024',
+            'module_08': 'CEH_Module8_2024',
+            'module_09': 'CEH_Module9_2024',
+            'module_10': 'CEH_Module10_2024',
+            'module_11': 'CEH_Module11_2024',
+            'module_12': 'CEH_Module12_2024',
+            'module_13': 'CEH_Module13_2024',
+            'module_14': 'CEH_Module14_2024',
+            'module_15': 'CEH_Module15_2024',
+            'module_16': 'CEH_Module16_2024',
+            'module_17': 'CEH_Module17_2024',
+            'module_18': 'CEH_Module18_2024',
+            'module_19': 'CEH_Module19_2024',
+            'module_20': 'CEH_Module20_2024'
         }
         
         if module_id in module_passwords:
@@ -2623,21 +2275,345 @@ def verify_module_password(current_user):
     except Exception as e:
         logger.error(f"Module password verification error: {e}")
         return jsonify({'error': 'Verification failed'}), 500
-    
-def get_video_progress_collection():
-    """Get video_progress collection with indexes"""
-    if not MONGODB_AVAILABLE:
-        return None
-    
-    db = get_db()
-    if db is not None:
-        collection = db.video_progress
-        try:
-            collection.create_index([("username", 1), ("course_id", 1), ("module_id", 1)], unique=True)
-        except Exception as e:
-            logger.error(f"Error creating index: {e}")
-        return collection
-    return None
+
+@app.route('/api/track-video-watch', methods=['POST'])
+@token_required
+def track_video_watch(current_user):
+    """Track when user starts watching a video"""
+    try:
+        data = request.get_json()
+        course_id = data.get('course_id')
+        module_id = data.get('module_id')
+        action = data.get('action', 'started_watching')
+        
+        log_user_activity(current_user, f'video_watch_{action}_{course_id}_{module_id}', request.remote_addr)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Video watch tracked'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Track video watch error: {e}")
+        return jsonify({'error': 'Failed to track video watch'}), 500
+
+# ===========================================
+# FILE SERVING ROUTES
+# ===========================================
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('../frontend', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('../frontend', path)
+
+# Serve assets from different directories
+@app.route('/assets/<path:path>')
+def serve_assets(path):
+    return send_from_directory('../frontend/assets', path)
+
+@app.route('/js/<path:path>')
+def serve_js(path):
+    return send_from_directory('../frontend/js', path)
+
+@app.route('/css/<path:path>')
+def serve_css(path):
+    return send_from_directory('../frontend/css', path)
+
+@app.route('/downloads/<path:filename>')
+def serve_downloads(filename):
+    return send_from_directory('../frontend/downloads', filename)
+
+# Serve profile.html and reset-password.html
+@app.route('/profile.html')
+def serve_profile():
+    return send_from_directory('../frontend', 'profile.html')
+
+@app.route('/reset-password.html')
+def serve_reset_password():
+    return send_from_directory('../frontend', 'reset-password.html')
+
+# HEALTH CHECK ENDPOINT
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.datetime.utcnow().isoformat(),
+        'database': 'connected' if get_mongo_client() is not None else 'disconnected',
+        'video_endpoints': 'available'
+    }), 200
+
+# Practice Set File Serving Routes
+@app.route('/practic_set.html')
+def serve_practice_set_1():
+    """Serve practice set 1 (with original spelling)"""
+    return send_from_directory('../frontend', 'practic_set.html')
+
+@app.route('/practice_set_1.html')
+def serve_practice_set_1_correct():
+    """Serve practice set 1 with correct spelling"""
+    return send_from_directory('../frontend', 'practice_set_1.html')
+
+@app.route('/practice_set_2.html')
+def serve_practice_set_2():
+    return send_from_directory('../frontend', 'practice_set_2.html')
+
+@app.route('/practice_set_3.html')
+def serve_practice_set_3():
+    return send_from_directory('../frontend', 'practice_set_3.html')
+
+@app.route('/practice_set_4.html')
+def serve_practice_set_4():
+    return send_from_directory('../frontend', 'practice_set_4.html')
+
+@app.route('/practice_set_5.html')
+def serve_practice_set_5():
+    return send_from_directory('../frontend', 'practice_set_5.html')
+
+@app.route('/practice_set_6.html')
+def serve_practice_set_6():
+    return send_from_directory('../frontend', 'practice_set_6.html')
+
+@app.route('/practice_set_7.html')
+def serve_practice_set_7():
+    return send_from_directory('../frontend', 'practice_set_7.html')
+
+@app.route('/practice_set_8.html')
+def serve_practice_set_8():
+    return send_from_directory('../frontend', 'practice_set_8.html')
+
+# Serve video player page
+@app.route('/video-player.html')
+def serve_video_player():
+    return send_from_directory('../frontend', 'video-player.html')
+
+# Serve videos.html
+@app.route('/videos.html')
+def serve_videos():
+    return send_from_directory('../frontend', 'videos.html')
+
+# Serve course-player.html
+@app.route('/course-player.html')
+def serve_course_player():
+    return send_from_directory('../frontend', 'course-player.html')
+
+# Catch-all for any other HTML files
+@app.route('/<filename>.html')
+def serve_html_files(filename):
+    """Serve any HTML file from the frontend directory"""
+    try:
+        return send_from_directory('../frontend', f'{filename}.html')
+    except:
+        return "File not found", 404
+
+@app.route('/api/save-practice-progress', methods=['POST'])
+@token_required
+def save_practice_progress(current_user):
+    """Save user progress for practice sets"""
+    try:
+        data = request.get_json()
+        practice_set = data.get('practice_set')
+        current_question = data.get('current_question', 1)
+        user_answers = data.get('user_answers', [])
+        score = data.get('score', 0)
+        completed = data.get('completed', False)
+        
+        if not practice_set:
+            return jsonify({'error': 'Practice set is required'}), 400
+        
+        progress_coll = get_user_practice_progress_collection()
+        if progress_coll is None:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        # Upsert practice progress
+        progress_data = {
+            "username": current_user,
+            "practice_set": practice_set,
+            "current_question": current_question,
+            "user_answers": user_answers,
+            "score": score,
+            "completed": completed,
+            "last_updated": datetime.datetime.utcnow()
+        }
+        
+        result = progress_coll.update_one(
+            {
+                "username": current_user,
+                "practice_set": practice_set
+            },
+            {
+                "$set": progress_data,
+                "$setOnInsert": {"created_at": datetime.datetime.utcnow()}
+            },
+            upsert=True
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progress saved successfully'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Save progress error: {e}")
+        return jsonify({'error': 'Failed to save progress'}), 500
+
+@app.route('/api/get-practice-progress', methods=['GET'])
+@token_required
+def get_practice_progress(current_user):
+    """Get user progress for all practice sets"""
+    try:
+        progress_coll = get_user_practice_progress_collection()
+        if progress_coll is None:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        cursor = progress_coll.find(
+            {"username": current_user}
+        ).sort("practice_set", 1)
+        
+        progress_data = []
+        for doc in cursor:
+            doc.pop('_id', None)
+            progress_data.append(doc)
+        
+        # Format the response
+        progress = {}
+        for row in progress_data:
+            progress[row['practice_set']] = {
+                'current_question': row.get('current_question', 1),
+                'user_answers': row.get('user_answers', []),
+                'score': row.get('score', 0),
+                'completed': row.get('completed', False),
+                'last_updated': row.get('last_updated', datetime.datetime.utcnow()).isoformat()
+            }
+        
+        return jsonify({
+            'success': True,
+            'progress': progress
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Get progress error: {e}")
+        return jsonify({'error': 'Failed to get progress'}), 500
+
+@app.route('/api/reset-practice-progress', methods=['POST'])
+@token_required
+def reset_practice_progress(current_user):
+    """Reset user progress for a practice set"""
+    try:
+        data = request.get_json()
+        practice_set = data.get('practice_set')
+        
+        if not practice_set:
+            return jsonify({'error': 'Practice set is required'}), 400
+        
+        progress_coll = get_user_practice_progress_collection()
+        if progress_coll is None:
+            return jsonify({'error': 'Database connection failed'}), 500
+        
+        result = progress_coll.delete_one({
+            "username": current_user,
+            "practice_set": practice_set
+        })
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progress reset successfully'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Reset progress error: {e}")
+        return jsonify({'error': 'Failed to reset progress'}), 500
+
+
+# Add these routes to app.py
+
+@app.route('/api/check-username', methods=['POST'])
+def check_username():
+    """Check if username is available"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        
+        if not username:
+            return jsonify({'exists': False}), 200
+        
+        # Validate username format
+        if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
+            return jsonify({'exists': False}), 200
+        
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return jsonify({'exists': False}), 200
+        
+        existing_user = users_coll.find_one({"username": username})
+        
+        return jsonify({
+            'exists': existing_user is not None
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Username check error: {e}")
+        return jsonify({'exists': False}), 200
+
+@app.route('/api/check-email', methods=['POST'])
+def check_email():
+    """Check if email is available"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'exists': False}), 200
+        
+        # Validate Gmail format
+        gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
+        if not re.match(gmail_regex, email):
+            return jsonify({'exists': False}), 200
+        
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return jsonify({'exists': False}), 200
+        
+        existing_user = users_coll.find_one({"email": email})
+        
+        return jsonify({
+            'exists': existing_user is not None
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Email check error: {e}")
+        return jsonify({'exists': False}), 200
+
+@app.route('/api/check-mobile', methods=['POST'])
+def check_mobile():
+    """Check if mobile number is available"""
+    try:
+        data = request.get_json()
+        mobile_no = data.get('mobile_no', '').strip()
+        
+        if not mobile_no:
+            return jsonify({'exists': False}), 200
+        
+        # Validate Indian mobile format
+        if not re.match(r'^[6-9]\d{9}$', mobile_no):
+            return jsonify({'exists': False}), 200
+        
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return jsonify({'exists': False}), 200
+        
+        existing_user = users_coll.find_one({"mobile_no": mobile_no})
+        
+        return jsonify({
+            'exists': existing_user is not None
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Mobile check error: {e}")
+        return jsonify({'exists': False}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
@@ -2667,6 +2643,3 @@ if __name__ == '__main__':
     print(f"🎥 VIDEO_PASSWORD: {'✅ Set' if os.getenv('VIDEO_PASSWORD') else '❌ Using Default'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
-
-
-
