@@ -2030,6 +2030,94 @@ def reset_practice_progress(current_user):
         logger.error(f"Reset progress error: {e}")
         return jsonify({'error': 'Failed to reset progress'}), 500
 
+
+# Add these routes to app.py
+
+@app.route('/api/check-username', methods=['POST'])
+def check_username():
+    """Check if username is available"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        
+        if not username:
+            return jsonify({'exists': False}), 200
+        
+        # Validate username format
+        if not re.match(r'^[a-zA-Z0-9_]{3,30}$', username):
+            return jsonify({'exists': False}), 200
+        
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return jsonify({'exists': False}), 200
+        
+        existing_user = users_coll.find_one({"username": username})
+        
+        return jsonify({
+            'exists': existing_user is not None
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Username check error: {e}")
+        return jsonify({'exists': False}), 200
+
+@app.route('/api/check-email', methods=['POST'])
+def check_email():
+    """Check if email is available"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'exists': False}), 200
+        
+        # Validate Gmail format
+        gmail_regex = r'^[a-zA-Z0-9.]+@gmail\.com$'
+        if not re.match(gmail_regex, email):
+            return jsonify({'exists': False}), 200
+        
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return jsonify({'exists': False}), 200
+        
+        existing_user = users_coll.find_one({"email": email})
+        
+        return jsonify({
+            'exists': existing_user is not None
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Email check error: {e}")
+        return jsonify({'exists': False}), 200
+
+@app.route('/api/check-mobile', methods=['POST'])
+def check_mobile():
+    """Check if mobile number is available"""
+    try:
+        data = request.get_json()
+        mobile_no = data.get('mobile_no', '').strip()
+        
+        if not mobile_no:
+            return jsonify({'exists': False}), 200
+        
+        # Validate Indian mobile format
+        if not re.match(r'^[6-9]\d{9}$', mobile_no):
+            return jsonify({'exists': False}), 200
+        
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return jsonify({'exists': False}), 200
+        
+        existing_user = users_coll.find_one({"mobile_no": mobile_no})
+        
+        return jsonify({
+            'exists': existing_user is not None
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Mobile check error: {e}")
+        return jsonify({'exists': False}), 200
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -2058,3 +2146,4 @@ if __name__ == '__main__':
     print(f"🎥 VIDEO_PASSWORD: {'✅ Set' if os.getenv('VIDEO_PASSWORD') else '❌ Using Default'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
