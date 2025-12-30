@@ -622,17 +622,17 @@
         }
 
         // Access Course
-        function accessCourse(categoryId) {
-            const category = state.categories[categoryId];
-            if (!category) return;
+       function accessCourse(categoryId) {
+    const category = state.categories[categoryId];
+    if (!category) return;
 
-            if (category.requires_password) {
-                openPasswordModal(category);
-            } else {
-                // Direct access for courses without password
-                window.location.href = `video-player.html?category=${categoryId}`;
-            }
-        }
+    if (category.requires_password) {
+        openPasswordModal(category);
+    } else {
+        // Open course player in new tab
+        window.open(`course-player.html?course=${categoryId}`, '_blank');
+    }
+}
 
         // Request Access
         function requestAccess(categoryId) {
@@ -766,3 +766,4 @@
     </script>
 </body>
 </html>
+
