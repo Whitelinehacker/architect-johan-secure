@@ -1982,7 +1982,7 @@ def get_video_library(current_user):
 def get_course_modules(current_user, course_id):
     """Get all modules for a specific course"""
     try:
-        # Course modules data
+        # Course modules data with embed codes
         courses = {
             'ceh_v13': {
                 'id': 'ceh_v13',
@@ -1997,7 +1997,13 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_intro_1',
                         'order': 0,
                         'locked': False,
-                        'thumbnail': 'https://img.youtube.com/vi/piz1aVOw_3k/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/piz1aVOw_3k/maxresdefault.jpg',
+                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+                            <iframe src="https://geo.dailymotion.com/player.html?video=k6V2CaHv7bDeQlExqG2"
+                                    style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;"
+                                    allowfullscreen title="Dailymotion Video Player"
+                                    allow="web-share"></iframe></div>''',
+                        'requires_password': False
                     },
                     {
                         'id': 'module_01',
@@ -2007,7 +2013,13 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_01',
                         'order': 1,
                         'locked': False,
-                        'thumbnail': 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
+                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+                            <iframe src="https://geo.dailymotion.com/player.html?video=koTNweSut799lhEy9U4"
+                                    style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;"
+                                    allowfullscreen title="Dailymotion Video Player"
+                                    allow="web-share"></iframe></div>''',
+                        'requires_password': False
                     },
                     {
                         'id': 'module_02',
@@ -2017,7 +2029,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_02',
                         'order': 2,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/9bZkp7q19f0/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/9bZkp7q19f0/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module2_2024'
                     },
                     {
                         'id': 'module_03',
@@ -2027,7 +2042,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_03',
                         'order': 3,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/L_jWHffIx5E/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/L_jWHffIx5E/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module3_2024'
                     },
                     {
                         'id': 'module_04',
@@ -2037,7 +2055,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_04',
                         'order': 4,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/CduA0TULnow/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/CduA0TULnow/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module4_2024'
                     },
                     {
                         'id': 'module_05',
@@ -2047,7 +2068,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_05',
                         'order': 5,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/BgxXwKvxY7Y/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/BgxXwKvxY7Y/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module5_2024'
                     },
                     {
                         'id': 'module_06',
@@ -2057,7 +2081,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_06',
                         'order': 6,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/mWRsgZuwf_8/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/mWRsgZuwf_8/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module6_2024'
                     },
                     {
                         'id': 'module_07',
@@ -2067,7 +2094,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_07',
                         'order': 7,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/OPf0YbXqDm0/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/OPf0YbXqDm0/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module7_2024'
                     },
                     {
                         'id': 'module_08',
@@ -2077,7 +2107,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_08',
                         'order': 8,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/7NOSDKb0HlU/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/7NOSDKb0HlU/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module8_2024'
                     },
                     {
                         'id': 'module_09',
@@ -2087,7 +2120,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_09',
                         'order': 9,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/UtNYzv8gLbs/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/UtNYzv8gLbs/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module9_2024'
                     },
                     {
                         'id': 'module_10',
@@ -2097,7 +2133,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_10',
                         'order': 10,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/8SbUC-UaAxE/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/8SbUC-UaAxE/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module10_2024'
                     },
                     {
                         'id': 'module_11',
@@ -2107,7 +2146,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_11',
                         'order': 11,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/3NnUy1Omm_4/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/3NnUy1Omm_4/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module11_2024'
                     },
                     {
                         'id': 'module_12',
@@ -2117,7 +2159,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_12',
                         'order': 12,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/2Vv-BfVoq4g/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/2Vv-BfVoq4g/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module12_2024'
                     },
                     {
                         'id': 'module_13',
@@ -2127,7 +2172,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_13',
                         'order': 13,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/kffacxfA7G4/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/kffacxfA7G4/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module13_2024'
                     },
                     {
                         'id': 'module_14',
@@ -2137,7 +2185,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_14',
                         'order': 14,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/fLexgOhs2SM/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/fLexgOhs2SM/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module14_2024'
                     },
                     {
                         'id': 'module_15',
@@ -2147,7 +2198,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_15',
                         'order': 15,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/ciNHn38EyRc/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/ciNHn38EyRc/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module15_2024'
                     },
                     {
                         'id': 'module_16',
@@ -2157,7 +2211,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_16',
                         'order': 16,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/ns1V4eJ2IqQ/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/ns1V4eJ2IqQ/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module16_2024'
                     },
                     {
                         'id': 'module_17',
@@ -2167,7 +2224,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_17',
                         'order': 17,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/YQHsXMglC9A/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/YQHsXMglC9A/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module17_2024'
                     },
                     {
                         'id': 'module_18',
@@ -2177,7 +2237,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_18',
                         'order': 18,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/JwSA3d3cUqg/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/JwSA3d3cUqg/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module18_2024'
                     },
                     {
                         'id': 'module_19',
@@ -2187,7 +2250,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_19',
                         'order': 19,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/e-ORhEE9VVg/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/e-ORhEE9VVg/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module19_2024'
                     },
                     {
                         'id': 'module_20',
@@ -2197,7 +2263,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'ceh_module_20',
                         'order': 20,
                         'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/NmM9HA2MQGI/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/NmM9HA2MQGI/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'CEH_Module20_2024'
                     }
                 ],
                 'total_modules': 21,
@@ -2219,7 +2288,10 @@ def get_course_modules(current_user, course_id):
                         'video_id': 'python_intro',
                         'order': 0,
                         'locked': False,
-                        'thumbnail': 'https://img.youtube.com/vi/_uQrJ0TkZlc/maxresdefault.jpg'
+                        'thumbnail': 'https://img.youtube.com/vi/_uQrJ0TkZlc/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'Python_Intro_2024'
                     },
                     {
                         'id': 'module_01',
@@ -2228,8 +2300,11 @@ def get_course_modules(current_user, course_id):
                         'duration': '42:15',
                         'video_id': 'python_basics',
                         'order': 1,
-                        'locked': False,
-                        'thumbnail': 'https://img.youtube.com/vi/_uQrJ0TkZlc/maxresdefault.jpg'
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/_uQrJ0TkZlc/maxresdefault.jpg',
+                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                        'requires_password': True,
+                        'password_hint': 'Python_Basics_2024'
                     }
                 ],
                 'total_modules': 15,
@@ -2252,6 +2327,47 @@ def get_course_modules(current_user, course_id):
     except Exception as e:
         logger.error(f"Course modules error: {e}")
         return jsonify({'error': 'Failed to load course modules'}), 500
+
+@app.route('/api/video-module/<module_id>/embed', methods=['GET'])
+@token_required
+def get_module_embed(current_user, module_id):
+    """Get video embed for a specific module"""
+    try:
+        # Module embeds with your Dailymotion videos
+        module_embeds = {
+            'module_00': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+                <iframe src="https://geo.dailymotion.com/player.html?video=k6V2CaHv7bDeQlExqG2"
+                        style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;"
+                        allowfullscreen title="Dailymotion Video Player"
+                        allow="web-share"></iframe></div>''',
+            'module_01': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+                <iframe src="https://geo.dailymotion.com/player.html?video=koTNweSut799lhEy9U4"
+                        style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;"
+                        allowfullscreen title="Dailymotion Video Player"
+                        allow="web-share"></iframe></div>'''
+        }
+        
+        if module_id in module_embeds:
+            log_video_access(current_user, module_id, request.remote_addr, 'accessed_embed')
+            return jsonify({
+                'success': True,
+                'embed_code': module_embeds[module_id]
+            }), 200
+        else:
+            # Default placeholder for other modules
+            return jsonify({
+                'success': True,
+                'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
+                        <h3>Secure Video Player</h3>
+                        <p>Video content will be available soon</p>
+                    </div>
+                </div>'''
+            }), 200
+            
+    except Exception as e:
+        logger.error(f"Module embed error: {e}")
+        return jsonify({'error': 'Failed to get embed'}), 500
 
 @app.route('/api/course-video-progress', methods=['GET'])
 @token_required
@@ -2375,8 +2491,12 @@ def verify_module_password(current_user):
         
         if module_id in module_passwords:
             if password == module_passwords[module_id]:
+                # Log successful access
+                log_user_activity(current_user, f'module_unlocked_{module_id}', request.remote_addr)
                 return jsonify({'success': True}), 200
             else:
+                # Log failed attempt
+                log_user_activity(current_user, f'module_password_failed_{module_id}', request.remote_addr)
                 return jsonify({'error': 'Incorrect password'}), 401
         else:
             return jsonify({'error': 'Module not found'}), 404
