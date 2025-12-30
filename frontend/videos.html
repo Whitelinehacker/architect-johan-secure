@@ -670,318 +670,52 @@
     <div id="security-status"></div>
 
     <script>
+      <script>
     // ===========================================
     // CORE CONFIGURATION
     // ===========================================
     const API_URL = 'https://architect-johan-secure.onrender.com';
     const STATE = {
-        // Security
-        securityLevel: 0, // 0=off, 1=basic, 2=medium, 3=high
-        violations: 0,
-        maxViolations: 3,
-        sessionToken: null,
         videoLoaded: false,
-        
-        // Tracking
-        lastActivity: Date.now(),
-        incidentCount: 0,
-        checkInterval: null,
-        
-        // Protection
-        screenshotDots: [],
-        watermarkInterval: null,
-        securityChecks: 0
+        sessionToken: null,
+        securityActive: false
     };
 
     // ===========================================
-    // SCREENSHOT & RECORDING BLOCKING
+    // AUTHENTICATION CHECK
     // ===========================================
-    
-    function initScreenshotProtection() {
-        console.log("🛡️ Initializing screenshot protection...");
-        
-        // 1. Create moving watermark
-        createDynamicWatermark();
-        
-        // 2. Create blinking dots that appear in screenshots
-        createScreenshotDots();
-        
-        // 3. Override screen recording APIs
-        overrideRecordingAPIs();
-        
-        // 4. Block screenshot shortcuts
-        blockScreenshotShortcuts();
-        
-        // 5. Start security monitoring
-        startSecurityMonitoring();
-        
-        updateSecurityStatus("Protection: ACTIVE");
-    }
-
-    function createDynamicWatermark() {
-        const watermark = document.getElementById('dynamic-watermark');
-        const username = localStorage.getItem('username') || 'UNKNOWN_USER';
-        const userId = localStorage.getItem('user_id') || '000000';
-        
-        function addWatermarkText() {
-            const text = `ARCHITECT JOHAN - SECURE CONTENT - USER: ${username} - ID: ${userId} - ${new Date().toISOString()} - UNAUTHORIZED COPYING PROHIBITED - COPYRIGHT VIOLATION WILL BE PROSECUTED`;
-            
-            const watermarkElement = document.createElement('div');
-            watermarkElement.className = 'watermark-text';
-            watermarkElement.textContent = text;
-            watermarkElement.style.top = Math.random() * 80 + 10 + '%';
-            watermarkElement.style.animationDuration = (Math.random() * 20 + 20) + 's';
-            watermarkElement.style.fontSize = (Math.random() * 10 + 20) + 'px';
-            watermarkElement.style.opacity = 0.05 + Math.random() * 0.1;
-            
-            watermark.appendChild(watermarkElement);
-            
-            // Remove old watermarks
-            if (watermark.children.length > 50) {
-                watermark.removeChild(watermark.firstChild);
-            }
+    function checkAuthentication() {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            alert('🔐 Please login to access secure videos');
+            window.location.href = 'index.html';
+            return false;
         }
         
-        // Add watermarks periodically
-        STATE.watermarkInterval = setInterval(addWatermarkText, 1000);
-        for (let i = 0; i < 20; i++) addWatermarkText();
+        // Validate token with server
+        return validateToken(token);
     }
 
-    function createScreenshotDots() {
-        // These dots are invisible but appear in screenshots
-        for (let i = 0; i < 100; i++) {
-            const dot = document.createElement('div');
-            dot.className = 'screenshot-dot';
-            dot.style.left = Math.random() * 100 + '%';
-            dot.style.top = Math.random() * 100 + '%';
-            dot.style.animationDelay = Math.random() * 2 + 's';
-            dot.style.animationDuration = 1 + Math.random() * 3 + 's';
-            document.body.appendChild(dot);
-            STATE.screenshotDots.push(dot);
-        }
-    }
-
-    function overrideRecordingAPIs() {
-        // Block screen recording API
-        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-            const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
-            navigator.mediaDevices.getDisplayMedia = function() {
-                triggerSecurityIncident('screen_recording_attempt', 'getDisplayMedia API call');
-                return Promise.reject(new Error('Screen recording is blocked by content protection'));
-            };
-            
-            // Also block getUserMedia for video
-            const originalGetUserMedia = navigator.mediaDevices.getUserMedia;
-            navigator.mediaDevices.getUserMedia = function(constraints) {
-                if (constraints && constraints.video) {
-                    triggerSecurityIncident('camera_access_attempt', 'getUserMedia video request');
-                    return Promise.reject(new Error('Camera access is blocked by content protection'));
-                }
-                return originalGetUserMedia.call(this, constraints);
-            };
-        }
-        
-        // Block clipboard API (some recorders use this)
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            const originalWriteText = navigator.clipboard.writeText;
-            navigator.clipboard.writeText = function() {
-                triggerSecurityIncident('clipboard_write_attempt', 'clipboard API');
-                return Promise.reject(new Error('Clipboard access blocked'));
-            };
-        }
-    }
-
-    function blockScreenshotShortcuts() {
-        // Block ALL screenshot shortcuts
-        const blockedKeys = new Set([
-            'PrintScreen', 'Snapshot', 'Print', // Print Screen
-            'F13', // Some systems use F13 for Print Screen
-            44 // Print Screen key code
-        ]);
-        
-        document.addEventListener('keydown', function(e) {
-            // Block Print Screen
-            if (blockedKeys.has(e.key) || e.keyCode === 44) {
-                e.preventDefault();
-                e.stopPropagation();
-                triggerSecurityIncident('screenshot_key_pressed', e.key);
-                return false;
-            }
-            
-            // Block Windows + Shift + S (Windows Snipping Tool)
-            if ((e.key === 's' || e.key === 'S') && e.shiftKey && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                e.stopPropagation();
-                triggerSecurityIncident('snipping_tool_shortcut', 'Win+Shift+S');
-                return false;
-            }
-            
-            // Block Alt + Print Screen
-            if (e.key === 'PrintScreen' && e.altKey) {
-                e.preventDefault();
-                e.stopPropagation();
-                triggerSecurityIncident('active_window_screenshot', 'Alt+PrintScreen');
-                return false;
-            }
-            
-            // Block Mac screenshot shortcuts (Command + Shift + 3/4)
-            if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4')) {
-                e.preventDefault();
-                e.stopPropagation();
-                triggerSecurityIncident('mac_screenshot', `Cmd+Shift+${e.key}`);
-                return false;
-            }
-            
-            // Block F12 and DevTools
-            if (e.key === 'F12' || e.keyCode === 123 || 
-                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-                (e.ctrlKey && e.key === 'U')) {
-                e.preventDefault();
-                e.stopPropagation();
-                triggerSecurityIncident('devtools_shortcut', e.key);
-                return false;
-            }
-        }, true); // Use capture phase to block early
-    }
-
-    function startSecurityMonitoring() {
-        // Check for recording software
-        STATE.checkInterval = setInterval(() => {
-            STATE.securityChecks++;
-            
-            // Detect DevTools
-            detectDevTools();
-            
-            // Detect iframe embedding
-            if (window.self !== window.top) {
-                triggerSecurityIncident('iframe_embedding', 'Page loaded in iframe');
-            }
-            
-            // Detect fullscreen exit (some recorders trigger this)
-            if (document.fullscreenElement === null && STATE.videoLoaded) {
-                STATE.violations++;
-                if (STATE.violations > 2) {
-                    triggerSecurityIncident('fullscreen_exit', 'Possible recording software');
-                }
-            }
-            
-            // Update security info
-            updateSecurityInfo();
-        }, 2000);
-        
-        // Monitor visibility changes
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden && STATE.videoLoaded) {
-                triggerSecurityIncident('tab_switch', 'Tab hidden during playback');
-            }
-        });
-        
-        // Monitor mouse activity
-        document.addEventListener('mousemove', function() {
-            STATE.lastActivity = Date.now();
-        });
-    }
-
-    function detectDevTools() {
-        // Multiple detection methods
-        const widthDiff = Math.abs(window.outerWidth - window.innerWidth);
-        const heightDiff = Math.abs(window.outerHeight - window.innerHeight);
-        
-        // Method 1: Size difference
-        if (widthDiff > 200 || heightDiff > 200) {
-            triggerSecurityIncident('devtools_detected', 'Window size difference');
-        }
-        
-        // Method 2: Debugger detection
+    async function validateToken(token) {
         try {
-            (function() {
-                const start = Date.now();
-                debugger;
-                const end = Date.now();
-                if (end - start > 100) {
-                    triggerSecurityIncident('debugger_active', 'Debugger detected');
+            const response = await fetch(`${API_URL}/api/validate-token`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
                 }
-            })();
-        } catch (e) {
-            // Debugger is active
-            triggerSecurityIncident('debugger_active', 'Debugger exception');
+            });
+            
+            const data = await response.json();
+            return data.valid === true;
+        } catch (error) {
+            console.error('Token validation failed:', error);
+            return false;
         }
     }
 
     // ===========================================
-    // SECURITY INCIDENT HANDLING
-    // ===========================================
-    function triggerSecurityIncident(method, details) {
-        if (!STATE.videoLoaded) return;
-        
-        STATE.incidentCount++;
-        STATE.violations++;
-        
-        // Generate incident ID
-        const incidentId = `INC-${Date.now()}-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
-        
-        // Log to console
-        console.error(`🚨 SECURITY INCIDENT #${STATE.incidentCount}: ${method} - ${details}`);
-        console.error(`   Incident ID: ${incidentId}`);
-        console.error(`   Total Violations: ${STATE.violations}`);
-        
-        // Update UI
-        document.getElementById('incident-id').textContent = incidentId;
-        document.getElementById('incident-time').textContent = new Date().toLocaleTimeString();
-        
-        // Show security screen on 3rd violation
-        if (STATE.violations >= STATE.maxViolations) {
-            showSecurityScreen();
-        } else {
-            // Show warning
-            showSecurityInfo(`⚠️ Warning: ${method} detected (${STATE.violations}/${STATE.maxViolations})`);
-        }
-        
-        // Send to server
-        sendSecurityLog({
-            incidentId: incidentId,
-            method: method,
-            details: details,
-            violations: STATE.violations,
-            timestamp: new Date().toISOString(),
-            user: localStorage.getItem('username') || 'unknown',
-            userAgent: navigator.userAgent
-        });
-    }
-
-    function showSecurityScreen() {
-        document.getElementById('security-screen').classList.add('active');
-        document.getElementById('video-container').classList.remove('active');
-        document.getElementById('controls').classList.remove('active');
-        
-        // Clear video
-        document.getElementById('video-wrapper').innerHTML = '';
-        
-        updateSecurityStatus("SECURITY BREACH - PLAYBACK BLOCKED");
-    }
-
-    function resetSecurity() {
-        document.getElementById('security-screen').classList.remove('active');
-        document.getElementById('video-container').classList.add('active');
-        document.getElementById('controls').classList.add('active');
-        
-        // Reduce violations
-        STATE.violations = Math.max(0, STATE.violations - 2);
-        
-        // Show warning
-        showSecurityInfo(`Security resumed. Violations: ${STATE.violations}/${STATE.maxViolations}`);
-        updateSecurityStatus("Protection: ACTIVE (Reduced)");
-        
-        // Reload video after delay
-        setTimeout(() => {
-            if (STATE.sessionToken) {
-                loadVideoContent();
-            }
-        }, 1000);
-    }
-
-    // ===========================================
-    // VIDEO FUNCTIONS
+    // PASSWORD VERIFICATION
     // ===========================================
     async function verifyPassword() {
         const password = document.getElementById('password-input').value.trim();
@@ -992,13 +726,12 @@
         errorElement.textContent = '';
         
         if (!password) {
-            errorElement.textContent = '⚠️ Password is required';
-            errorElement.style.display = 'block';
+            showError('⚠️ Password is required');
             return;
         }
 
         try {
-            // Show loading progress
+            // Show loading state
             const progress = document.getElementById('load-progress');
             progress.style.width = '30%';
             
@@ -1010,6 +743,7 @@
 
             progress.style.width = '60%';
             
+            // Use the correct endpoint from your app.py
             const response = await fetch(`${API_URL}/api/secure-video/verify`, {
                 method: 'POST',
                 headers: {
@@ -1024,7 +758,7 @@
             const data = await response.json();
 
             if (data.success) {
-                // Store session
+                // Store session token
                 STATE.sessionToken = data.session_token;
                 localStorage.setItem('video_session_token', data.session_token);
                 
@@ -1035,14 +769,12 @@
                 // Load video
                 await loadVideoContent();
             } else {
-                errorElement.textContent = data.error || '❌ Invalid password. Please try again.';
-                errorElement.style.display = 'block';
+                showError(data.error || '❌ Invalid password. Please try again.');
                 document.getElementById('password-input').value = '';
                 progress.style.width = '0%';
             }
         } catch (error) {
-            errorElement.textContent = '🌐 Network error. Please check your connection.';
-            errorElement.style.display = 'block';
+            showError('🌐 Network error. Please check your connection.');
             document.getElementById('load-progress').style.width = '0%';
         }
     }
@@ -1050,44 +782,38 @@
     async function loadVideoContent() {
         try {
             const token = localStorage.getItem('auth_token');
-            if (!token || !STATE.sessionToken) {
-                throw new Error('No valid session');
+            if (!token) {
+                window.location.href = 'index.html';
+                return;
             }
 
+            // First, hide loading screen and show video container
+            document.getElementById('loading-screen').style.display = 'none';
+            
+            // Now get the video embed
             const response = await fetch(`${API_URL}/api/secure-video/get-embed`, {
                 method: 'GET',
                 headers: {
                     'Authorization': 'Bearer ' + token,
-                    'X-Session-Token': STATE.sessionToken
+                    'X-Session-Token': STATE.sessionToken || ''
                 }
             });
 
             const data = await response.json();
 
-            if (data.success) {
+            if (data.success && data.embed) {
                 // Load video
                 document.getElementById('video-wrapper').innerHTML = data.embed;
-                document.getElementById('loading-screen').style.display = 'none';
                 document.getElementById('video-container').classList.add('active');
                 document.getElementById('controls').classList.add('active');
                 
                 // Update state
                 STATE.videoLoaded = true;
                 
-                // Initialize protection
-                initScreenshotProtection();
+                // Initialize basic protection
+                initBasicProtection();
                 
-                // Start controls auto-hide
-                startControlsAutoHide();
-                
-                // Log success
-                sendSecurityLog({
-                    event: 'video_loaded',
-                    timestamp: new Date().toISOString(),
-                    user: localStorage.getItem('username') || 'unknown'
-                });
-                
-                showSecurityInfo('✅ Secure video loaded. Protection active.');
+                console.log('✅ Video loaded successfully');
             } else {
                 throw new Error(data.error || 'Failed to load video');
             }
@@ -1096,9 +822,7 @@
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('password-modal').style.display = 'flex';
             
-            const errorElement = document.getElementById('password-error');
-            errorElement.textContent = '❌ Failed to load video. Please try again.';
-            errorElement.style.display = 'block';
+            showError('❌ Failed to load video. Please try again.');
             
             // Clear invalid session
             STATE.sessionToken = null;
@@ -1107,67 +831,47 @@
     }
 
     // ===========================================
-    // UI FUNCTIONS
+    // BASIC PROTECTION (Simplified)
     // ===========================================
-    function startControlsAutoHide() {
-        let hideTimeout;
+    function initBasicProtection() {
+        console.log("🛡️ Initializing basic protection...");
         
-        document.addEventListener('mousemove', function() {
-            const controls = document.getElementById('controls');
-            if (controls.classList.contains('active')) {
-                controls.style.opacity = '1';
-                clearTimeout(hideTimeout);
-                hideTimeout = setTimeout(() => {
-                    controls.style.opacity = '0.3';
-                }, 3000);
+        // Block right-click
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            showSecurityInfo('⚠️ Right-click disabled');
+            return false;
+        });
+        
+        // Block copy
+        document.addEventListener('copy', function(e) {
+            e.preventDefault();
+            showSecurityInfo('⚠️ Copy disabled');
+            return false;
+        });
+        
+        // Block Print Screen key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'PrintScreen' || e.keyCode === 44) {
+                e.preventDefault();
+                showSecurityInfo('⚠️ Screenshot disabled');
+                return false;
             }
         });
-    }
-
-    function toggleFullscreen() {
-        const container = document.getElementById('video-container');
         
-        if (!document.fullscreenElement) {
-            if (container.requestFullscreen) container.requestFullscreen();
-            else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
-            else if (container.mozRequestFullScreen) container.mozRequestFullScreen();
-            else if (container.msRequestFullscreen) container.msRequestFullscreen();
-            
-            showSecurityInfo('🖥️ Entered fullscreen mode');
-        } else {
-            if (document.exitFullscreen) document.exitFullscreen();
-            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-            else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
-            else if (document.msExitFullscreen) document.msExitFullscreen();
-            
-            showSecurityInfo('📱 Exited fullscreen mode');
-        }
+        showSecurityInfo('✅ Protection active');
     }
 
-    function exitPlayer() {
-        if (confirm('⚠️ Exit secure video player?\n\nAll security protections will be disabled.')) {
-            // Cleanup
-            if (STATE.checkInterval) clearInterval(STATE.checkInterval);
-            if (STATE.watermarkInterval) clearInterval(STATE.watermarkInterval);
-            
-            // Clear session
-            STATE.sessionToken = null;
-            STATE.videoLoaded = false;
-            localStorage.removeItem('video_session_token');
-            
-            // Log exit
-            sendSecurityLog({
-                event: 'player_exited',
-                timestamp: new Date().toISOString(),
-                user: localStorage.getItem('username') || 'unknown'
-            });
-            
-            // Redirect
-            window.location.href = 'home.html';
-        }
+    // ===========================================
+    // UI HELPER FUNCTIONS
+    // ===========================================
+    function showError(message) {
+        const errorElement = document.getElementById('password-error');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
     }
 
-    function updateSecurityInfo(message) {
+    function showSecurityInfo(message) {
         const info = document.getElementById('security-info');
         if (message) {
             info.textContent = message;
@@ -1176,34 +880,36 @@
             setTimeout(() => {
                 const user = localStorage.getItem('username') || 'User';
                 const time = new Date().toLocaleTimeString();
-                info.textContent = `👤 ${user} | 🕒 ${time} | 🔒 Secure`;
+                info.textContent = `👤 ${user} | 🕒 ${time} | 🔒 Protected`;
                 info.style.color = 'rgba(255, 255, 255, 0.1)';
-            }, 5000);
+            }, 3000);
         }
     }
 
-    function updateSecurityStatus(status) {
-        const statusElement = document.getElementById('security-status');
-        statusElement.textContent = status;
-        statusElement.style.display = 'block';
+    function toggleFullscreen() {
+        const container = document.getElementById('video-container');
         
-        if (status.includes('BREACH')) {
-            statusElement.style.color = '#ff0000';
-            statusElement.style.borderColor = 'rgba(255, 0, 0, 0.5)';
+        if (!document.fullscreenElement) {
+            if (container.requestFullscreen) container.requestFullscreen();
+            else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+            showSecurityInfo('🖥️ Fullscreen mode');
         } else {
-            statusElement.style.color = '#00ff00';
-            statusElement.style.borderColor = 'rgba(0, 255, 0, 0.3)';
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            showSecurityInfo('📱 Normal mode');
         }
     }
 
-    function sendSecurityLog(data) {
-        fetch(`${API_URL}/api/security/log`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        }).catch(error => {
-            console.warn('Failed to send security log:', error);
-        });
+    function exitPlayer() {
+        if (confirm('⚠️ Exit secure video player?')) {
+            // Clear session
+            STATE.sessionToken = null;
+            STATE.videoLoaded = false;
+            localStorage.removeItem('video_session_token');
+            
+            // Redirect to home
+            window.location.href = 'home.html';
+        }
     }
 
     // ===========================================
@@ -1244,55 +950,19 @@
             STATE.sessionToken = sessionToken;
             document.getElementById('password-modal').style.display = 'none';
             document.getElementById('loading-screen').style.display = 'flex';
-            loadVideoContent();
+            setTimeout(() => {
+                loadVideoContent();
+            }, 1000);
         } else {
+            // Show password modal immediately (don't show loading screen)
+            document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('password-modal').style.display = 'flex';
         }
 
-        // Prevent page close during playback
-        window.addEventListener('beforeunload', function(e) {
-            if (STATE.videoLoaded) {
-                e.preventDefault();
-                e.returnValue = '⚠️ You are watching a secure video. Are you sure you want to leave?';
-                return e.returnValue;
-            }
-        });
-
-        // Block right-click
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            triggerSecurityIncident('right_click', 'Context menu attempt');
-            return false;
-        });
-
-        // Block copy
-        document.addEventListener('copy', function(e) {
-            e.preventDefault();
-            e.clipboardData.setData('text/plain', 'Copying disabled - Secure content protection');
-            triggerSecurityIncident('copy_attempt', 'Copy to clipboard');
-            return false;
-        });
-
-        // Block drag and drop
-        document.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-        
-        document.addEventListener('drop', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-
         console.log("✅ Secure Video Player Ready");
     });
-
-    // Cleanup on exit
-    window.addEventListener('unload', function() {
-        if (STATE.checkInterval) clearInterval(STATE.checkInterval);
-        if (STATE.watermarkInterval) clearInterval(STATE.watermarkInterval);
-    });
+    </script>
     </script>
 </body>
 </html>
+
