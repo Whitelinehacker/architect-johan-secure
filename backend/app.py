@@ -2118,6 +2118,136 @@ def check_mobile():
         logger.error(f"Mobile check error: {e}")
         return jsonify({'exists': False}), 200
 
+@app.route('/api/video-library', methods=['GET'])
+@token_required
+def get_video_library(current_user):
+    """Get categorized video library"""
+    try:
+        # Categories with thumbnails and descriptions
+        categories = {
+            'ceh_v13': {
+                'id': 'ceh_v13',
+                'title': 'CEH v13 - Certified Ethical Hacker',
+                'description': 'Complete Ethical Hacking course covering penetration testing, vulnerability assessment, and security tools.',
+                'thumbnail': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                'videos_count': 15,
+                'duration': '45 hours',
+                'level': 'Advanced',
+                'locked': False,
+                'requires_password': True,
+                'password_hint': 'CEH v13 Course Password',
+                'topics': [
+                    'Introduction to Ethical Hacking',
+                    'Footprinting and Reconnaissance',
+                    'Scanning Networks',
+                    'Enumeration',
+                    'Vulnerability Analysis'
+                ]
+            },
+            'ccna': {
+                'id': 'ccna',
+                'title': 'CCNA - Cisco Certified Network Associate',
+                'description': 'Complete networking fundamentals, routing, switching, and Cisco IOS configuration.',
+                'thumbnail': 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                'videos_count': 12,
+                'duration': '35 hours',
+                'level': 'Intermediate',
+                'locked': True,
+                'requires_password': True,
+                'password_hint': 'CCNA Course Password',
+                'topics': [
+                    'Networking Fundamentals',
+                    'IP Addressing',
+                    'Routing Protocols',
+                    'Switching Concepts',
+                    'Network Security'
+                ]
+            },
+            'python': {
+                'id': 'python',
+                'title': 'Python Programming',
+                'description': 'From basics to advanced Python programming including automation, web development, and data analysis.',
+                'thumbnail': 'https://images.unsplash.com/photo-1526379879527-8559ecfcaec8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                'videos_count': 20,
+                'duration': '50 hours',
+                'level': 'Beginner to Advanced',
+                'locked': False,
+                'requires_password': False,
+                'topics': [
+                    'Python Basics',
+                    'Data Structures',
+                    'Object-Oriented Programming',
+                    'Web Development',
+                    'Automation Scripts'
+                ]
+            },
+            'cybersecurity': {
+                'id': 'cybersecurity',
+                'title': 'Cybersecurity Fundamentals',
+                'description': 'Essential cybersecurity concepts, threats, defenses, and best practices.',
+                'thumbnail': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                'videos_count': 10,
+                'duration': '30 hours',
+                'level': 'Beginner',
+                'locked': False,
+                'requires_password': False,
+                'topics': [
+                    'Security Principles',
+                    'Threat Landscape',
+                    'Cryptography',
+                    'Network Security',
+                    'Incident Response'
+                ]
+            },
+            'linux': {
+                'id': 'linux',
+                'title': 'Linux Administration',
+                'description': 'Complete Linux system administration, command line, and server management.',
+                'thumbnail': 'https://images.unsplash.com/photo-1544654803-b69140b285a1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                'videos_count': 18,
+                'duration': '40 hours',
+                'level': 'Intermediate',
+                'locked': True,
+                'requires_password': True,
+                'password_hint': 'Linux Admin Password',
+                'topics': [
+                    'Linux Basics',
+                    'File Systems',
+                    'User Management',
+                    'Networking',
+                    'Server Administration'
+                ]
+            },
+            'web_security': {
+                'id': 'web_security',
+                'title': 'Web Application Security',
+                'description': 'Web security vulnerabilities, penetration testing, and secure coding practices.',
+                'thumbnail': 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                'videos_count': 14,
+                'duration': '38 hours',
+                'level': 'Advanced',
+                'locked': True,
+                'requires_password': True,
+                'password_hint': 'Web Security Password',
+                'topics': [
+                    'OWASP Top 10',
+                    'SQL Injection',
+                    'XSS Attacks',
+                    'CSRF Protection',
+                    'Secure APIs'
+                ]
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'categories': categories
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Video library error: {e}")
+        return jsonify({'error': 'Failed to load video library'}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -2146,4 +2276,5 @@ if __name__ == '__main__':
     print(f"🎥 VIDEO_PASSWORD: {'✅ Set' if os.getenv('VIDEO_PASSWORD') else '❌ Using Default'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
