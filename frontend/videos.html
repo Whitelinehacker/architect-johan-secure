@@ -174,7 +174,7 @@
             width: 100%;
             height: 100%;
             background: #000;
-            display: flex;
+            display: none; /* Changed from flex to none */
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -215,7 +215,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.98);
-            display: flex;
+            display: none; /* Changed - will be shown when needed */
             justify-content: center;
             align-items: center;
             z-index: 800000;
@@ -567,6 +567,24 @@
         .hidden {
             display: none !important;
         }
+        
+        /* Progress bar for loading */
+        #load-progress {
+            width: 0%;
+            height: 4px;
+            background: #00ff00;
+            transition: width 0.3s;
+            border-radius: 2px;
+        }
+        
+        .progress-container {
+            width: 300px;
+            height: 4px;
+            background: rgba(0, 255, 0, 0.2);
+            border-radius: 2px;
+            margin: 30px 0;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
@@ -610,8 +628,8 @@
         <p style="font-size: 16px; color: #00cc00; margin-top: 20px;">
             Initializing screenshot protection protocols...
         </p>
-        <div style="margin-top: 30px; width: 300px; height: 4px; background: rgba(0, 255, 0, 0.2); border-radius: 2px; overflow: hidden;">
-            <div id="load-progress" style="height: 100%; width: 0%; background: #00ff00; transition: width 0.3s;"></div>
+        <div class="progress-container">
+            <div id="load-progress"></div>
         </div>
     </div>
 
@@ -670,7 +688,6 @@
     <div id="security-status"></div>
 
     <script>
-      <script>
     // ===========================================
     // CORE CONFIGURATION
     // ===========================================
@@ -682,26 +699,88 @@
     };
 
     // ===========================================
-    // AUTHENTICATION CHECK
+    // MAIN INITIALIZATION
     // ===========================================
-    function checkAuthentication() {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("🚀 Secure Video Player Initializing...");
+        
+        // 1. First check if user is logged in
         const token = localStorage.getItem('auth_token');
         if (!token) {
             alert('🔐 Please login to access secure videos');
             window.location.href = 'index.html';
-            return false;
+            return;
         }
         
-        // Validate token with server
-        return validateToken(token);
+        // 2. Immediately show password modal (NOT loading screen)
+        document.getElementById('password-modal').style.display = 'flex';
+        
+        // 3. Setup event listeners
+        setupEventListeners();
+        
+        // 4. Check for existing valid session
+        checkExistingSession();
+        
+        console.log("✅ Secure Video Player Ready - Password modal shown");
+    });
+
+    function setupEventListeners() {
+        // Password submission
+        document.getElementById('submit-btn').addEventListener('click', verifyPassword);
+        
+        // Cancel button
+        document.getElementById('cancel-btn').addEventListener('click', function() {
+            if (confirm('Cancel video access?')) {
+                window.location.href = 'home.html';
+            }
+        });
+        
+        // Enter key for password
+        document.getElementById('password-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') verifyPassword();
+        });
+        
+        // Auto-focus password input
+        setTimeout(() => {
+            const passwordInput = document.getElementById('password-input');
+            if (passwordInput) {
+                passwordInput.focus();
+            }
+        }, 100);
     }
 
-    async function validateToken(token) {
+    function checkExistingSession() {
+        const sessionToken = localStorage.getItem('video_session_token');
+        if (sessionToken) {
+            STATE.sessionToken = sessionToken;
+            
+            // Validate the session with backend
+            validateSessionToken(sessionToken).then(isValid => {
+                if (isValid) {
+                    // Hide password modal, show loading
+                    document.getElementById('password-modal').style.display = 'none';
+                    document.getElementById('loading-screen').style.display = 'flex';
+                    
+                    // Load video after short delay
+                    setTimeout(() => {
+                        loadVideoContent();
+                    }, 1000);
+                } else {
+                    // Invalid session, clear it
+                    localStorage.removeItem('video_session_token');
+                    STATE.sessionToken = null;
+                }
+            });
+        }
+    }
+
+    async function validateSessionToken(token) {
         try {
+            const authToken = localStorage.getItem('auth_token');
             const response = await fetch(`${API_URL}/api/validate-token`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + token,
+                    'Authorization': 'Bearer ' + authToken,
                     'Content-Type': 'application/json'
                 }
             });
@@ -709,7 +788,7 @@
             const data = await response.json();
             return data.valid === true;
         } catch (error) {
-            console.error('Token validation failed:', error);
+            console.error('Session validation failed:', error);
             return false;
         }
     }
@@ -732,8 +811,7 @@
 
         try {
             // Show loading state
-            const progress = document.getElementById('load-progress');
-            progress.style.width = '30%';
+            updateProgress(30);
             
             const token = localStorage.getItem('auth_token');
             if (!token) {
@@ -741,7 +819,7 @@
                 return;
             }
 
-            progress.style.width = '60%';
+            updateProgress(60);
             
             // Use the correct endpoint from your app.py
             const response = await fetch(`${API_URL}/api/secure-video/verify`, {
@@ -753,7 +831,7 @@
                 body: JSON.stringify({ password: password })
             });
 
-            progress.style.width = '90%';
+            updateProgress(90);
             
             const data = await response.json();
 
@@ -764,21 +842,34 @@
                 
                 // Hide password modal, show loading
                 document.getElementById('password-modal').style.display = 'none';
-                progress.style.width = '100%';
+                document.getElementById('loading-screen').style.display = 'flex';
+                updateProgress(100);
                 
-                // Load video
-                await loadVideoContent();
+                // Load video after short delay
+                setTimeout(() => {
+                    loadVideoContent();
+                }, 500);
             } else {
                 showError(data.error || '❌ Invalid password. Please try again.');
                 document.getElementById('password-input').value = '';
-                progress.style.width = '0%';
+                updateProgress(0);
             }
         } catch (error) {
             showError('🌐 Network error. Please check your connection.');
-            document.getElementById('load-progress').style.width = '0%';
+            updateProgress(0);
         }
     }
 
+    function updateProgress(percent) {
+        const progress = document.getElementById('load-progress');
+        if (progress) {
+            progress.style.width = percent + '%';
+        }
+    }
+
+    // ===========================================
+    // VIDEO LOADING
+    // ===========================================
     async function loadVideoContent() {
         try {
             const token = localStorage.getItem('auth_token');
@@ -787,10 +878,7 @@
                 return;
             }
 
-            // First, hide loading screen and show video container
-            document.getElementById('loading-screen').style.display = 'none';
-            
-            // Now get the video embed
+            // Get the video embed
             const response = await fetch(`${API_URL}/api/secure-video/get-embed`, {
                 method: 'GET',
                 headers: {
@@ -802,6 +890,9 @@
             const data = await response.json();
 
             if (data.success && data.embed) {
+                // Hide loading screen
+                document.getElementById('loading-screen').style.display = 'none';
+                
                 // Load video
                 document.getElementById('video-wrapper').innerHTML = data.embed;
                 document.getElementById('video-container').classList.add('active');
@@ -813,13 +904,21 @@
                 // Initialize basic protection
                 initBasicProtection();
                 
+                // Log success
+                logEvent('video_loaded');
+                
+                showSecurityInfo('✅ Secure video loaded. Protection active.');
                 console.log('✅ Video loaded successfully');
             } else {
                 throw new Error(data.error || 'Failed to load video');
             }
         } catch (error) {
             console.error('Video loading error:', error);
+            
+            // Hide loading screen
             document.getElementById('loading-screen').style.display = 'none';
+            
+            // Show password modal again
             document.getElementById('password-modal').style.display = 'flex';
             
             showError('❌ Failed to load video. Please try again.');
@@ -831,7 +930,7 @@
     }
 
     // ===========================================
-    // BASIC PROTECTION (Simplified)
+    // BASIC PROTECTION
     // ===========================================
     function initBasicProtection() {
         console.log("🛡️ Initializing basic protection...");
@@ -857,13 +956,20 @@
                 showSecurityInfo('⚠️ Screenshot disabled');
                 return false;
             }
+            
+            // Block F12 (DevTools)
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                showSecurityInfo('⚠️ Developer tools disabled');
+                return false;
+            }
         });
         
         showSecurityInfo('✅ Protection active');
     }
 
     // ===========================================
-    // UI HELPER FUNCTIONS
+    // UI FUNCTIONS
     // ===========================================
     function showError(message) {
         const errorElement = document.getElementById('password-error');
@@ -873,7 +979,7 @@
 
     function showSecurityInfo(message) {
         const info = document.getElementById('security-info');
-        if (message) {
+        if (info && message) {
             info.textContent = message;
             info.style.color = message.includes('Warning') ? '#ff9900' : '#00ff00';
             
@@ -901,11 +1007,14 @@
     }
 
     function exitPlayer() {
-        if (confirm('⚠️ Exit secure video player?')) {
+        if (confirm('⚠️ Exit secure video player?\n\nAll security protections will be disabled.')) {
             // Clear session
             STATE.sessionToken = null;
             STATE.videoLoaded = false;
             localStorage.removeItem('video_session_token');
+            
+            // Log exit
+            logEvent('player_exited');
             
             // Redirect to home
             window.location.href = 'home.html';
@@ -913,56 +1022,42 @@
     }
 
     // ===========================================
-    // INITIALIZATION
+    // SECURITY FUNCTIONS
     // ===========================================
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log("🚀 Secure Video Player Initializing...");
+    function resetSecurity() {
+        document.getElementById('security-screen').classList.remove('active');
+        document.getElementById('video-container').classList.add('active');
+        document.getElementById('controls').classList.add('active');
         
-        // Check authentication
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            alert('🔐 Please login to access secure videos');
-            window.location.href = 'index.html';
-            return;
-        }
+        showSecurityInfo('✅ Security resumed');
+    }
 
-        // Setup event listeners
-        document.getElementById('submit-btn').addEventListener('click', verifyPassword);
-        document.getElementById('cancel-btn').addEventListener('click', function() {
-            if (confirm('Cancel video access?')) {
-                window.location.href = 'home.html';
-            }
+    function logEvent(event) {
+        // Simple logging - can be extended to send to server
+        console.log(`📝 Event: ${event}`, {
+            user: localStorage.getItem('username') || 'unknown',
+            time: new Date().toISOString()
         });
-        
-        // Enter key for password
-        document.getElementById('password-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') verifyPassword();
-        });
-        
-        // Auto-focus password input
-        setTimeout(() => {
-            document.getElementById('password-input').focus();
-        }, 500);
+    }
 
-        // Check for existing session
-        const sessionToken = localStorage.getItem('video_session_token');
-        if (sessionToken) {
-            STATE.sessionToken = sessionToken;
-            document.getElementById('password-modal').style.display = 'none';
-            document.getElementById('loading-screen').style.display = 'flex';
-            setTimeout(() => {
-                loadVideoContent();
-            }, 1000);
-        } else {
-            // Show password modal immediately (don't show loading screen)
-            document.getElementById('loading-screen').style.display = 'none';
-            document.getElementById('password-modal').style.display = 'flex';
+    // ===========================================
+    // PAGE PROTECTION
+    // ===========================================
+    // Prevent page close during playback
+    window.addEventListener('beforeunload', function(e) {
+        if (STATE.videoLoaded) {
+            e.preventDefault();
+            e.returnValue = '⚠️ You are watching a secure video. Are you sure you want to leave?';
+            return e.returnValue;
         }
-
-        console.log("✅ Secure Video Player Ready");
     });
-    </script>
+
+    // Cleanup on exit
+    window.addEventListener('unload', function() {
+        if (STATE.videoLoaded) {
+            logEvent('page_closed_during_playback');
+        }
+    });
     </script>
 </body>
 </html>
-
