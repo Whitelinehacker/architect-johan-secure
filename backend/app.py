@@ -2248,6 +2248,397 @@ def get_video_library(current_user):
         logger.error(f"Video library error: {e}")
         return jsonify({'error': 'Failed to load video library'}), 500
 
+@app.route('/api/video-courses/<course_id>/modules', methods=['GET'])
+@token_required
+def get_course_modules(current_user, course_id):
+    """Get all modules for a specific course"""
+    try:
+        # Course modules data (you can extend this with MongoDB)
+        courses = {
+            'ceh_v13': {
+                'id': 'ceh_v13',
+                'title': 'CEH v13 - Certified Ethical Hacker',
+                'description': 'Complete Ethical Hacking course covering penetration testing, vulnerability assessment, and security tools.',
+                'modules': [
+                    {
+                        'id': 'module_00',
+                        'title': 'Module 00: Course Introduction',
+                        'description': 'Introduction to CEH v13 course, syllabus, and certification path.',
+                        'duration': '45:30',
+                        'video_id': 'ceh_intro_1',
+                        'order': 0,
+                        'locked': False,
+                        'thumbnail': 'https://img.youtube.com/vi/piz1aVOw_3k/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_01',
+                        'title': 'Module 01: Introduction to Ethical Hacking',
+                        'description': 'Understanding ethical hacking, legal aspects, and key concepts.',
+                        'duration': '58:20',
+                        'video_id': 'ceh_module_01',
+                        'order': 1,
+                        'locked': False,
+                        'thumbnail': 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_02',
+                        'title': 'Module 02: Footprinting and Reconnaissance',
+                        'description': 'Information gathering techniques and footprinting methodologies.',
+                        'duration': '1:05:45',
+                        'video_id': 'ceh_module_02',
+                        'order': 2,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/9bZkp7q19f0/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_03',
+                        'title': 'Module 03: Scanning Networks',
+                        'description': 'Network scanning techniques and port scanning methods.',
+                        'duration': '1:12:30',
+                        'video_id': 'ceh_module_03',
+                        'order': 3,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/L_jWHffIx5E/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_04',
+                        'title': 'Module 04: Enumeration',
+                        'description': 'System enumeration and extracting information from targets.',
+                        'duration': '1:08:15',
+                        'video_id': 'ceh_module_04',
+                        'order': 4,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/CduA0TULnow/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_05',
+                        'title': 'Module 05: Vulnerability Analysis',
+                        'description': 'Identifying and analyzing system vulnerabilities.',
+                        'duration': '1:15:40',
+                        'video_id': 'ceh_module_05',
+                        'order': 5,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/BgxXwKvxY7Y/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_06',
+                        'title': 'Module 06: System Hacking',
+                        'description': 'System hacking techniques and password cracking.',
+                        'duration': '1:20:25',
+                        'video_id': 'ceh_module_06',
+                        'order': 6,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/mWRsgZuwf_8/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_07',
+                        'title': 'Module 07: Malware Threats',
+                        'description': 'Understanding malware, viruses, and trojans.',
+                        'duration': '1:10:50',
+                        'video_id': 'ceh_module_07',
+                        'order': 7,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/OPf0YbXqDm0/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_08',
+                        'title': 'Module 08: Sniffing',
+                        'description': 'Network sniffing techniques and packet analysis.',
+                        'duration': '1:18:35',
+                        'video_id': 'ceh_module_08',
+                        'order': 8,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/7NOSDKb0HlU/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_09',
+                        'title': 'Module 09: Social Engineering',
+                        'description': 'Social engineering attacks and prevention.',
+                        'duration': '1:05:20',
+                        'video_id': 'ceh_module_09',
+                        'order': 9,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/UtNYzv8gLbs/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_10',
+                        'title': 'Module 10: Denial-of-Service',
+                        'description': 'DoS and DDoS attacks and mitigation.',
+                        'duration': '1:15:10',
+                        'video_id': 'ceh_module_10',
+                        'order': 10,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/8SbUC-UaAxE/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_11',
+                        'title': 'Module 11: Session Hijacking',
+                        'description': 'Session hijacking techniques and protection.',
+                        'duration': '1:12:45',
+                        'video_id': 'ceh_module_11',
+                        'order': 11,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/3NnUy1Omm_4/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_12',
+                        'title': 'Module 12: Evading IDS, Firewalls and Honeypots',
+                        'description': 'Bypassing security systems and detection.',
+                        'duration': '1:25:30',
+                        'video_id': 'ceh_module_12',
+                        'order': 12,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/2Vv-BfVoq4g/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_13',
+                        'title': 'Module 13: Hacking Web Servers',
+                        'description': 'Web server attacks and security.',
+                        'duration': '1:30:15',
+                        'video_id': 'ceh_module_13',
+                        'order': 13,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/kffacxfA7G4/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_14',
+                        'title': 'Module 14: Hacking Web Applications',
+                        'description': 'Web application vulnerabilities and exploitation.',
+                        'duration': '1:35:40',
+                        'video_id': 'ceh_module_14',
+                        'order': 14,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/fLexgOhs2SM/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_15',
+                        'title': 'Module 15: SQL Injection',
+                        'description': 'SQL injection attacks and prevention.',
+                        'duration': '1:28:25',
+                        'video_id': 'ceh_module_15',
+                        'order': 15,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/ciNHn38EyRc/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_16',
+                        'title': 'Module 16: Hacking Wireless Networks',
+                        'description': 'Wireless network attacks and security.',
+                        'duration': '1:22:10',
+                        'video_id': 'ceh_module_16',
+                        'order': 16,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/ns1V4eJ2IqQ/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_17',
+                        'title': 'Module 17: Hacking Mobile Platforms',
+                        'description': 'Mobile security threats and protection.',
+                        'duration': '1:18:45',
+                        'video_id': 'ceh_module_17',
+                        'order': 17,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/YQHsXMglC9A/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_18',
+                        'title': 'Module 18: IoT and OT Hacking',
+                        'description': 'IoT security challenges and attacks.',
+                        'duration': '1:20:30',
+                        'video_id': 'ceh_module_18',
+                        'order': 18,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/JwSA3d3cUqg/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_19',
+                        'title': 'Module 19: Cloud Computing',
+                        'description': 'Cloud security threats and protection.',
+                        'duration': '1:15:55',
+                        'video_id': 'ceh_module_19',
+                        'order': 19,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/e-ORhEE9VVg/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_20',
+                        'title': 'Module 20: Cryptography',
+                        'description': 'Cryptography concepts and implementation.',
+                        'duration': '1:32:20',
+                        'video_id': 'ceh_module_20',
+                        'order': 20,
+                        'locked': True,
+                        'thumbnail': 'https://img.youtube.com/vi/NmM9HA2MQGI/maxresdefault.jpg'
+                    }
+                ],
+                'total_modules': 21,
+                'total_duration': '28 hours 45 minutes',
+                'instructor': 'Architect Johan',
+                'level': 'Advanced',
+                'category': 'Cybersecurity'
+            },
+            'python': {
+                'id': 'python',
+                'title': 'Python Programming Masterclass',
+                'description': 'Complete Python programming course from basics to advanced concepts.',
+                'modules': [
+                    {
+                        'id': 'module_00',
+                        'title': 'Module 00: Python Setup & Introduction',
+                        'description': 'Setting up Python environment and basic concepts.',
+                        'duration': '35:20',
+                        'video_id': 'python_intro',
+                        'order': 0,
+                        'locked': False,
+                        'thumbnail': 'https://img.youtube.com/vi/_uQrJ0TkZlc/maxresdefault.jpg'
+                    }
+                    # Add more Python modules...
+                ]
+            }
+        }
+        
+        course = courses.get(course_id)
+        if not course:
+            return jsonify({'error': 'Course not found'}), 404
+        
+        return jsonify({
+            'success': True,
+            'course': course
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Course modules error: {e}")
+        return jsonify({'error': 'Failed to load course modules'}), 500
+    
+
+@app.route('/api/get-video-progress', methods=['GET'])
+@token_required
+def get_video_progress(current_user):
+    """Get user's video progress for a course"""
+    try:
+        course_id = request.args.get('course')
+        
+        # Get from MongoDB
+        db = get_db()
+        if db is not None:
+            progress_collection = db.video_progress
+            
+            # Find user's progress for this course
+            progress_data = progress_collection.find({
+                'username': current_user,
+                'course_id': course_id
+            })
+            
+            completed_modules = []
+            for doc in progress_data:
+                completed_modules.append(doc.get('module_id'))
+            
+            return jsonify({
+                'success': True,
+                'progress': completed_modules
+            }), 200
+        else:
+            return jsonify({'success': True, 'progress': []}), 200
+            
+    except Exception as e:
+        logger.error(f"Get video progress error: {e}")
+        return jsonify({'success': True, 'progress': []}), 200
+
+@app.route('/api/save-module-progress', methods=['POST'])
+@token_required
+def save_module_progress(current_user):
+    """Save user's module progress"""
+    try:
+        data = request.get_json()
+        course_id = data.get('course_id')
+        module_id = data.get('module_id')
+        completed = data.get('completed', False)
+        
+        if not course_id or not module_id:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Save to MongoDB
+        db = get_db()
+        if db is not None:
+            progress_collection = db.video_progress
+            
+            progress_collection.update_one(
+                {
+                    'username': current_user,
+                    'course_id': course_id,
+                    'module_id': module_id
+                },
+                {
+                    '$set': {
+                        'completed': completed,
+                        'last_watched': datetime.datetime.utcnow(),
+                        'progress': 100 if completed else 0
+                    },
+                    '$setOnInsert': {
+                        'first_watched': datetime.datetime.utcnow()
+                    }
+                },
+                upsert=True
+            )
+        
+        # Log activity
+        log_user_activity(current_user, 
+                         f'module_completed_{course_id}_{module_id}' 
+                         if completed else f'module_started_{course_id}_{module_id}',
+                         request.remote_addr)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Progress saved successfully'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Save module progress error: {e}")
+        return jsonify({'error': 'Failed to save progress'}), 500
+
+@app.route('/api/verify-module-password', methods=['POST'])
+@token_required
+def verify_module_password(current_user):
+    """Verify password for locked module"""
+    try:
+        data = request.get_json()
+        module_id = data.get('module_id')
+        password = data.get('password')
+        
+        # Define module passwords
+        module_passwords = {
+            'module_02': 'CEH_Module2_2024',
+            'module_03': 'CEH_Module3_2024',
+            # Add more module passwords
+        }
+        
+        if module_id in module_passwords:
+            if password == module_passwords[module_id]:
+                return jsonify({'success': True}), 200
+            else:
+                return jsonify({'error': 'Incorrect password'}), 401
+        else:
+            return jsonify({'error': 'Module not found'}), 404
+            
+    except Exception as e:
+        logger.error(f"Module password verification error: {e}")
+        return jsonify({'error': 'Verification failed'}), 500
+    
+def get_video_progress_collection():
+    """Get video_progress collection with indexes"""
+    if not MONGODB_AVAILABLE:
+        return None
+    
+    db = get_db()
+    if db is not None:
+        collection = db.video_progress
+        try:
+            collection.create_index([("username", 1), ("course_id", 1), ("module_id", 1)], unique=True)
+        except Exception as e:
+            logger.error(f"Error creating index: {e}")
+        return collection
+    return None
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
@@ -2276,5 +2667,6 @@ if __name__ == '__main__':
     print(f"🎥 VIDEO_PASSWORD: {'✅ Set' if os.getenv('VIDEO_PASSWORD') else '❌ Using Default'}")
     
     app.run(debug=False, host='0.0.0.0', port=port)
+
 
 
