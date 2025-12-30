@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architect Johan — Course Player</title>
+    <style>
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0f0f;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Main Container */
+        .course-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: #1a1a1a;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: #000;
+            border-bottom: 1px solid #333;
+        }
+
+        .course-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #00ff00;
+            margin-bottom: 5px;
+        }
+
+        .course-info {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .modules-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .module-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: #222;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            position: relative;
+        }
+
+        .module-item:hover {
+            background: #2a2a2a;
+            border-color: #00ff00;
+        }
+
+        .module-item.active {
+            background: rgba(0, 255, 0, 0.1);
+            border-color: #00ff00;
+        }
+
+        .module-item.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .module-item.locked::after {
+            content: '🔒';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+        }
+
+        .module-number {
+            font-size: 12px;
+            color: #00ff00;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .module-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #fff;
+        }
+
+        .module-duration {
+            font-size: 11px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .progress-indicator {
+            position: absolute;
+            bottom: 5px;
+            right: 15px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff00;
+            opacity: 0;
+        }
+
+        .module-item.completed .progress-indicator {
+            opacity: 1;
+        }
+
+        /* Search & Filter */
+        .sidebar-search {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #00ff00;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Video Header */
+        .video-header {
+            padding: 15px 25px;
+            background: #000;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .video-title-section h2 {
+            font-size: 22px;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .module-path {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-btn {
+            padding: 8px 16px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .header-btn:hover {
+            background: #2a2a2a;
+            border-color: #00ff00;
+        }
+
+        .header-btn.primary {
+            background: #00ff00;
+            color: #000;
+            border-color: #00ff00;
+            font-weight: 600;
+        }
+
+        .header-btn.primary:hover {
+            background: #00cc00;
+        }
+
+        /* Video Player Container */
+        .video-player-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #video-player {
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        .video-placeholder {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+
+        .placeholder-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        /* Video Controls */
+        .video-controls {
+            padding: 15px 25px;
+            background: #000;
+            border-top: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            background: #2a2a2a;
+            border-color: #00ff00;
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Module Content */
+        .module-content {
+            padding: 25px;
+            background: #1a1a1a;
+            border-top: 1px solid #333;
+            display: none;
+        }
+
+        .module-content.active {
+            display: block;
+        }
+
+        .content-header {
+            margin-bottom: 20px;
+        }
+
+        .content-title {
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .content-description {
+            color: #aaa;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .resources-section {
+            margin-top: 25px;
+        }
+
+        .resources-title {
+            font-size: 16px;
+            color: #00ff00;
+            margin-bottom: 15px;
+        }
+
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .resource-card {
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .resource-card:hover {
+            border-color: #00ff00;
+            transform: translateY(-2px);
+        }
+
+        .resource-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #00ff00;
+        }
+
+        .resource-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #fff;
+        }
+
+        .resource-size {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* Loading State */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 255, 0, 0.3);
+            border-top: 4px solid #00ff00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Password Modal */
+        .password-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .password-modal.active {
+            display: flex;
+        }
+
+        .password-box {
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            border-radius: 15px;
+            padding: 40px;
+            width: 400px;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .password-title {
+            color: #00ff00;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .password-description {
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 15px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .password-input:focus {
+            outline: none;
+            border-color: #00ff00;
+        }
+
+        .password-error {
+            color: #ff4444;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .password-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .password-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .password-btn.submit {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .password-btn.cancel {
+            background: #333;
+            color: #fff;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .course-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 300px;
+                border-right: none;
+                border-bottom: 1px solid #333;
+            }
+            
+            .modules-list {
+                max-height: 200px;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="spinner"></div>
+        <p>Loading course content...</p>
+    </div>
+
+    <!-- Main Container -->
+    <div id="course-container" class="course-container" style="display: none;">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2 id="course-title" class="course-title">CEH v13 - Certified Ethical Hacker</h2>
+                <div class="course-info">
+                    <span class="info-item">📚 <span id="module-count">21 Modules</span></span>
+                    <span class="info-item">⏱️ <span id="course-duration">28h 45m</span></span>
+                    <span class="info-item">🎓 <span id="course-level">Advanced</span></span>
+                </div>
+            </div>
+            
+            <div class="sidebar-search">
+                <input type="text" 
+                       id="module-search" 
+                       class="search-input" 
+                       placeholder="Search modules...">
+            </div>
+            
+            <div class="modules-list" id="modules-list">
+                <!-- Modules will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Video Header -->
+            <div class="video-header">
+                <div class="video-title-section">
+                    <h2 id="current-module-title">Select a module to start learning</h2>
+                    <div class="module-path" id="module-path">Course > Module 00</div>
+                </div>
+                
+                <div class="header-actions">
+                    <button class="header-btn" onclick="toggleFullscreen()">
+                        ⛶ Fullscreen
+                    </button>
+                    <button class="header-btn" onclick="exitCourse()">
+                        🚪 Exit
+                    </button>
+                </div>
+            </div>
+
+            <!-- Video Player -->
+            <div class="video-player-container">
+                <div id="video-player">
+                    <div class="video-placeholder">
+                        <div class="placeholder-icon">🎬</div>
+                        <h3>Select a module to start watching</h3>
+                        <p>Choose a module from the sidebar to begin your learning journey</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Controls -->
+            <div class="video-controls">
+                <div class="control-buttons">
+                    <button class="control-btn" onclick="previousModule()" id="prev-btn" disabled>
+                        ◀ Previous
+                    </button>
+                    <button class="control-btn" onclick="nextModule()" id="next-btn" disabled>
+                        Next ▶
+                    </button>
+                </div>
+                
+                <div class="navigation-buttons">
+                    <button class="control-btn" onclick="toggleContent()" id="content-toggle">
+                        📖 Show Notes
+                    </button>
+                    <button class="control-btn" onclick="downloadResources()">
+                        📥 Download
+                    </button>
+                    <button class="control-btn" onclick="markComplete()" id="complete-btn">
+                        ✓ Mark Complete
+                    </button>
+                </div>
+            </div>
+
+            <!-- Module Content Panel -->
+            <div class="module-content" id="module-content">
+                <div class="content-header">
+                    <h3 class="content-title" id="content-title">Module Content</h3>
+                    <p class="content-description" id="content-description">
+                        Detailed notes and resources for this module will appear here.
+                    </p>
+                </div>
+                
+                <div class="resources-section">
+                    <h4 class="resources-title">📚 Resources</h4>
+                    <div class="resources-grid" id="resources-grid">
+                        <!-- Resources will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="password-modal" class="password-modal">
+        <div class="password-box">
+            <h2 class="password-title">🔐 Secure Access</h2>
+            <p class="password-description" id="password-desc">
+                Enter password to access this module
+            </p>
+            <input type="password" 
+                   id="module-password" 
+                   class="password-input" 
+                   placeholder="Enter module password"
+                   autocomplete="off">
+            <div id="password-error" class="password-error"></div>
+            <div class="password-buttons">
+                <button onclick="verifyModulePassword()" class="password-btn submit">
+                    Unlock Module
+                </button>
+                <button onclick="closePasswordModal()" class="password-btn cancel">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global State
+        const state = {
+            courseId: null,
+            courseData: null,
+            modules: [],
+            currentModule: null,
+            completedModules: new Set(),
+            videoSession: null
+        };
+
+        // DOM Elements
+        const loadingScreen = document.getElementById('loading-screen');
+        const courseContainer = document.getElementById('course-container');
+        const modulesList = document.getElementById('modules-list');
+        const courseTitle = document.getElementById('course-title');
+        const moduleCount = document.getElementById('module-count');
+        const courseDuration = document.getElementById('course-duration');
+        const courseLevel = document.getElementById('course-level');
+        const currentModuleTitle = document.getElementById('current-module-title');
+        const modulePath = document.getElementById('module-path');
+        const videoPlayer = document.getElementById('video-player');
+        const moduleContent = document.getElementById('module-content');
+        const contentTitle = document.getElementById('content-title');
+        const contentDescription = document.getElementById('content-description');
+        const resourcesGrid = document.getElementById('resources-grid');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const contentToggle = document.getElementById('content-toggle');
+        const completeBtn = document.getElementById('complete-btn');
+        const passwordModal = document.getElementById('password-modal');
+        const passwordInput = document.getElementById('module-password');
+        const passwordError = document.getElementById('password-error');
+        const passwordDesc = document.getElementById('password-desc');
+        const moduleSearch = document.getElementById('module-search');
+
+        // API Configuration
+        const API_BASE = 'https://architect-johan-secure.onrender.com';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get course ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            state.courseId = urlParams.get('course') || 'ceh_v13';
+            
+            // Check authentication
+            if (!checkAuth()) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Load course data
+            loadCourseData();
+            
+            // Load user progress
+            loadUserProgress();
+            
+            // Setup event listeners
+            setupEventListeners();
+        });
+
+        // Authentication Check
+        function checkAuth() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                return false;
+            }
+            
+            // Validate token
+            fetch(`${API_BASE}/api/validate-token`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }).catch(() => {
+                localStorage.removeItem('auth_token');
+                window.location.href = 'index.html';
+            });
+            
+            return true;
+        }
+
+        // Load Course Data
+        async function loadCourseData() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch(`${API_BASE}/api/video-courses/${state.courseId}/modules`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load course');
+                }
+                
+                const data = await response.json();
+                if (data.success) {
+                    state.courseData = data.course;
+                    state.modules = data.course.modules;
+                    renderCourseInfo();
+                    renderModulesList();
+                    hideLoading();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Failed to load course:', error);
+                alert('Failed to load course. Please try again.');
+                window.location.href = 'videos.html';
+            }
+        }
+
+        // Load User Progress
+        async function loadUserProgress() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch(`${API_BASE}/api/get-video-progress?course=${state.courseId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.progress) {
+                        // Mark completed modules
+                        data.progress.forEach(moduleId => {
+                            state.completedModules.add(moduleId);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load progress:', error);
+            }
+        }
+
+        // Render Course Info
+        function renderCourseInfo() {
+            if (!state.courseData) return;
+            
+            courseTitle.textContent = state.courseData.title;
+            moduleCount.textContent = `${state.courseData.total_modules || state.modules.length} Modules`;
+            courseDuration.textContent = state.courseData.total_duration || 'N/A';
+            courseLevel.textContent = state.courseData.level || 'Intermediate';
+        }
+
+        // Render Modules List
+        function renderModulesList() {
+            modulesList.innerHTML = '';
+            
+            state.modules.forEach(module => {
+                const moduleElement = createModuleElement(module);
+                modulesList.appendChild(moduleElement);
+            });
+        }
+
+        // Create Module Element
+        function createModuleElement(module) {
+            const div = document.createElement('div');
+            div.className = `module-item ${module.locked ? 'locked' : ''} ${state.completedModules.has(module.id) ? 'completed' : ''}`;
+            div.dataset.moduleId = module.id;
+            div.dataset.order = module.order;
+            
+            div.innerHTML = `
+                <div class="module-number">Module ${module.order.toString().padStart(2, '0')}</div>
+                <div class="module-title">${module.title}</div>
+                <div class="module-duration">⏱️ ${module.duration}</div>
+                <div class="progress-indicator"></div>
+            `;
+            
+            if (!module.locked) {
+                div.addEventListener('click', () => selectModule(module));
+            }
+            
+            return div;
+        }
+
+        // Select Module
+        function selectModule(module) {
+            if (module.locked) {
+                // Show password modal for locked modules
+                state.currentModule = module;
+                showPasswordModal(module);
+                return;
+            }
+            
+            loadModule(module);
+        }
+
+        // Load Module
+        async function loadModule(module) {
+            // Update UI
+            updateModuleUI(module);
+            
+            // Load video content
+            await loadVideoContent(module);
+            
+            // Load module content
+            loadModuleContent(module);
+            
+            // Update navigation buttons
+            updateNavigationButtons();
+            
+            // Save progress
+            saveModuleProgress(module.id);
+        }
+
+        // Update Module UI
+        function updateModuleUI(module) {
+            // Update current module
+            state.currentModule = module;
+            
+            // Update header
+            currentModuleTitle.textContent = module.title;
+            modulePath.textContent = `${state.courseData.title} > Module ${module.order.toString().padStart(2, '0')}`;
+            
+            // Update active state in sidebar
+            document.querySelectorAll('.module-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.moduleId === module.id) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // Load Video Content
+        async function loadVideoContent(module) {
+            try {
+                // Clear previous video
+                videoPlayer.innerHTML = '';
+                
+                // Create video container
+                const videoContainer = document.createElement('div');
+                videoContainer.style.width = '100%';
+                videoContainer.style.height = '100%';
+                videoContainer.style.background = '#000';
+                
+                // Check if module requires password
+                if (module.requiresPassword) {
+                    videoContainer.innerHTML = `
+                        <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; color:#fff;">
+                            <div style="font-size:48px; margin-bottom:20px;">🔐</div>
+                            <h3>Secure Video</h3>
+                            <p>Password required to access this video</p>
+                            <button onclick="showPasswordModalForVideo()" 
+                                    style="margin-top:20px; padding:10px 20px; background:#00ff00; color:#000; border:none; border-radius:5px; cursor:pointer;">
+                                Enter Password
+                            </button>
+                        </div>
+                    `;
+                    videoPlayer.appendChild(videoContainer);
+                    return;
+                }
+                
+                // Load actual video embed
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch(`${API_BASE}/api/get-video-embed/${module.video_id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.embed) {
+                        videoContainer.innerHTML = data.embed;
+                    } else {
+                        showPlaceholderVideo(module);
+                    }
+                } else {
+                    showPlaceholderVideo(module);
+                }
+                
+                videoPlayer.appendChild(videoContainer);
+                
+            } catch (error) {
+                console.error('Failed to load video:', error);
+                showPlaceholderVideo(module);
+            }
+        }
+
+        // Show Placeholder Video
+        function showPlaceholderVideo(module) {
+            videoPlayer.innerHTML = `
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; color:#fff; text-align:center;">
+                    <div style="font-size:60px; margin-bottom:20px;">🎬</div>
+                    <h2>${module.title}</h2>
+                    <p style="margin-top:10px; color:#888;">Video content for this module</p>
+                    <div style="margin-top:30px; width:80%; max-width:600px; height:2px; background:#333;"></div>
+                    <p style="margin-top:20px; color:#666;">Duration: ${module.duration}</p>
+                </div>
+            `;
+        }
+
+        // Load Module Content
+        function loadModuleContent(module) {
+            // Update content panel
+            contentTitle.textContent = module.title;
+            contentDescription.textContent = module.description;
+            
+            // Load resources
+            loadModuleResources(module);
+        }
+
+        // Load Module Resources
+        function loadModuleResources(module) {
+            resourcesGrid.innerHTML = '';
+            
+            // Default resources
+            const resources = [
+                {
+                    icon: '📄',
+                    title: 'Module Notes PDF',
+                    size: '2.5 MB',
+                    url: '#'
+                },
+                {
+                    icon: '📋',
+                    title: 'Practice Exercises',
+                    size: '1.8 MB',
+                    url: '#'
+                },
+                {
+                    icon: '🔗',
+                    title: 'Reference Links',
+                    size: '150 KB',
+                    url: '#'
+                },
+                {
+                    icon: '💻',
+                    title: 'Lab Files',
+                    size: '15.2 MB',
+                    url: '#'
+                }
+            ];
+            
+            resources.forEach(resource => {
+                const resourceCard = document.createElement('div');
+                resourceCard.className = 'resource-card';
+                resourceCard.innerHTML = `
+                    <div class="resource-icon">${resource.icon}</div>
+                    <div class="resource-title">${resource.title}</div>
+                    <div class="resource-size">${resource.size}</div>
+                `;
+                resourceCard.addEventListener('click', () => downloadResource(resource));
+                resourcesGrid.appendChild(resourceCard);
+            });
+        }
+
+        // Password Modal Functions
+        function showPasswordModal(module) {
+            state.currentModule = module;
+            passwordDesc.textContent = `Enter password to access: ${module.title}`;
+            passwordInput.value = '';
+            passwordError.style.display = 'none';
+            passwordModal.classList.add('active');
+            passwordInput.focus();
+        }
+
+        function closePasswordModal() {
+            passwordModal.classList.remove('active');
+            state.currentModule = null;
+        }
+
+        async function verifyModulePassword() {
+            const password = passwordInput.value.trim();
+            
+            if (!password) {
+                showPasswordError('Password is required');
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch(`${API_BASE}/api/verify-module-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        module_id: state.currentModule.id,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Unlock module
+                    state.currentModule.locked = false;
+                    closePasswordModal();
+                    loadModule(state.currentModule);
+                    
+                    // Update module in list
+                    const moduleElement = document.querySelector(`[data-module-id="${state.currentModule.id}"]`);
+                    if (moduleElement) {
+                        moduleElement.classList.remove('locked');
+                        moduleElement.addEventListener('click', () => selectModule(state.currentModule));
+                    }
+                } else {
+                    showPasswordError(data.error || 'Incorrect password');
+                }
+            } catch (error) {
+                showPasswordError('Network error. Please try again.');
+            }
+        }
+
+        function showPasswordError(message) {
+            passwordError.textContent = message;
+            passwordError.style.display = 'block';
+        }
+
+        // Navigation Functions
+        function previousModule() {
+            if (!state.currentModule) return;
+            
+            const currentOrder = parseInt(state.currentModule.order);
+            if (currentOrder > 0) {
+                const prevModule = state.modules.find(m => m.order === currentOrder - 1);
+                if (prevModule) {
+                    selectModule(prevModule);
+                }
+            }
+        }
+
+        function nextModule() {
+            if (!state.currentModule) return;
+            
+            const currentOrder = parseInt(state.currentModule.order);
+            const nextModule = state.modules.find(m => m.order === currentOrder + 1);
+            if (nextModule) {
+                selectModule(nextModule);
+            }
+        }
+
+        function updateNavigationButtons() {
+            if (!state.currentModule) {
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                return;
+            }
+            
+            const currentOrder = parseInt(state.currentModule.order);
+            prevBtn.disabled = currentOrder === 0;
+            nextBtn.disabled = currentOrder === state.modules.length - 1;
+        }
+
+        // Content Toggle
+        function toggleContent() {
+            moduleContent.classList.toggle('active');
+            contentToggle.textContent = moduleContent.classList.contains('active') ? 
+                '📖 Hide Notes' : '📖 Show Notes';
+        }
+
+        // Mark Complete
+        async function markComplete() {
+            if (!state.currentModule) return;
+            
+            state.completedModules.add(state.currentModule.id);
+            
+            // Update UI
+            const moduleElement = document.querySelector(`[data-module-id="${state.currentModule.id}"]`);
+            if (moduleElement) {
+                moduleElement.classList.add('completed');
+            }
+            
+            // Save to server
+            try {
+                const token = localStorage.getItem('auth_token');
+                await fetch(`${API_BASE}/api/save-module-progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        course_id: state.courseId,
+                        module_id: state.currentModule.id,
+                        completed: true
+                    })
+                });
+            } catch (error) {
+                console.error('Failed to save progress:', error);
+            }
+            
+            // Auto-advance to next module
+            setTimeout(() => {
+                nextModule();
+            }, 1000);
+        }
+
+        // Download Resources
+        function downloadResource(resource) {
+            // Implement download logic
+            alert(`Downloading: ${resource.title}`);
+        }
+
+        function downloadResources() {
+            alert('Downloading all resources for this module...');
+        }
+
+        // Save Module Progress
+        async function saveModuleProgress(moduleId) {
+            try {
+                const token = localStorage.getItem('auth_token');
+                await fetch(`${API_BASE}/api/track-video-watch`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        course_id: state.courseId,
+                        module_id: moduleId,
+                        action: 'started_watching'
+                    })
+                });
+            } catch (error) {
+                console.error('Failed to save progress:', error);
+            }
+        }
+
+        // Fullscreen
+        function toggleFullscreen() {
+            const container = document.querySelector('.main-content');
+            if (!document.fullscreenElement) {
+                container.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Exit Course
+        function exitCourse() {
+            if (confirm('Exit course player?')) {
+                window.location.href = 'videos.html';
+            }
+        }
+
+        // Search Modules
+        function setupEventListeners() {
+            // Module search
+            moduleSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                document.querySelectorAll('.module-item').forEach(item => {
+                    const title = item.querySelector('.module-title').textContent.toLowerCase();
+                    const number = item.querySelector('.module-number').textContent.toLowerCase();
+                    
+                    if (title.includes(searchTerm) || number.includes(searchTerm)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closePasswordModal();
+                }
+                
+                if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
+                    previousModule();
+                }
+                
+                if (e.key === 'ArrowRight' && !nextBtn.disabled) {
+                    nextModule();
+                }
+                
+                if (e.key === ' ' || e.key === 'Spacebar') {
+                    e.preventDefault();
+                    // Toggle play/pause if video is playing
+                }
+            });
+        }
+
+        // Hide Loading Screen
+        function hideLoading() {
+            loadingScreen.style.display = 'none';
+            courseContainer.style.display = 'flex';
+        }
+
+        // Auto-select first unlocked module
+        function autoSelectFirstModule() {
+            const unlockedModule = state.modules.find(module => !module.locked);
+            if (unlockedModule) {
+                selectModule(unlockedModule);
+            }
+        }
+
+        // Initialize after data load
+        setTimeout(() => {
+            if (state.modules.length > 0) {
+                autoSelectFirstModule();
+            }
+        }, 500);
+    </script>
+</body>
+</html>
