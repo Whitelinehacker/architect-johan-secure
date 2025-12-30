@@ -20,6 +20,44 @@
             overflow: hidden;
         }
 
+        /* Security overlay to prevent inspection */
+        .security-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 99999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+        
+        .security-content {
+            background: rgba(255, 0, 0, 0.2);
+            padding: 40px;
+            border-radius: 10px;
+            border: 2px solid #ff4444;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .security-message {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #ff4444;
+        }
+        
+        .anti-debug {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            opacity: 0;
+        }
+
         /* Main Container */
         .course-container {
             display: flex;
@@ -535,6 +573,23 @@
     </style>
 </head>
 <body>
+    <!-- Security Overlay -->
+    <div id="security-overlay" class="security-overlay">
+        <div class="security-content">
+            <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+            <div class="security-message">Security Alert</div>
+            <p style="font-size: 14px; margin-top: 20px; color: #ff4444;">
+                Security violation detected. Developer tools are disabled.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Anti-debug elements -->
+    <div class="anti-debug">
+        <!-- Hidden content to confuse scrapers -->
+        <div data-security="true" data-protected="true" data-inspect="blocked"></div>
+    </div>
+    
     <!-- Loading Screen -->
     <div id="loading-screen" class="loading-screen">
         <div class="spinner"></div>
@@ -663,7 +718,116 @@
         </div>
     </div>
 
- <script>
+<script>
+    // ==================== SECURITY FUNCTIONS ====================
+    
+    // Security: Prevent right-click, F12, Ctrl+Shift+I, Ctrl+U, etc.
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        showSecurityAlert('Right-click is disabled for security.');
+        logSecurityEvent('right_click_blocked');
+    });
+    
+    // Block all developer tool shortcuts
+    document.addEventListener('keydown', function(e) {
+        const blockedCombinations = [
+            // F12
+            {key: 'F12', ctrl: false, shift: false, alt: false, meta: false},
+            // Ctrl+Shift+I
+            {key: 'I', ctrl: true, shift: true, alt: false, meta: false},
+            // Ctrl+Shift+J
+            {key: 'J', ctrl: true, shift: true, alt: false, meta: false},
+            // Ctrl+Shift+C
+            {key: 'C', ctrl: true, shift: true, alt: false, meta: false},
+            // Ctrl+U
+            {key: 'U', ctrl: true, shift: false, alt: false, meta: false},
+            // Ctrl+S
+            {key: 'S', ctrl: true, shift: false, alt: false, meta: false},
+            // Ctrl+P
+            {key: 'P', ctrl: true, shift: false, alt: false, meta: false},
+            // Alt+Shift+I
+            {key: 'I', ctrl: false, shift: true, alt: true, meta: false},
+            // Windows key + Shift + I
+            {key: 'I', ctrl: false, shift: true, alt: false, meta: true}
+        ];
+        
+        for (const combo of blockedCombinations) {
+            if (e.key === combo.key && 
+                e.ctrlKey === combo.ctrl && 
+                e.shiftKey === combo.shift && 
+                e.altKey === combo.alt &&
+                e.metaKey === combo.meta) {
+                e.preventDefault();
+                showSecurityAlert('Developer tools are disabled for security.');
+                logSecurityEvent(`keyboard_shortcut_blocked: ${e.key}`);
+                return false;
+            }
+        }
+        
+        // Also block Ctrl+Shift+Del, Ctrl+Shift+F12, etc.
+        if (e.ctrlKey && e.shiftKey) {
+            showSecurityAlert('Shortcut blocked for security.');
+            e.preventDefault();
+            logSecurityEvent('ctrl_shift_combo_blocked');
+            return false;
+        }
+    });
+    
+    // Detect if dev tools are open using console trick
+    let devtools = /./;
+    devtools.toString = function() {
+        showSecurityAlert('Developer tools detected!');
+        logSecurityEvent('devtools_opened_detected');
+        return '';
+    };
+    
+    // Regular console check
+    console.log('%c', devtools);
+    
+    // Detect debugger statements
+    setInterval(function() {
+        const start = new Date().getTime();
+        (function() {
+            debugger;
+        })();
+        const end = new Date().getTime();
+        if (end - start > 100) {
+            showSecurityAlert('Debugger detected!');
+            logSecurityEvent('debugger_detected');
+        }
+    }, 1000);
+    
+    // Function to show security alert
+    function showSecurityAlert(message) {
+        const overlay = document.getElementById('security-overlay');
+        overlay.querySelector('.security-message').textContent = message;
+        overlay.style.display = 'flex';
+        
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 3000);
+        
+        // Log security event to server
+        logSecurityEvent(`Security Alert: ${message}`);
+    }
+    
+    // Log security events to server
+    async function logSecurityEvent(event) {
+        try {
+            await fetch(`${API_BASE}/api/security/log`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ event: event })
+            });
+        } catch (error) {
+            // Silent fail for security events
+        }
+    }
+    
+    // ==================== COURSE PLAYER FUNCTIONS ====================
+    
     // Global State
     const state = {
         courseId: null,
@@ -777,7 +941,7 @@
         }
     }
 
-    // Load User Progress - CHANGED ENDPOINT NAME
+    // Load User Progress
     async function loadUserProgress() {
         try {
             const token = localStorage.getItem('auth_token');
@@ -903,13 +1067,13 @@
             videoContainer.style.background = '#000';
             
             // Check if module requires password
-            if (module.requiresPassword) {
+            if (module.locked) {
                 videoContainer.innerHTML = `
                     <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; color:#fff;">
                         <div style="font-size:48px; margin-bottom:20px;">🔐</div>
                         <h3>Secure Video</h3>
                         <p>Password required to access this video</p>
-                        <button onclick="showPasswordModalForVideo()" 
+                        <button onclick="showPasswordModal(state.currentModule)" 
                                 style="margin-top:20px; padding:10px 20px; background:#00ff00; color:#000; border:none; border-radius:5px; cursor:pointer;">
                             Enter Password
                         </button>
@@ -919,12 +1083,46 @@
                 return;
             }
             
-            // For now, show placeholder video
-            showPlaceholderVideo(module);
+            // If module has embed code, use it
+            if (module.embed_code) {
+                videoContainer.innerHTML = module.embed_code;
+                videoPlayer.appendChild(videoContainer);
+                
+                // Add video security features
+                addVideoSecurity();
+                
+                // Track video viewing
+                trackVideoView(module.id);
+            } else {
+                // Fallback to placeholder
+                showPlaceholderVideo(module);
+            }
             
         } catch (error) {
             console.error('Failed to load video:', error);
             showPlaceholderVideo(module);
+        }
+    }
+    
+    // Add video security features
+    function addVideoSecurity() {
+        const iframe = document.querySelector('iframe');
+        if (iframe) {
+            // Add security attributes
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-presentation');
+            iframe.setAttribute('referrerpolicy', 'no-referrer');
+            
+            // Prevent iframe from being accessed via JavaScript
+            try {
+                Object.defineProperty(iframe.contentWindow, 'document', {
+                    get: function() {
+                        showSecurityAlert('Access to iframe document is blocked.');
+                        return null;
+                    }
+                });
+            } catch (e) {
+                // Cross-origin restriction, which is good for security
+            }
         }
     }
 
@@ -1169,6 +1367,27 @@
             console.error('Failed to save progress:', error);
         }
     }
+    
+    // Track video view
+    async function trackVideoView(moduleId) {
+        try {
+            const token = localStorage.getItem('auth_token');
+            await fetch(`${API_BASE}/api/track-video-watch`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    course_id: state.courseId,
+                    module_id: moduleId,
+                    action: 'video_playing'
+                })
+            });
+        } catch (error) {
+            console.error('Failed to track video:', error);
+        }
+    }
 
     // Fullscreen
     function toggleFullscreen() {
@@ -1206,27 +1425,32 @@
             });
         });
         
-        // Keyboard shortcuts
+        // Keyboard shortcuts for navigation (allow these)
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closePasswordModal();
+            if (passwordModal.classList.contains('active')) {
+                if (e.key === 'Escape') {
+                    closePasswordModal();
+                }
+                
+                if (e.key === 'Enter') {
+                    verifyModulePassword();
+                }
             }
             
-            if (passwordModal.classList.contains('active') && e.key === 'Enter') {
-                verifyModulePassword();
-            }
-            
-            if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
-                previousModule();
-            }
-            
-            if (e.key === 'ArrowRight' && !nextBtn.disabled) {
-                nextModule();
-            }
-            
-            if (e.key === ' ' || e.key === 'Spacebar') {
-                e.preventDefault();
-                // Toggle play/pause if video is playing
+            // Navigation shortcuts (only when password modal is not open)
+            if (!passwordModal.classList.contains('active')) {
+                if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
+                    previousModule();
+                }
+                
+                if (e.key === 'ArrowRight' && !nextBtn.disabled) {
+                    nextModule();
+                }
+                
+                if (e.key === ' ' || e.key === 'Spacebar') {
+                    e.preventDefault();
+                    // Space for play/pause if video is playing
+                }
             }
         });
     }
