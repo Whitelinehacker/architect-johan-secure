@@ -69,6 +69,20 @@ PRACTICE_PASSWORDS = {
     'ceh_study_notes': 'CEH^Vault_52@k!Rn'
 }
 
+# Course Access Passwords - NEW
+COURSE_PASSWORDS = {
+    'ceh_v13': 'CEH_V13_2024_SECURE',
+    'ccna': 'CCNA_Cisco_2024',
+    'python': 'Python_2024_Architect',
+    'cybersecurity': 'Cyber_Sec_2024',
+    'linux': 'Linux_Admin_2024',
+    'web_security': 'Web_Sec_2024',
+    'c_programming': 'C_Programming_2024',
+    'ethical_hacking': 'Ethical_Hack_2024',
+    'network_security': 'Net_Sec_2024',
+    'cloud_security': 'Cloud_Sec_2024'
+}
+
 EXAM_LEVEL_PASSWORDS = {
     'exam_level_1': 'Arch1t3ch_Joh@N!X#Exam1_2025',
     'exam_level_2': 'Arch1t3ch_Joh@N!X#Exam2_2025',
@@ -1257,11 +1271,11 @@ def login():
         logger.error(f"Login error: {e}")
         return jsonify({'error': 'Login failed due to server error'}), 500
 
-# PRACTICE SET PASSWORD VERIFICATION
+# PRACTICE SET & COURSE PASSWORD VERIFICATION - UPDATED
 @app.route('/api/verify-practice-password', methods=['POST'])
 @token_required
 def verify_practice_password(current_user):
-    """Verify password for practice set access"""
+    """Verify password for practice set or course access"""
     try:
         data = request.get_json()
         password = data.get('password')
@@ -1270,34 +1284,39 @@ def verify_practice_password(current_user):
         if not password or not practice_set:
             return jsonify({'error': 'Password and practice set are required'}), 400
         
-        # Check if practice set exists
+        # Check if it's a practice set
         if practice_set in PRACTICE_PASSWORDS:
             expected_password = PRACTICE_PASSWORDS[practice_set]
-            
-            if password == expected_password:
-                # Log successful access
-                log_practice_access(current_user, practice_set, request.remote_addr, 'success')
-                
-                # Determine redirect URL based on practice set
-                redirect_url = ''
-                if practice_set == 'practice_set_1':
-                    redirect_url = 'practic_set.html'
-                elif practice_set == 'ceh_study_notes':
-                    redirect_url = 'cehv13_notes.html'
-                else:
-                    redirect_url = f'{practice_set}.html'
-                
-                return jsonify({
-                    'success': True,
-                    'message': 'Password verified successfully',
-                    'redirect_url': redirect_url
-                }), 200
-            else:
-                # Log failed attempt
-                log_practice_access(current_user, practice_set, request.remote_addr, 'failed')
-                return jsonify({'error': 'Incorrect password'}), 401
+        # Check if it's a course
+        elif practice_set in COURSE_PASSWORDS:
+            expected_password = COURSE_PASSWORDS[practice_set]
         else:
-            return jsonify({'error': 'Invalid practice set'}), 404
+            return jsonify({'error': 'Invalid practice set or course'}), 404
+        
+        if password == expected_password:
+            # Log successful access
+            log_practice_access(current_user, practice_set, request.remote_addr, 'success')
+            
+            # Determine redirect URL
+            if practice_set in COURSE_PASSWORDS:
+                # It's a course, redirect to course player
+                redirect_url = f'course-player.html?course={practice_set}'
+            elif practice_set == 'practice_set_1':
+                redirect_url = 'practic_set.html'
+            elif practice_set == 'ceh_study_notes':
+                redirect_url = 'cehv13_notes.html'
+            else:
+                redirect_url = f'{practice_set}.html'
+            
+            return jsonify({
+                'success': True,
+                'message': 'Password verified successfully',
+                'redirect_url': redirect_url
+            }), 200
+        else:
+            # Log failed attempt
+            log_practice_access(current_user, practice_set, request.remote_addr, 'failed')
+            return jsonify({'error': 'Incorrect password'}), 401
             
     except Exception as e:
         logger.error(f"Practice password verification error: {e}")
@@ -1838,12 +1857,12 @@ def get_video_library(current_user):
                 'title': 'CEH v13 - Certified Ethical Hacker',
                 'description': 'Complete Ethical Hacking course covering penetration testing, vulnerability assessment, and security tools.',
                 'thumbnail': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                'videos_count': 15,
-                'duration': '45 hours',
+                'videos_count': 21,
+                'duration': '28 hours 45 minutes',
                 'level': 'Advanced',
                 'locked': False,
                 'requires_password': True,
-                'password_hint': 'CEH v13 Course Password',
+                'password_hint': 'CEH v13 Course Password: CEH_V13_2024_SECURE',
                 'topics': [
                     'Introduction to Ethical Hacking',
                     'Footprinting and Reconnaissance',
@@ -1862,7 +1881,7 @@ def get_video_library(current_user):
                 'level': 'Intermediate',
                 'locked': True,
                 'requires_password': True,
-                'password_hint': 'CCNA Course Password',
+                'password_hint': 'CCNA Course Password: CCNA_Cisco_2024',
                 'topics': [
                     'Networking Fundamentals',
                     'IP Addressing',
@@ -1880,13 +1899,71 @@ def get_video_library(current_user):
                 'duration': '50 hours',
                 'level': 'Beginner to Advanced',
                 'locked': False,
-                'requires_password': False,
+                'requires_password': True,
+                'password_hint': 'Python Course Password: Python_2024_Architect',
                 'topics': [
                     'Python Basics',
                     'Data Structures',
                     'Object-Oriented Programming',
                     'Web Development',
                     'Automation Scripts'
+                ]
+            },
+            'cybersecurity': {
+                'id': 'cybersecurity',
+                'title': 'Cybersecurity Fundamentals',
+                'description': 'Essential cybersecurity concepts, threats, defenses, and best practices.',
+                'thumbnail': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                'videos_count': 10,
+                'duration': '30 hours',
+                'level': 'Beginner',
+                'locked': False,
+                'requires_password': True,
+                'password_hint': 'Cybersecurity Password: Cyber_Sec_2024',
+                'topics': [
+                    'Security Principles',
+                    'Threat Landscape',
+                    'Cryptography',
+                    'Network Security',
+                    'Incident Response'
+                ]
+            },
+            'linux': {
+                'id': 'linux',
+                'title': 'Linux Administration',
+                'description': 'Complete Linux system administration, command line, and server management.',
+                'thumbnail': 'https://images.unsplash.com/photo-1544654803-b69140b285a1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                'videos_count': 18,
+                'duration': '40 hours',
+                'level': 'Intermediate',
+                'locked': True,
+                'requires_password': True,
+                'password_hint': 'Linux Admin Password: Linux_Admin_2024',
+                'topics': [
+                    'Linux Basics',
+                    'File Systems',
+                    'User Management',
+                    'Networking',
+                    'Server Administration'
+                ]
+            },
+            'web_security': {
+                'id': 'web_security',
+                'title': 'Web Application Security',
+                'description': 'Web security vulnerabilities, penetration testing, and secure coding practices.',
+                'thumbnail': 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                'videos_count': 14,
+                'duration': '38 hours',
+                'level': 'Advanced',
+                'locked': True,
+                'requires_password': True,
+                'password_hint': 'Web Security Password: Web_Sec_2024',
+                'topics': [
+                    'OWASP Top 10',
+                    'SQL Injection',
+                    'XSS Attacks',
+                    'CSRF Protection',
+                    'Secure APIs'
                 ]
             }
         }
@@ -2128,6 +2205,38 @@ def get_course_modules(current_user, course_id):
                 'instructor': 'Architect Johan',
                 'level': 'Advanced',
                 'category': 'Cybersecurity'
+            },
+            'python': {
+                'id': 'python',
+                'title': 'Python Programming Masterclass',
+                'description': 'Complete Python programming course from basics to advanced concepts.',
+                'modules': [
+                    {
+                        'id': 'module_00',
+                        'title': 'Module 00: Python Setup & Introduction',
+                        'description': 'Setting up Python environment and basic concepts.',
+                        'duration': '35:20',
+                        'video_id': 'python_intro',
+                        'order': 0,
+                        'locked': False,
+                        'thumbnail': 'https://img.youtube.com/vi/_uQrJ0TkZlc/maxresdefault.jpg'
+                    },
+                    {
+                        'id': 'module_01',
+                        'title': 'Module 01: Python Basics & Syntax',
+                        'description': 'Variables, data types, and basic syntax.',
+                        'duration': '42:15',
+                        'video_id': 'python_basics',
+                        'order': 1,
+                        'locked': False,
+                        'thumbnail': 'https://img.youtube.com/vi/_uQrJ0TkZlc/maxresdefault.jpg'
+                    }
+                ],
+                'total_modules': 15,
+                'total_duration': '24 hours',
+                'instructor': 'Architect Johan',
+                'level': 'Beginner to Advanced',
+                'category': 'Programming'
             }
         }
         
@@ -2641,5 +2750,12 @@ if __name__ == '__main__':
     print(f"🔑 JWT_SECRET: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
     print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
     print(f"🎥 VIDEO_PASSWORD: {'✅ Set' if os.getenv('VIDEO_PASSWORD') else '❌ Using Default'}")
+    
+    # Print course passwords for reference
+    print("\n📚 COURSE PASSWORDS:")
+    print("=" * 40)
+    for course, password in COURSE_PASSWORDS.items():
+        print(f"{course:20} : {password}")
+    print("=" * 40)
     
     app.run(debug=False, host='0.0.0.0', port=port)
