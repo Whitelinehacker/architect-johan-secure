@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Architect Johan — Smart Secure Video Player</title>
+    <title>Architect Johan — Accurate Secure Video Player</title>
     <style>
         /* ===========================================
-           CRITICAL: SCREENSHOT PREVENTION TECHNIQUES
+           BASIC STYLES
         =========================================== */
         body {
             background: #000 !important;
@@ -22,9 +22,6 @@
             left: 0;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
             user-select: none;
         }
 
@@ -55,18 +52,9 @@
             font-size: 32px;
             margin-bottom: 20px;
             color: #ff0000;
-            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
         }
 
-        .black-screen-subtext {
-            font-size: 18px;
-            color: #ff4444;
-            margin-bottom: 30px;
-            max-width: 600px;
-            line-height: 1.5;
-        }
-
-        /* DEBUG MODE TOGGLE */
+        /* DEBUG PANEL */
         #debug-toggle {
             position: fixed;
             top: 10px;
@@ -87,7 +75,7 @@
             top: 50px;
             right: 10px;
             width: 300px;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             border: 1px solid #00ff00;
             border-radius: 5px;
             padding: 15px;
@@ -106,80 +94,11 @@
             border-bottom: 1px solid rgba(0, 255, 0, 0.2);
         }
 
-        .debug-item.success {
-            color: #00ff00;
-        }
+        .debug-item.success { color: #00ff00; }
+        .debug-item.warning { color: #ffff00; }
+        .debug-item.error { color: #ff0000; }
 
-        .debug-item.warning {
-            color: #ffff00;
-        }
-
-        .debug-item.error {
-            color: #ff0000;
-        }
-
-        /* ===========================================
-           SECURITY SCREEN
-        =========================================== */
-        #security-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            color: #ff0000;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000000;
-            text-align: center;
-            padding: 20px;
-            font-family: 'Courier New', monospace;
-        }
-
-        #security-screen.active {
-            display: flex;
-        }
-
-        /* ===========================================
-           LOADING SCREEN
-        =========================================== */
-        #loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 900000;
-            color: #00ff00;
-        }
-
-        .spinner {
-            width: 80px;
-            height: 80px;
-            border: 4px solid rgba(0, 255, 0, 0.3);
-            border-top: 4px solid #00ff00;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 30px;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* ===========================================
-           PASSWORD MODAL
-        =========================================== */
+        /* PASSWORD MODAL */
         #password-modal {
             position: fixed;
             top: 0;
@@ -198,79 +117,66 @@
             background: rgba(20, 20, 20, 0.95);
             border: 3px solid #00ff00;
             border-radius: 15px;
-            padding: 60px 50px;
-            width: 500px;
+            padding: 40px;
+            width: 400px;
             max-width: 90%;
             text-align: center;
             box-shadow: 0 0 50px rgba(0, 255, 0, 0.3);
-            animation: modalAppear 0.5s ease-out;
-        }
-
-        @keyframes modalAppear {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
         }
 
         .password-input {
             width: 100%;
-            padding: 20px;
-            margin: 25px 0;
+            padding: 15px;
+            margin: 20px 0;
             background: rgba(0, 255, 0, 0.1);
             border: 2px solid #00ff00;
             border-radius: 10px;
             color: #00ff00;
             font-family: 'Courier New', monospace;
-            font-size: 20px;
+            font-size: 18px;
             text-align: center;
-            letter-spacing: 2px;
             outline: none;
-            transition: all 0.3s;
         }
 
         .error {
             color: #ff0000;
-            margin: 20px 0;
+            margin: 15px 0;
             display: none;
-            font-size: 16px;
-            min-height: 24px;
+            font-size: 14px;
         }
 
-        .password-buttons {
-            display: flex;
+        /* LOADING SCREEN */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: none;
+            flex-direction: column;
             justify-content: center;
-            gap: 20px;
-            margin-top: 40px;
-        }
-
-        .password-btn {
-            padding: 16px 40px;
-            border: none;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.3s;
-            min-width: 180px;
-            display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
+            z-index: 900000;
+            color: #00ff00;
         }
 
-        #submit-btn {
-            background: linear-gradient(45deg, #00ff00, #00cc00);
-            color: #000;
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(0, 255, 0, 0.3);
+            border-top: 4px solid #00ff00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
         }
 
-        #cancel-btn {
-            background: linear-gradient(45deg, #ff0000, #cc0000);
-            color: #fff;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        /* ===========================================
-           VIDEO CONTAINER
-        =========================================== */
+        /* VIDEO CONTAINER */
         #video-container {
             position: fixed;
             top: 0;
@@ -290,94 +196,68 @@
 
         #video-wrapper {
             width: 95%;
-            max-width: 1600px;
-            height: 90vh;
-            position: relative;
+            max-width: 1400px;
+            height: 85vh;
             background: #000;
-            border: 3px solid #00ff00;
-            border-radius: 15px;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 0 40px rgba(0, 255, 0, 0.2);
         }
 
-        /* ===========================================
-           CONTROLS
-        =========================================== */
+        /* CONTROLS */
         #controls {
             position: fixed;
-            bottom: 40px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.9);
-            padding: 20px 30px;
-            border-radius: 15px;
+            padding: 15px 25px;
+            border-radius: 10px;
             border: 2px solid #00ff00;
             display: none;
-            gap: 20px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            gap: 15px;
             z-index: 200000;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
         }
 
         #controls.active {
             display: flex;
         }
 
-        #controls:hover {
-            opacity: 1;
-        }
-
         .control-btn {
             background: linear-gradient(45deg, #00ff00, #00cc00);
             color: #000;
             border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
+            padding: 12px 25px;
+            border-radius: 8px;
             cursor: pointer;
             font-family: 'Courier New', monospace;
             font-weight: bold;
-            font-size: 16px;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 180px;
-            justify-content: center;
+            font-size: 14px;
         }
 
-        /* ===========================================
-           SECURITY INFO
-        =========================================== */
+        /* SECURITY INFO */
         #security-info {
             position: fixed;
             top: 20px;
             left: 20px;
             color: rgba(255, 255, 255, 0.1);
-            font-size: 14px;
+            font-size: 12px;
             z-index: 150000;
-            pointer-events: none;
             font-family: monospace;
             background: rgba(0, 0, 0, 0.5);
-            padding: 10px 15px;
+            padding: 8px 12px;
             border-radius: 5px;
-            border: 1px solid rgba(255, 0, 0, 0.1);
         }
 
-        /* ===========================================
-           RESPONSIVE DESIGN
-        =========================================== */
+        /* RESPONSIVE */
         @media (max-width: 768px) {
             .password-box {
-                padding: 40px 30px;
-                width: 90%;
+                padding: 30px 20px;
             }
             
             #video-wrapper {
-                width: 99%;
-                height: 80vh;
-                border-width: 2px;
+                width: 98%;
+                height: 75vh;
             }
             
             #debug-panel {
@@ -386,22 +266,20 @@
             }
         }
 
-        /* Progress bar for loading */
-        #load-progress {
-            width: 0%;
-            height: 4px;
-            background: #00ff00;
-            transition: width 0.3s;
-            border-radius: 2px;
-        }
-        
         .progress-container {
-            width: 300px;
+            width: 250px;
             height: 4px;
             background: rgba(0, 255, 0, 0.2);
             border-radius: 2px;
-            margin: 30px 0;
+            margin: 20px 0;
             overflow: hidden;
+        }
+        
+        #load-progress {
+            width: 0%;
+            height: 100%;
+            background: #00ff00;
+            transition: width 0.3s;
         }
     </style>
 </head>
@@ -413,42 +291,22 @@
         <div id="debug-log"></div>
     </div>
 
-    <!-- BLACK SCREEN OVERLAY -->
+    <!-- BLACK SCREEN -->
     <div id="black-screen">
-        <div class="black-screen-text">🚨 RECORDING DETECTED</div>
+        <div class="black-screen-text">🚨 SECURITY ALERT</div>
         <div class="black-screen-subtext" id="detection-details">
-            Screen recording software detected.
+            Recording attempt detected.
         </div>
         <div style="color: #666; font-size: 14px; margin-top: 20px;">
-            Auto-resume in <span id="resume-timer">60</span> seconds
+            Auto-resume in <span id="resume-timer">30</span> seconds
         </div>
     </div>
 
-    <!-- Security Screen -->
-    <div id="security-screen">
-        <h1>🚨 MULTIPLE VIOLATIONS DETECTED</h1>
-        <p style="color: #ff8888; max-width: 600px;">
-            Multiple recording attempts detected. Please close all recording software and refresh the page.
-        </p>
-        <button onclick="resetSecurity()">
-            🔓 TRY AGAIN
-        </button>
-    </div>
-
-    <!-- Loading Screen -->
-    <div id="loading-screen">
-        <div class="spinner"></div>
-        <p>INITIALIZING SECURE PLAYER...</p>
-        <div class="progress-container">
-            <div id="load-progress"></div>
-        </div>
-    </div>
-
-    <!-- Password Modal -->
+    <!-- PASSWORD MODAL -->
     <div id="password-modal">
         <div class="password-box">
-            <h2>🔐 SECURE VIDEO ACCESS</h2>
-            <p>Enter password to access protected content</p>
+            <h2>🔐 SECURE ACCESS</h2>
+            <p>Enter password to watch video</p>
             <input type="password" 
                    class="password-input" 
                    id="password-input" 
@@ -457,33 +315,42 @@
             <div class="error" id="password-error"></div>
             <div class="password-buttons">
                 <button class="password-btn" id="submit-btn">
-                    <span style="font-size: 20px;">🔓</span> UNLOCK
+                    🔓 UNLOCK
                 </button>
                 <button class="password-btn" id="cancel-btn">
-                    <span style="font-size: 20px;">✖</span> CANCEL
+                    ✖ CANCEL
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Video Container -->
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p>LOADING SECURE PLAYER...</p>
+        <div class="progress-container">
+            <div id="load-progress"></div>
+        </div>
+    </div>
+
+    <!-- VIDEO CONTAINER -->
     <div id="video-container">
         <div id="video-wrapper">
             <!-- Video embed will be loaded here -->
         </div>
     </div>
 
-    <!-- Controls -->
+    <!-- CONTROLS -->
     <div id="controls">
         <button class="control-btn" onclick="toggleFullscreen()">
-            <span style="font-size: 20px;">⛶</span> FULLSCREEN
+            ⛶ FULLSCREEN
         </button>
         <button class="control-btn" onclick="exitPlayer()">
-            <span style="font-size: 20px;">🚪</span> EXIT
+            🚪 EXIT
         </button>
     </div>
 
-    <!-- Security Info -->
+    <!-- SECURITY INFO -->
     <div id="security-info"></div>
 
     <script>
@@ -496,10 +363,9 @@
         sessionToken: null,
         recordingDetected: false,
         violations: 0,
-        maxViolations: 3,
+        maxViolations: 5,
         debugMode: false,
-        detectionConfidence: 0, // 0-100, only trigger at high confidence
-        detectionLog: []
+        intervals: []
     };
 
     // ===========================================
@@ -513,389 +379,325 @@
     }
 
     function logDebug(message, type = 'info') {
-        STATE.detectionLog.push({time: new Date(), message, type});
+        const timestamp = new Date().toLocaleTimeString();
+        console.log(`[${timestamp}] ${type.toUpperCase()}: ${message}`);
         
         if (STATE.debugMode) {
             const debugLog = document.getElementById('debug-log');
             const item = document.createElement('div');
             item.className = `debug-item ${type}`;
-            item.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            item.textContent = `[${timestamp}] ${message}`;
             debugLog.appendChild(item);
             
-            // Keep only last 20 logs
+            // Keep only last 15 logs
             const items = debugLog.querySelectorAll('.debug-item');
-            if (items.length > 20) {
+            if (items.length > 15) {
                 debugLog.removeChild(items[0]);
             }
         }
-        
-        console.log(`[${type.toUpperCase()}] ${message}`);
     }
 
     // ===========================================
-    // SMART OBS DETECTION (NO FALSE POSITIVES)
+    // ACCURATE EXTENSION DETECTION (NO FALSE POSITIVES)
     // ===========================================
-    function initSmartOBSDetection() {
-        logDebug('Initializing OBS detection', 'info');
+    function initAccurateExtensionDetection() {
+        logDebug('Initializing ACCURATE extension detection', 'info');
         
-        // Only use reliable detection methods
-        detectOBSViaPerformance();
-        detectOBSViaScreenSharing();
-        detectOBSViaWindowProperties();
+        // Only use reliable methods that don't cause false positives
+        setTimeout(() => {
+            checkForActiveRecordingExtensions();
+            monitorExtensionBehavior();
+        }, 3000); // Wait for page to fully load
         
-        // Don't use aggressive DOM scanning (causes false positives)
-        // Don't use performance spikes (causes false positives)
-        // Don't use canvas scanning (causes false positives)
+        logDebug('Accurate extension detection ready', 'success');
+    }
+
+    function checkForActiveRecordingExtensions() {
+        logDebug('Checking for ACTIVE recording extensions...', 'info');
         
-        logDebug('OBS detection initialized (smart mode)', 'success');
-    }
-
-    function detectOBSViaPerformance() {
-        // Check for OBS virtual camera (most reliable)
-        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-            navigator.mediaDevices.enumerateDevices()
-                .then(devices => {
-                    let obsDeviceFound = false;
-                    devices.forEach(device => {
-                        const label = device.label.toLowerCase();
-                        // Only trigger on exact OBS camera names
-                        if (label.includes('obs virtual camera') || 
-                            label.includes('obs-camera') ||
-                            label === 'obs virtual camera') {
-                            obsDeviceFound = true;
-                            triggerOBSDetection('virtual_camera', `OBS Camera: ${device.label}`);
-                        }
-                    });
-                    
-                    if (!obsDeviceFound) {
-                        logDebug('No OBS virtual camera detected', 'success');
-                    }
-                })
-                .catch(() => logDebug('Cannot enumerate devices', 'warning'));
-        }
-    }
-
-    function detectOBSViaScreenSharing() {
-        // Only trigger when screen sharing actually starts
-        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-            const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
-            navigator.mediaDevices.getDisplayMedia = function(constraints) {
-                logDebug('Screen sharing API called', 'warning');
-                
-                // Wait to see if this is actually OBS
-                setTimeout(() => {
-                    // Check stream characteristics
-                    return originalGetDisplayMedia.call(this, constraints)
-                        .then(stream => {
-                            const videoTracks = stream.getVideoTracks();
-                            videoTracks.forEach(track => {
-                                const label = track.label.toLowerCase();
-                                // Only trigger on clear OBS indicators
-                                if (label.includes('obs') || label.includes('streamlabs')) {
-                                    triggerOBSDetection('screen_sharing', `OBS Screen: ${track.label}`);
-                                } else {
-                                    logDebug(`Screen sharing detected (not OBS): ${track.label}`, 'info');
-                                }
-                            });
-                            return stream;
-                        });
-                }, 100);
-            };
-        }
-    }
-
-    function detectOBSViaWindowProperties() {
-        // Check for OBS browser source (reliable indicator)
-        try {
-            // Check URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('obs') || urlParams.toString().includes('obs')) {
-                triggerOBSDetection('url_parameter', 'OBS browser source detected');
-                return;
+        // List of KNOWN recording extensions (only ones that actually record)
+        const recordingExtensions = [
+            // Only extensions that can actually screen record
+            {
+                id: 'fmbbmjnjmkcdlhgajjhefpakdflhjlgo',
+                name: 'Loom',
+                checkMethod: 'api' // Loom has specific APIs
+            },
+            {
+                id: 'pobhoodpcipjmedfenaigbelojhblflp', 
+                name: 'Veed Screen Recorder',
+                checkMethod: 'resource'
             }
-            
-            // Check referrer (OBS browser source often has no referrer or specific referrer)
-            if (document.referrer && 
-                (document.referrer.includes('obs://') || 
-                 document.referrer.includes('obsproject.com'))) {
-                triggerOBSDetection('referrer', `OBS referrer: ${document.referrer}`);
-                return;
-            }
-            
-            // Check for OBS in window name (browser source sets this)
-            if (window.name && window.name.toLowerCase().includes('obs')) {
-                triggerOBSDetection('window_name', `Window name: ${window.name}`);
-                return;
-            }
-            
-            logDebug('No OBS window properties detected', 'success');
-            
-        } catch (e) {
-            logDebug('Error checking window properties: ' + e.message, 'warning');
-        }
-    }
-
-    function triggerOBSDetection(method, details) {
-        // Only trigger if confidence is high (avoid false positives)
-        const highConfidenceMethods = [
-            'virtual_camera',
-            'screen_sharing',
-            'url_parameter',
-            'referrer'
         ];
         
-        if (!highConfidenceMethods.includes(method)) {
-            logDebug(`Low confidence OBS detection ignored: ${method} - ${details}`, 'warning');
+        // Method 1: Check for extension APIs (most reliable)
+        checkExtensionAPIs();
+        
+        // Method 2: Check for extension-specific behaviors
+        checkExtensionBehaviors();
+        
+        // Method 3: Monitor for recording activity
+        monitorRecordingActivity();
+        
+        logDebug('Extension check completed', 'success');
+    }
+
+    function checkExtensionAPIs() {
+        // Check if specific extension APIs are available
+        // This is more reliable than checking resources
+        
+        // Check for Loom extension
+        if (window.loomExtension) {
+            triggerExtensionDetection('loom_api', 'Loom extension API detected');
             return;
         }
         
-        logDebug(`OBS DETECTED: ${method} - ${details}`, 'error');
-        triggerBlackScreen('obs_studio', `${method}: ${details}`);
-    }
-
-    // ===========================================
-    // EXTENSION DETECTION (RELIABLE ONLY)
-    // ===========================================
-    function initExtensionDetection() {
-        logDebug('Initializing extension detection', 'info');
-        
-        // Only check for specific recording extensions
-        checkForRecordingExtensions();
-        
-        // Don't scan all DOM elements (causes false positives)
-        // Don't check all permissions (causes false positives)
-        
-        logDebug('Extension detection initialized', 'success');
-    }
-
-    function checkForRecordingExtensions() {
-        // Only block known malicious recording extensions
-        const dangerousExtensions = [
-            // These extensions are specifically for recording/grabbing video
-            'jpidbhpfejapdfkckpnceaodmydncjji', // Nimbus Screenshot & Screen Video Recorder
-            'cbjhfgdfnknfdkekkdkldjbedjhoghlg', // Screen Recorder
-            'fmbbmjnjmkcdlhgajjhefpakdflhjlgo', // Loom for Chrome
-            'pobhoodpcipjmedfenaigbelojhblflp', // Veed Screen Recorder
+        // Check for common recording extension patterns
+        const suspiciousGlobals = [
+            'screenRecorder',
+            'videoCapture',
+            'recorderExtension',
+            'captureTab',
+            'recordScreen'
         ];
         
-        // Try to detect by checking for their resources
-        dangerousExtensions.forEach(extId => {
-            const testURL = `chrome-extension://${extId}/manifest.json`;
-            
-            // Create hidden iframe to test extension existence
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = testURL;
-            iframe.onload = function() {
-                triggerExtensionDetection('extension_resource', `Recording extension detected: ${extId}`);
-                document.body.removeChild(iframe);
-            };
-            iframe.onerror = function() {
-                // Extension not present or blocked
-                document.body.removeChild(iframe);
-            };
-            
-            document.body.appendChild(iframe);
+        suspiciousGlobals.forEach(globalName => {
+            if (window[globalName]) {
+                triggerExtensionDetection('global_object', `${globalName} global detected`);
+            }
         });
         
-        // Also check for common extension patterns
+        logDebug('No extension APIs detected', 'success');
+    }
+
+    function checkExtensionBehaviors() {
+        // Look for specific behaviors of recording extensions
+        
+        // 1. Check for recording buttons/overlays added by extensions
         setTimeout(() => {
-            const scripts = document.querySelectorAll('script[src*="chrome-extension://"]');
-            scripts.forEach(script => {
-                const src = script.src;
-                dangerousExtensions.forEach(extId => {
-                    if (src.includes(extId)) {
-                        triggerExtensionDetection('injected_script', `Recording extension script: ${extId}`);
+            const recordingIndicators = [
+                'record-button',
+                'screen-record',
+                'video-capture',
+                'recorder-toolbar',
+                'capture-widget'
+            ];
+            
+            recordingIndicators.forEach(className => {
+                const elements = document.querySelectorAll(`.${className}, [class*="${className}"], [id*="${className}"]`);
+                if (elements.length > 0) {
+                    triggerExtensionDetection('recording_ui', `Recording UI detected: ${className}`);
+                }
+            });
+        }, 5000); // Wait longer for extensions to load
+        
+        // 2. Monitor for recording-related network requests
+        if (window.performance && performance.getEntriesByType) {
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                const url = args[0];
+                if (typeof url === 'string') {
+                    // Check for recording-related API calls
+                    const recordingAPIs = [
+                        '/api/record',
+                        '/api/capture',
+                        '/api/screenshot',
+                        '/api/video',
+                        'recording',
+                        'capture',
+                        'screen-record'
+                    ];
+                    
+                    recordingAPIs.forEach(api => {
+                        if (url.includes(api)) {
+                            logDebug(`Recording API call detected: ${url}`, 'warning');
+                            // Don't block immediately, just log
+                        }
+                    });
+                }
+                return originalFetch.apply(this, args);
+            };
+        }
+        
+        logDebug('Extension behavior monitoring active', 'success');
+    }
+
+    function monitorRecordingActivity() {
+        // Only trigger when recording actually starts
+        
+        // Monitor MediaRecorder API
+        if (window.MediaRecorder) {
+            const originalMediaRecorder = MediaRecorder;
+            window.MediaRecorder = function(stream, options) {
+                logDebug('MediaRecorder created', 'warning');
+                
+                // Check if this is for screen recording
+                const videoTracks = stream.getVideoTracks();
+                videoTracks.forEach(track => {
+                    if (track.kind === 'video') {
+                        setTimeout(() => {
+                            triggerExtensionDetection('media_recorder', 'Screen recording started via MediaRecorder');
+                        }, 1000);
                     }
                 });
-            });
-        }, 1000);
+                
+                return new originalMediaRecorder(stream, options);
+            };
+        }
+        
+        // Monitor canvas capture
+        if (HTMLCanvasElement.prototype.captureStream) {
+            const originalCaptureStream = HTMLCanvasElement.prototype.captureStream;
+            HTMLCanvasElement.prototype.captureStream = function(fps) {
+                logDebug('Canvas captureStream called', 'warning');
+                
+                // Check if this is likely for recording
+                if (this.width > 1280 || this.height > 720) {
+                    triggerExtensionDetection('canvas_capture', 'Large canvas capture (possible recording)');
+                }
+                
+                return originalCaptureStream.call(this, fps);
+            };
+        }
+        
+        logDebug('Recording activity monitoring active', 'success');
     }
 
     function triggerExtensionDetection(method, details) {
+        // Only trigger black screen for HIGH confidence detections
+        const highConfidence = [
+            'media_recorder',
+            'screen_sharing',
+            'canvas_capture',
+            'loom_api'
+        ];
+        
+        if (!highConfidence.includes(method)) {
+            logDebug(`Low confidence extension detection (ignored): ${method} - ${details}`, 'warning');
+            return;
+        }
+        
         logDebug(`EXTENSION DETECTED: ${method} - ${details}`, 'error');
-        triggerBlackScreen('recording_extension', `${method}: ${details}`);
+        triggerBlackScreen('extension', `${method}: ${details}`);
     }
 
     // ===========================================
-    // HOTKEY DETECTION (RELIABLE ONLY)
+    // SCREENSHOT & RECORDING DETECTION
     // ===========================================
-    function initHotkeyDetection() {
-        logDebug('Initializing hotkey detection', 'info');
+    function initScreenshotDetection() {
+        logDebug('Initializing screenshot detection', 'info');
         
-        // Only block actual recording hotkeys, not all function keys
+        // Block screenshot keys (reliable)
+        blockScreenshotKeys();
+        
+        // Block screen recording APIs
+        blockScreenRecordingAPIs();
+        
+        logDebug('Screenshot detection active', 'success');
+    }
+
+    function blockScreenshotKeys() {
         document.addEventListener('keydown', function(e) {
-            // Print Screen (all variations)
-            if (e.key === 'PrintScreen' || e.key === 'Snapshot' || e.keyCode === 44) {
+            // Print Screen
+            if (e.key === 'PrintScreen' || e.keyCode === 44) {
                 e.preventDefault();
                 e.stopPropagation();
-                triggerHotkeyDetection('print_screen', 'Print Screen blocked');
+                triggerBlackScreen('print_screen', 'Print Screen key pressed');
                 return false;
             }
             
-            // Windows + Shift + S (Snipping Tool)
+            // Windows + Shift + S
             if ((e.key === 's' || e.key === 'S') && e.shiftKey && 
                 (navigator.platform.includes('Win') ? e.ctrlKey : e.metaKey)) {
                 e.preventDefault();
                 e.stopPropagation();
-                triggerHotkeyDetection('snipping_tool', 'Win+Shift+S blocked');
+                triggerBlackScreen('snipping_tool', 'Win+Shift+S pressed');
                 return false;
             }
             
-            // Alt + Print Screen
-            if (e.key === 'PrintScreen' && e.altKey) {
+            // Mac Screenshot
+            if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4')) {
                 e.preventDefault();
                 e.stopPropagation();
-                triggerHotkeyDetection('alt_printscreen', 'Alt+PrintScreen blocked');
+                triggerBlackScreen('mac_screenshot', `Cmd+Shift+${e.key} pressed`);
                 return false;
             }
-            
-            // Mac Screenshot shortcuts
-            if (e.metaKey && e.shiftKey) {
-                if (e.key === '3' || e.key === '4') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    triggerHotkeyDetection('mac_screenshot', `Cmd+Shift+${e.key} blocked`);
-                    return false;
-                }
-            }
-            
-            // Common OBS hotkeys (only when combined with Ctrl)
-            if (e.ctrlKey) {
-                if (e.key === 'F9' || e.key === 'F10' || e.key === 'F11' || e.key === 'F12') {
-                    logDebug(`Ctrl+${e.key} pressed (possible OBS hotkey)`, 'warning');
-                    // Don't block immediately, just log
-                }
-            }
-            
         }, true);
-        
-        logDebug('Hotkey detection initialized', 'success');
     }
 
-    function triggerHotkeyDetection(method, details) {
-        logDebug(`HOTKEY DETECTED: ${method} - ${details}`, 'error');
-        triggerBlackScreen('hotkey', `${method}: ${details}`);
-    }
-
-    // ===========================================
-    // SCREEN RECORDING DETECTION (ACTUAL RECORDING)
-    // ===========================================
-    function initRecordingDetection() {
-        logDebug('Initializing recording detection', 'info');
-        
-        // Monitor for actual screen recording
-        monitorScreenRecording();
-        
-        // Monitor for tab capture
-        monitorTabCapture();
-        
-        // Monitor for performance changes during recording
-        monitorRecordingPerformance();
-        
-        logDebug('Recording detection initialized', 'success');
-    }
-
-    function monitorScreenRecording() {
-        // Override getDisplayMedia to detect recording start
+    function blockScreenRecordingAPIs() {
+        // Block getDisplayMedia
         if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
             const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
             navigator.mediaDevices.getDisplayMedia = function(constraints) {
-                logDebug('Screen recording API accessed', 'warning');
-                
-                return originalGetDisplayMedia.call(this, constraints)
-                    .then(stream => {
-                        // Recording has started
-                        triggerRecordingDetection('screen_recording', 'Screen recording started');
-                        
-                        // Monitor when recording stops
-                        stream.getTracks().forEach(track => {
-                            track.addEventListener('ended', () => {
-                                logDebug('Screen recording stopped', 'info');
-                                // Don't auto-resume, wait for timeout
-                            });
-                        });
-                        
-                        return stream;
-                    })
-                    .catch(error => {
-                        logDebug('Screen recording blocked or failed: ' + error.message, 'warning');
-                        throw error;
-                    });
+                logDebug('Screen recording API accessed', 'error');
+                triggerBlackScreen('screen_recording', 'Screen recording attempted via getDisplayMedia');
+                return Promise.reject(new Error('Screen recording blocked'));
             };
         }
-    }
-
-    function monitorTabCapture() {
-        // Detect tab/window capture via getDisplayMedia
+        
+        // Monitor for browser recording
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             const originalGetUserMedia = navigator.mediaDevices.getUserMedia;
             navigator.mediaDevices.getUserMedia = function(constraints) {
-                if (constraints && constraints.video && 
-                   (constraints.video.mandatory || constraints.video.mediaSource)) {
-                    logDebug('Tab/window capture attempted', 'warning');
-                    triggerRecordingDetection('tab_capture', 'Tab/window capture detected');
+                if (constraints && constraints.video === 'screen' || 
+                    (constraints.video && constraints.video.mediaSource === 'screen')) {
+                    logDebug('Screen capture via getUserMedia', 'error');
+                    triggerBlackScreen('screen_capture', 'Screen capture via getUserMedia');
                 }
                 return originalGetUserMedia.call(this, constraints);
             };
         }
     }
 
-    function monitorRecordingPerformance() {
-        // Monitor for performance degradation specific to recording
-        if (window.performance && performance.now) {
-            let baselinePerformance = null;
-            let performanceSamples = [];
-            
-            // Establish baseline when video starts
-            setTimeout(() => {
-                // Take 5 samples to establish baseline
-                for (let i = 0; i < 5; i++) {
-                    const start = performance.now();
-                    // Light computation
-                    let sum = 0;
-                    for (let j = 0; j < 10000; j++) {
-                        sum += Math.random();
-                    }
-                    const end = performance.now();
-                    performanceSamples.push(end - start);
-                }
-                
-                baselinePerformance = performanceSamples.reduce((a, b) => a + b) / performanceSamples.length;
-                logDebug(`Performance baseline: ${baselinePerformance.toFixed(2)}ms`, 'info');
-            }, 5000);
-            
-            // Monitor periodically
-            const monitorInterval = setInterval(() => {
-                if (!STATE.videoLoaded) {
-                    clearInterval(monitorInterval);
-                    return;
-                }
-                
-                const start = performance.now();
-                // Same light computation
-                let sum = 0;
-                for (let i = 0; i < 10000; i++) {
-                    sum += Math.random();
-                }
-                const end = performance.now();
-                const duration = end - start;
-                
-                // Only trigger if significant degradation AND baseline established
-                if (baselinePerformance && duration > baselinePerformance * 5) {
-                    triggerRecordingDetection('performance_degradation', 
-                        `Performance dropped: ${duration.toFixed(2)}ms (baseline: ${baselinePerformance.toFixed(2)}ms)`);
-                }
-                
-            }, 10000);
-            
-            STATE.intervals.push(monitorInterval);
+    // ===========================================
+    // OBS DETECTION (RELIABLE ONLY)
+    // ===========================================
+    function initOBSDetection() {
+        logDebug('Initializing OBS detection', 'info');
+        
+        // Only reliable OBS detection methods
+        checkForOBSVirtualCamera();
+        checkForOBSBrowserSource();
+        
+        logDebug('OBS detection active', 'success');
+    }
+
+    function checkForOBSVirtualCamera() {
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+            navigator.mediaDevices.enumerateDevices()
+                .then(devices => {
+                    devices.forEach(device => {
+                        const label = device.label.toLowerCase();
+                        // Only trigger on exact OBS camera
+                        if (label === 'obs virtual camera' || label.includes('obs-camera')) {
+                            triggerBlackScreen('obs_camera', 'OBS Virtual Camera detected');
+                        }
+                    });
+                })
+                .catch(() => {});
         }
     }
 
-    function triggerRecordingDetection(method, details) {
-        logDebug(`RECORDING DETECTED: ${method} - ${details}`, 'error');
-        triggerBlackScreen('recording', `${method}: ${details}`);
+    function checkForOBSBrowserSource() {
+        // Check if page is loaded in OBS browser source
+        try {
+            // OBS browser source often has specific URL patterns
+            if (window.location.href.includes('obs://') || 
+                document.referrer.includes('obsproject.com')) {
+                triggerBlackScreen('obs_browser_source', 'OBS Browser Source detected');
+                return;
+            }
+            
+            // Check for OBS in window properties
+            if (window.name && window.name.toLowerCase().includes('obs')) {
+                triggerBlackScreen('obs_window', `Window name: ${window.name}`);
+                return;
+            }
+            
+        } catch (e) {
+            // Ignore errors
+        }
     }
 
     // ===========================================
@@ -907,17 +709,20 @@
         STATE.recordingDetected = true;
         STATE.violations++;
         
-        logDebug(`Black screen triggered - Violation ${STATE.violations}/${STATE.maxViolations}`, 'error');
+        logDebug(`Black screen triggered - ${type}: ${details}`, 'error');
         
-        // Update display
+        // Show black screen
         document.getElementById('detection-details').textContent = details;
         document.getElementById('black-screen').classList.add('active');
-        document.getElementById('video-container').classList.remove('active');
-        document.getElementById('controls').classList.remove('active');
-        document.getElementById('video-wrapper').innerHTML = '';
         
-        // Start resume timer
-        let resumeTime = 60;
+        if (STATE.videoLoaded) {
+            document.getElementById('video-container').classList.remove('active');
+            document.getElementById('controls').classList.remove('active');
+            document.getElementById('video-wrapper').innerHTML = '';
+        }
+        
+        // Start auto-resume timer (30 seconds)
+        let resumeTime = 30;
         const timerElement = document.getElementById('resume-timer');
         timerElement.textContent = resumeTime;
         
@@ -933,16 +738,9 @@
         
         STATE.intervals.push(timerInterval);
         
-        // Check for permanent block
-        if (STATE.violations >= STATE.maxViolations) {
-            setTimeout(() => {
-                document.getElementById('security-screen').classList.add('active');
-            }, 3000);
-        }
-        
         // Log to server
         sendSecurityLog({
-            type: 'recording_blocked',
+            type: 'security_alert',
             method: type,
             details: details,
             violations: STATE.violations,
@@ -955,7 +753,7 @@
         
         STATE.recordingDetected = false;
         
-        logDebug('Stopping recording detection, resuming video', 'info');
+        logDebug('Clearing black screen, resuming video', 'info');
         
         document.getElementById('black-screen').classList.remove('active');
         
@@ -964,8 +762,8 @@
                 if (STATE.videoLoaded && STATE.sessionToken) {
                     document.getElementById('video-container').classList.add('active');
                     document.getElementById('controls').classList.add('active');
-                    loadVideoContent();
-                    showSecurityInfo(`✅ Video resumed. Violations: ${STATE.violations}/${STATE.maxViolations}`);
+                    loadVideoContent(); // Reload video
+                    showSecurityInfo(`✅ Video resumed`);
                 }
             }, 1000);
         }
@@ -975,15 +773,15 @@
     // MAIN INITIALIZATION
     // ===========================================
     document.addEventListener('DOMContentLoaded', function() {
-        console.log("🚀 Smart Secure Video Player Initializing...");
+        console.log("🔒 Secure Video Player Initializing...");
         
-        // Setup debug toggle
+        // Setup debug
         document.getElementById('debug-toggle').addEventListener('click', toggleDebug);
         
         // Check authentication
         const token = localStorage.getItem('auth_token');
         if (!token) {
-            alert('🔐 Please login to access secure videos');
+            alert('Please login to access videos');
             window.location.href = 'index.html';
             return;
         }
@@ -991,12 +789,10 @@
         // Show password modal
         document.getElementById('password-modal').style.display = 'flex';
         
-        // Setup event listeners
+        // Setup password form
         document.getElementById('submit-btn').addEventListener('click', verifyPassword);
         document.getElementById('cancel-btn').addEventListener('click', function() {
-            if (confirm('Cancel video access?')) {
-                window.location.href = 'home.html';
-            }
+            window.location.href = 'home.html';
         });
         
         document.getElementById('password-input').addEventListener('keypress', function(e) {
@@ -1007,42 +803,24 @@
             document.getElementById('password-input').focus();
         }, 100);
         
-        // Check for existing session
+        // Check existing session
         const sessionToken = localStorage.getItem('video_session_token');
         if (sessionToken) {
             STATE.sessionToken = sessionToken;
-            validateSessionToken(sessionToken).then(isValid => {
-                if (isValid) {
-                    document.getElementById('password-modal').style.display = 'none';
-                    document.getElementById('loading-screen').style.display = 'flex';
-                    setTimeout(() => {
-                        loadVideoContent();
-                    }, 1000);
-                } else {
-                    localStorage.removeItem('video_session_token');
-                    STATE.sessionToken = null;
-                }
-            });
+            document.getElementById('password-modal').style.display = 'none';
+            document.getElementById('loading-screen').style.display = 'flex';
+            setTimeout(() => {
+                loadVideoContent();
+            }, 1000);
         }
         
-        logDebug('Player initialized successfully', 'success');
+        logDebug('Player initialized', 'success');
     });
 
-    async function validateSessionToken(token) {
-        try {
-            const authToken = localStorage.getItem('auth_token');
-            const response = await fetch(`${API_URL}/api/validate-token`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + authToken,
-                    'Content-Type': 'application/json'
-                }
-            });
-            const data = await response.json();
-            return data.valid === true;
-        } catch (error) {
-            logDebug('Session validation failed: ' + error.message, 'error');
-            return false;
+    function updateProgress(percent) {
+        const progress = document.getElementById('load-progress');
+        if (progress) {
+            progress.style.width = percent + '%';
         }
     }
 
@@ -1053,7 +831,7 @@
         errorElement.style.display = 'none';
         
         if (!password) {
-            showError('⚠️ Password is required');
+            showError('Password is required');
             return;
         }
 
@@ -1088,20 +866,13 @@
                     loadVideoContent();
                 }, 500);
             } else {
-                showError(data.error || '❌ Invalid password');
+                showError(data.error || 'Invalid password');
                 document.getElementById('password-input').value = '';
                 updateProgress(0);
             }
         } catch (error) {
-            showError('🌐 Network error');
+            showError('Network error');
             updateProgress(0);
-        }
-    }
-
-    function updateProgress(percent) {
-        const progress = document.getElementById('load-progress');
-        if (progress) {
-            progress.style.width = percent + '%';
         }
     }
 
@@ -1130,14 +901,13 @@
                 document.getElementById('controls').classList.add('active');
                 STATE.videoLoaded = true;
                 
-                // Initialize SMART detection (no false positives)
-                initSmartOBSDetection();
-                initExtensionDetection();
-                initHotkeyDetection();
-                initRecordingDetection();
+                // Initialize ACCURATE detection systems
+                initAccurateExtensionDetection();
+                initScreenshotDetection();
+                initOBSDetection();
                 
-                showSecurityInfo('✅ Secure video loaded');
-                logDebug('Video loaded with smart protection', 'success');
+                showSecurityInfo('✅ Video loaded');
+                logDebug('Video loaded successfully', 'success');
             } else {
                 throw new Error(data.error || 'Failed to load video');
             }
@@ -1145,7 +915,7 @@
             console.error('Video loading error:', error);
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('password-modal').style.display = 'flex';
-            showError('❌ Failed to load video');
+            showError('Failed to load video');
             STATE.sessionToken = null;
             localStorage.removeItem('video_session_token');
             logDebug('Video load failed: ' + error.message, 'error');
@@ -1160,14 +930,12 @@
 
     function showSecurityInfo(message) {
         const info = document.getElementById('security-info');
-        if (info && message) {
+        if (info) {
             info.textContent = message;
             info.style.color = '#00ff00';
             
             setTimeout(() => {
-                const user = localStorage.getItem('username') || 'User';
-                const time = new Date().toLocaleTimeString();
-                info.textContent = `👤 ${user} | 🕒 ${time} | 🔒 Secure`;
+                info.textContent = '🔒 Secure Player Active';
                 info.style.color = 'rgba(255, 255, 255, 0.1)';
             }, 3000);
         }
@@ -1185,22 +953,13 @@
     }
 
     function exitPlayer() {
-        if (confirm('⚠️ Exit secure video player?')) {
-            // Cleanup
+        if (confirm('Exit video player?')) {
             STATE.intervals.forEach(interval => clearInterval(interval));
             STATE.sessionToken = null;
             STATE.videoLoaded = false;
             localStorage.removeItem('video_session_token');
             window.location.href = 'home.html';
         }
-    }
-
-    function resetSecurity() {
-        document.getElementById('security-screen').classList.remove('active');
-        document.getElementById('video-container').classList.add('active');
-        document.getElementById('controls').classList.add('active');
-        STATE.violations = Math.max(0, STATE.violations - 2);
-        showSecurityInfo('✅ Temporary access granted');
     }
 
     async function sendSecurityLog(data) {
@@ -1211,18 +970,14 @@
                 body: JSON.stringify(data)
             });
         } catch (error) {
-            console.warn('Failed to send security log:', error);
+            console.warn('Failed to send security log');
         }
     }
 
-    // Store intervals for cleanup
-    STATE.intervals = [];
-
+    // Cleanup
     window.addEventListener('beforeunload', function(e) {
         if (STATE.videoLoaded) {
-            e.preventDefault();
-            e.returnValue = '⚠️ You are watching a secure video. Are you sure you want to leave?';
-            return e.returnValue;
+            e.returnValue = 'You are watching a secure video. Leave?';
         }
     });
 
