@@ -663,608 +663,594 @@
         </div>
     </div>
 
-    <script>
-        // Global State
-        const state = {
-            courseId: null,
-            courseData: null,
-            modules: [],
-            currentModule: null,
-            completedModules: new Set(),
-            videoSession: null
-        };
+ <script>
+    // Global State
+    const state = {
+        courseId: null,
+        courseData: null,
+        modules: [],
+        currentModule: null,
+        completedModules: new Set(),
+        videoSession: null
+    };
 
-        // DOM Elements
-        const loadingScreen = document.getElementById('loading-screen');
-        const courseContainer = document.getElementById('course-container');
-        const modulesList = document.getElementById('modules-list');
-        const courseTitle = document.getElementById('course-title');
-        const moduleCount = document.getElementById('module-count');
-        const courseDuration = document.getElementById('course-duration');
-        const courseLevel = document.getElementById('course-level');
-        const currentModuleTitle = document.getElementById('current-module-title');
-        const modulePath = document.getElementById('module-path');
-        const videoPlayer = document.getElementById('video-player');
-        const moduleContent = document.getElementById('module-content');
-        const contentTitle = document.getElementById('content-title');
-        const contentDescription = document.getElementById('content-description');
-        const resourcesGrid = document.getElementById('resources-grid');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const contentToggle = document.getElementById('content-toggle');
-        const completeBtn = document.getElementById('complete-btn');
-        const passwordModal = document.getElementById('password-modal');
-        const passwordInput = document.getElementById('module-password');
-        const passwordError = document.getElementById('password-error');
-        const passwordDesc = document.getElementById('password-desc');
-        const moduleSearch = document.getElementById('module-search');
+    // DOM Elements
+    const loadingScreen = document.getElementById('loading-screen');
+    const courseContainer = document.getElementById('course-container');
+    const modulesList = document.getElementById('modules-list');
+    const courseTitle = document.getElementById('course-title');
+    const moduleCount = document.getElementById('module-count');
+    const courseDuration = document.getElementById('course-duration');
+    const courseLevel = document.getElementById('course-level');
+    const currentModuleTitle = document.getElementById('current-module-title');
+    const modulePath = document.getElementById('module-path');
+    const videoPlayer = document.getElementById('video-player');
+    const moduleContent = document.getElementById('module-content');
+    const contentTitle = document.getElementById('content-title');
+    const contentDescription = document.getElementById('content-description');
+    const resourcesGrid = document.getElementById('resources-grid');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const contentToggle = document.getElementById('content-toggle');
+    const completeBtn = document.getElementById('complete-btn');
+    const passwordModal = document.getElementById('password-modal');
+    const passwordInput = document.getElementById('module-password');
+    const passwordError = document.getElementById('password-error');
+    const passwordDesc = document.getElementById('password-desc');
+    const moduleSearch = document.getElementById('module-search');
 
-        // API Configuration
-        const API_BASE = 'https://architect-johan-secure.onrender.com';
+    // API Configuration
+    const API_BASE = 'https://architect-johan-secure.onrender.com';
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get course ID from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            state.courseId = urlParams.get('course') || 'ceh_v13';
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get course ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        state.courseId = urlParams.get('course') || 'ceh_v13';
+        
+        // Check authentication
+        if (!checkAuth()) {
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        // Load course data
+        loadCourseData();
+        
+        // Load user progress
+        loadUserProgress();
+        
+        // Setup event listeners
+        setupEventListeners();
+    });
+
+    // Authentication Check
+    function checkAuth() {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            return false;
+        }
+        
+        // Validate token
+        fetch(`${API_BASE}/api/validate-token`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        }).catch(() => {
+            localStorage.removeItem('auth_token');
+            window.location.href = 'index.html';
+        });
+        
+        return true;
+    }
+
+    // Load Course Data
+    async function loadCourseData() {
+        try {
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch(`${API_BASE}/api/video-courses/${state.courseId}/modules`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             
-            // Check authentication
-            if (!checkAuth()) {
-                window.location.href = 'index.html';
+            if (!response.ok) {
+                throw new Error('Failed to load course');
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                state.courseData = data.course;
+                state.modules = data.course.modules;
+                renderCourseInfo();
+                renderModulesList();
+                hideLoading();
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (error) {
+            console.error('Failed to load course:', error);
+            alert('Failed to load course. Please try again.');
+            window.location.href = 'videos.html';
+        }
+    }
+
+    // Load User Progress - CHANGED ENDPOINT NAME
+    async function loadUserProgress() {
+        try {
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch(`${API_BASE}/api/course-video-progress?course=${state.courseId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.progress) {
+                    // Mark completed modules
+                    data.progress.forEach(moduleId => {
+                        state.completedModules.add(moduleId);
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load progress:', error);
+        }
+    }
+
+    // Render Course Info
+    function renderCourseInfo() {
+        if (!state.courseData) return;
+        
+        courseTitle.textContent = state.courseData.title;
+        moduleCount.textContent = `${state.courseData.total_modules || state.modules.length} Modules`;
+        courseDuration.textContent = state.courseData.total_duration || 'N/A';
+        courseLevel.textContent = state.courseData.level || 'Intermediate';
+    }
+
+    // Render Modules List
+    function renderModulesList() {
+        modulesList.innerHTML = '';
+        
+        state.modules.forEach(module => {
+            const moduleElement = createModuleElement(module);
+            modulesList.appendChild(moduleElement);
+        });
+    }
+
+    // Create Module Element
+    function createModuleElement(module) {
+        const div = document.createElement('div');
+        div.className = `module-item ${module.locked ? 'locked' : ''} ${state.completedModules.has(module.id) ? 'completed' : ''}`;
+        div.dataset.moduleId = module.id;
+        div.dataset.order = module.order;
+        
+        div.innerHTML = `
+            <div class="module-number">Module ${module.order.toString().padStart(2, '0')}</div>
+            <div class="module-title">${module.title}</div>
+            <div class="module-duration">⏱️ ${module.duration}</div>
+            <div class="progress-indicator"></div>
+        `;
+        
+        if (!module.locked) {
+            div.addEventListener('click', () => selectModule(module));
+        }
+        
+        return div;
+    }
+
+    // Select Module
+    function selectModule(module) {
+        if (module.locked) {
+            // Show password modal for locked modules
+            state.currentModule = module;
+            showPasswordModal(module);
+            return;
+        }
+        
+        loadModule(module);
+    }
+
+    // Load Module
+    async function loadModule(module) {
+        // Update UI
+        updateModuleUI(module);
+        
+        // Load video content
+        await loadVideoContent(module);
+        
+        // Load module content
+        loadModuleContent(module);
+        
+        // Update navigation buttons
+        updateNavigationButtons();
+        
+        // Save progress
+        saveModuleProgress(module.id);
+    }
+
+    // Update Module UI
+    function updateModuleUI(module) {
+        // Update current module
+        state.currentModule = module;
+        
+        // Update header
+        currentModuleTitle.textContent = module.title;
+        modulePath.textContent = `${state.courseData.title} > Module ${module.order.toString().padStart(2, '0')}`;
+        
+        // Update active state in sidebar
+        document.querySelectorAll('.module-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.moduleId === module.id) {
+                item.classList.add('active');
+            }
+        });
+    }
+
+    // Load Video Content
+    async function loadVideoContent(module) {
+        try {
+            // Clear previous video
+            videoPlayer.innerHTML = '';
+            
+            // Create video container
+            const videoContainer = document.createElement('div');
+            videoContainer.style.width = '100%';
+            videoContainer.style.height = '100%';
+            videoContainer.style.background = '#000';
+            
+            // Check if module requires password
+            if (module.requiresPassword) {
+                videoContainer.innerHTML = `
+                    <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; color:#fff;">
+                        <div style="font-size:48px; margin-bottom:20px;">🔐</div>
+                        <h3>Secure Video</h3>
+                        <p>Password required to access this video</p>
+                        <button onclick="showPasswordModalForVideo()" 
+                                style="margin-top:20px; padding:10px 20px; background:#00ff00; color:#000; border:none; border-radius:5px; cursor:pointer;">
+                            Enter Password
+                        </button>
+                    </div>
+                `;
+                videoPlayer.appendChild(videoContainer);
                 return;
             }
             
-            // Load course data
-            loadCourseData();
+            // For now, show placeholder video
+            showPlaceholderVideo(module);
             
-            // Load user progress
-            loadUserProgress();
-            
-            // Setup event listeners
-            setupEventListeners();
-        });
+        } catch (error) {
+            console.error('Failed to load video:', error);
+            showPlaceholderVideo(module);
+        }
+    }
 
-        // Authentication Check
-        function checkAuth() {
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                return false;
+    // Show Placeholder Video
+    function showPlaceholderVideo(module) {
+        videoPlayer.innerHTML = `
+            <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; color:#fff; text-align:center;">
+                <div style="font-size:60px; margin-bottom:20px;">🎬</div>
+                <h2>${module.title}</h2>
+                <p style="margin-top:10px; color:#888;">Video content for this module</p>
+                <div style="margin-top:30px; width:80%; max-width:600px; height:2px; background:#333;"></div>
+                <p style="margin-top:20px; color:#666;">Duration: ${module.duration}</p>
+            </div>
+        `;
+    }
+
+    // Load Module Content
+    function loadModuleContent(module) {
+        // Update content panel
+        contentTitle.textContent = module.title;
+        contentDescription.textContent = module.description;
+        
+        // Load resources
+        loadModuleResources(module);
+    }
+
+    // Load Module Resources
+    function loadModuleResources(module) {
+        resourcesGrid.innerHTML = '';
+        
+        // Default resources
+        const resources = [
+            {
+                icon: '📄',
+                title: 'Module Notes PDF',
+                size: '2.5 MB',
+                url: '#'
+            },
+            {
+                icon: '📋',
+                title: 'Practice Exercises',
+                size: '1.8 MB',
+                url: '#'
+            },
+            {
+                icon: '🔗',
+                title: 'Reference Links',
+                size: '150 KB',
+                url: '#'
+            },
+            {
+                icon: '💻',
+                title: 'Lab Files',
+                size: '15.2 MB',
+                url: '#'
             }
-            
-            // Validate token
-            fetch(`${API_BASE}/api/validate-token`, {
+        ];
+        
+        resources.forEach(resource => {
+            const resourceCard = document.createElement('div');
+            resourceCard.className = 'resource-card';
+            resourceCard.innerHTML = `
+                <div class="resource-icon">${resource.icon}</div>
+                <div class="resource-title">${resource.title}</div>
+                <div class="resource-size">${resource.size}</div>
+            `;
+            resourceCard.addEventListener('click', () => downloadResource(resource));
+            resourcesGrid.appendChild(resourceCard);
+        });
+    }
+
+    // Password Modal Functions
+    function showPasswordModal(module) {
+        state.currentModule = module;
+        passwordDesc.textContent = `Enter password to access: ${module.title}`;
+        passwordInput.value = '';
+        passwordError.style.display = 'none';
+        passwordModal.classList.add('active');
+        passwordInput.focus();
+    }
+
+    function closePasswordModal() {
+        passwordModal.classList.remove('active');
+        state.currentModule = null;
+    }
+
+    async function verifyModulePassword() {
+        const password = passwordInput.value.trim();
+        
+        if (!password) {
+            showPasswordError('Password is required');
+            return;
+        }
+        
+        try {
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch(`${API_BASE}/api/verify-module-password`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
-                }
-            }).catch(() => {
-                localStorage.removeItem('auth_token');
-                window.location.href = 'index.html';
-            });
-            
-            return true;
-        }
-
-        // Load Course Data
-        async function loadCourseData() {
-            try {
-                const token = localStorage.getItem('auth_token');
-                const response = await fetch(`${API_BASE}/api/video-courses/${state.courseId}/modules`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to load course');
-                }
-                
-                const data = await response.json();
-                if (data.success) {
-                    state.courseData = data.course;
-                    state.modules = data.course.modules;
-                    renderCourseInfo();
-                    renderModulesList();
-                    hideLoading();
-                } else {
-                    throw new Error(data.error);
-                }
-            } catch (error) {
-                console.error('Failed to load course:', error);
-                alert('Failed to load course. Please try again.');
-                window.location.href = 'videos.html';
-            }
-        }
-
-        // Load User Progress
-        async function loadUserProgress() {
-            try {
-                const token = localStorage.getItem('auth_token');
-                const response = await fetch(`${API_BASE}/api/get-video-progress?course=${state.courseId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.progress) {
-                        // Mark completed modules
-                        data.progress.forEach(moduleId => {
-                            state.completedModules.add(moduleId);
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load progress:', error);
-            }
-        }
-
-        // Render Course Info
-        function renderCourseInfo() {
-            if (!state.courseData) return;
-            
-            courseTitle.textContent = state.courseData.title;
-            moduleCount.textContent = `${state.courseData.total_modules || state.modules.length} Modules`;
-            courseDuration.textContent = state.courseData.total_duration || 'N/A';
-            courseLevel.textContent = state.courseData.level || 'Intermediate';
-        }
-
-        // Render Modules List
-        function renderModulesList() {
-            modulesList.innerHTML = '';
-            
-            state.modules.forEach(module => {
-                const moduleElement = createModuleElement(module);
-                modulesList.appendChild(moduleElement);
-            });
-        }
-
-        // Create Module Element
-        function createModuleElement(module) {
-            const div = document.createElement('div');
-            div.className = `module-item ${module.locked ? 'locked' : ''} ${state.completedModules.has(module.id) ? 'completed' : ''}`;
-            div.dataset.moduleId = module.id;
-            div.dataset.order = module.order;
-            
-            div.innerHTML = `
-                <div class="module-number">Module ${module.order.toString().padStart(2, '0')}</div>
-                <div class="module-title">${module.title}</div>
-                <div class="module-duration">⏱️ ${module.duration}</div>
-                <div class="progress-indicator"></div>
-            `;
-            
-            if (!module.locked) {
-                div.addEventListener('click', () => selectModule(module));
-            }
-            
-            return div;
-        }
-
-        // Select Module
-        function selectModule(module) {
-            if (module.locked) {
-                // Show password modal for locked modules
-                state.currentModule = module;
-                showPasswordModal(module);
-                return;
-            }
-            
-            loadModule(module);
-        }
-
-        // Load Module
-        async function loadModule(module) {
-            // Update UI
-            updateModuleUI(module);
-            
-            // Load video content
-            await loadVideoContent(module);
-            
-            // Load module content
-            loadModuleContent(module);
-            
-            // Update navigation buttons
-            updateNavigationButtons();
-            
-            // Save progress
-            saveModuleProgress(module.id);
-        }
-
-        // Update Module UI
-        function updateModuleUI(module) {
-            // Update current module
-            state.currentModule = module;
-            
-            // Update header
-            currentModuleTitle.textContent = module.title;
-            modulePath.textContent = `${state.courseData.title} > Module ${module.order.toString().padStart(2, '0')}`;
-            
-            // Update active state in sidebar
-            document.querySelectorAll('.module-item').forEach(item => {
-                item.classList.remove('active');
-                if (item.dataset.moduleId === module.id) {
-                    item.classList.add('active');
-                }
-            });
-        }
-
-        // Load Video Content
-        async function loadVideoContent(module) {
-            try {
-                // Clear previous video
-                videoPlayer.innerHTML = '';
-                
-                // Create video container
-                const videoContainer = document.createElement('div');
-                videoContainer.style.width = '100%';
-                videoContainer.style.height = '100%';
-                videoContainer.style.background = '#000';
-                
-                // Check if module requires password
-                if (module.requiresPassword) {
-                    videoContainer.innerHTML = `
-                        <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; color:#fff;">
-                            <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                            <h3>Secure Video</h3>
-                            <p>Password required to access this video</p>
-                            <button onclick="showPasswordModalForVideo()" 
-                                    style="margin-top:20px; padding:10px 20px; background:#00ff00; color:#000; border:none; border-radius:5px; cursor:pointer;">
-                                Enter Password
-                            </button>
-                        </div>
-                    `;
-                    videoPlayer.appendChild(videoContainer);
-                    return;
-                }
-                
-                // Load actual video embed
-                const token = localStorage.getItem('auth_token');
-                const response = await fetch(`${API_BASE}/api/get-video-embed/${module.video_id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.embed) {
-                        videoContainer.innerHTML = data.embed;
-                    } else {
-                        showPlaceholderVideo(module);
-                    }
-                } else {
-                    showPlaceholderVideo(module);
-                }
-                
-                videoPlayer.appendChild(videoContainer);
-                
-            } catch (error) {
-                console.error('Failed to load video:', error);
-                showPlaceholderVideo(module);
-            }
-        }
-
-        // Show Placeholder Video
-        function showPlaceholderVideo(module) {
-            videoPlayer.innerHTML = `
-                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; color:#fff; text-align:center;">
-                    <div style="font-size:60px; margin-bottom:20px;">🎬</div>
-                    <h2>${module.title}</h2>
-                    <p style="margin-top:10px; color:#888;">Video content for this module</p>
-                    <div style="margin-top:30px; width:80%; max-width:600px; height:2px; background:#333;"></div>
-                    <p style="margin-top:20px; color:#666;">Duration: ${module.duration}</p>
-                </div>
-            `;
-        }
-
-        // Load Module Content
-        function loadModuleContent(module) {
-            // Update content panel
-            contentTitle.textContent = module.title;
-            contentDescription.textContent = module.description;
-            
-            // Load resources
-            loadModuleResources(module);
-        }
-
-        // Load Module Resources
-        function loadModuleResources(module) {
-            resourcesGrid.innerHTML = '';
-            
-            // Default resources
-            const resources = [
-                {
-                    icon: '📄',
-                    title: 'Module Notes PDF',
-                    size: '2.5 MB',
-                    url: '#'
                 },
-                {
-                    icon: '📋',
-                    title: 'Practice Exercises',
-                    size: '1.8 MB',
-                    url: '#'
-                },
-                {
-                    icon: '🔗',
-                    title: 'Reference Links',
-                    size: '150 KB',
-                    url: '#'
-                },
-                {
-                    icon: '💻',
-                    title: 'Lab Files',
-                    size: '15.2 MB',
-                    url: '#'
-                }
-            ];
-            
-            resources.forEach(resource => {
-                const resourceCard = document.createElement('div');
-                resourceCard.className = 'resource-card';
-                resourceCard.innerHTML = `
-                    <div class="resource-icon">${resource.icon}</div>
-                    <div class="resource-title">${resource.title}</div>
-                    <div class="resource-size">${resource.size}</div>
-                `;
-                resourceCard.addEventListener('click', () => downloadResource(resource));
-                resourcesGrid.appendChild(resourceCard);
+                body: JSON.stringify({
+                    module_id: state.currentModule.id,
+                    password: password
+                })
             });
-        }
 
-        // Password Modal Functions
-        function showPasswordModal(module) {
-            state.currentModule = module;
-            passwordDesc.textContent = `Enter password to access: ${module.title}`;
-            passwordInput.value = '';
-            passwordError.style.display = 'none';
-            passwordModal.classList.add('active');
-            passwordInput.focus();
-        }
+            const data = await response.json();
 
-        function closePasswordModal() {
-            passwordModal.classList.remove('active');
-            state.currentModule = null;
-        }
-
-        async function verifyModulePassword() {
-            const password = passwordInput.value.trim();
-            
-            if (!password) {
-                showPasswordError('Password is required');
-                return;
-            }
-            
-            try {
-                const token = localStorage.getItem('auth_token');
-                const response = await fetch(`${API_BASE}/api/verify-module-password`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        module_id: state.currentModule.id,
-                        password: password
-                    })
-                });
+            if (data.success) {
+                // Unlock module
+                state.currentModule.locked = false;
+                closePasswordModal();
+                loadModule(state.currentModule);
                 
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Unlock module
-                    state.currentModule.locked = false;
-                    closePasswordModal();
-                    loadModule(state.currentModule);
-                    
-                    // Update module in list
-                    const moduleElement = document.querySelector(`[data-module-id="${state.currentModule.id}"]`);
-                    if (moduleElement) {
-                        moduleElement.classList.remove('locked');
-                        moduleElement.addEventListener('click', () => selectModule(state.currentModule));
-                    }
-                } else {
-                    showPasswordError(data.error || 'Incorrect password');
+                // Update module in list
+                const moduleElement = document.querySelector(`[data-module-id="${state.currentModule.id}"]`);
+                if (moduleElement) {
+                    moduleElement.classList.remove('locked');
+                    moduleElement.addEventListener('click', () => selectModule(state.currentModule));
                 }
-            } catch (error) {
-                showPasswordError('Network error. Please try again.');
-            }
-        }
-
-        function showPasswordError(message) {
-            passwordError.textContent = message;
-            passwordError.style.display = 'block';
-        }
-
-        // Navigation Functions
-        function previousModule() {
-            if (!state.currentModule) return;
-            
-            const currentOrder = parseInt(state.currentModule.order);
-            if (currentOrder > 0) {
-                const prevModule = state.modules.find(m => m.order === currentOrder - 1);
-                if (prevModule) {
-                    selectModule(prevModule);
-                }
-            }
-        }
-
-        function nextModule() {
-            if (!state.currentModule) return;
-            
-            const currentOrder = parseInt(state.currentModule.order);
-            const nextModule = state.modules.find(m => m.order === currentOrder + 1);
-            if (nextModule) {
-                selectModule(nextModule);
-            }
-        }
-
-        function updateNavigationButtons() {
-            if (!state.currentModule) {
-                prevBtn.disabled = true;
-                nextBtn.disabled = true;
-                return;
-            }
-            
-            const currentOrder = parseInt(state.currentModule.order);
-            prevBtn.disabled = currentOrder === 0;
-            nextBtn.disabled = currentOrder === state.modules.length - 1;
-        }
-
-        // Content Toggle
-        function toggleContent() {
-            moduleContent.classList.toggle('active');
-            contentToggle.textContent = moduleContent.classList.contains('active') ? 
-                '📖 Hide Notes' : '📖 Show Notes';
-        }
-
-        // Mark Complete
-        async function markComplete() {
-            if (!state.currentModule) return;
-            
-            state.completedModules.add(state.currentModule.id);
-            
-            // Update UI
-            const moduleElement = document.querySelector(`[data-module-id="${state.currentModule.id}"]`);
-            if (moduleElement) {
-                moduleElement.classList.add('completed');
-            }
-            
-            // Save to server
-            try {
-                const token = localStorage.getItem('auth_token');
-                await fetch(`${API_BASE}/api/save-module-progress`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        course_id: state.courseId,
-                        module_id: state.currentModule.id,
-                        completed: true
-                    })
-                });
-            } catch (error) {
-                console.error('Failed to save progress:', error);
-            }
-            
-            // Auto-advance to next module
-            setTimeout(() => {
-                nextModule();
-            }, 1000);
-        }
-
-        // Download Resources
-        function downloadResource(resource) {
-            // Implement download logic
-            alert(`Downloading: ${resource.title}`);
-        }
-
-        function downloadResources() {
-            alert('Downloading all resources for this module...');
-        }
-
-        // Save Module Progress
-        async function saveModuleProgress(moduleId) {
-            try {
-                const token = localStorage.getItem('auth_token');
-                await fetch(`${API_BASE}/api/track-video-watch`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        course_id: state.courseId,
-                        module_id: moduleId,
-                        action: 'started_watching'
-                    })
-                });
-            } catch (error) {
-                console.error('Failed to save progress:', error);
-            }
-        }
-
-        // Fullscreen
-        function toggleFullscreen() {
-            const container = document.querySelector('.main-content');
-            if (!document.fullscreenElement) {
-                container.requestFullscreen().catch(err => {
-                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
-                });
             } else {
-                document.exitFullscreen();
+                showPasswordError(data.error || 'Incorrect password');
+            }
+        } catch (error) {
+            showPasswordError('Network error. Please try again.');
+        }
+    }
+
+    function showPasswordError(message) {
+        passwordError.textContent = message;
+        passwordError.style.display = 'block';
+    }
+
+    // Navigation Functions
+    function previousModule() {
+        if (!state.currentModule) return;
+        
+        const currentOrder = parseInt(state.currentModule.order);
+        if (currentOrder > 0) {
+            const prevModule = state.modules.find(m => m.order === currentOrder - 1);
+            if (prevModule) {
+                selectModule(prevModule);
             }
         }
+    }
 
-        // Exit Course
-        function exitCourse() {
-            if (confirm('Exit course player?')) {
-                window.location.href = 'videos.html';
-            }
+    function nextModule() {
+        if (!state.currentModule) return;
+        
+        const currentOrder = parseInt(state.currentModule.order);
+        const nextModule = state.modules.find(m => m.order === currentOrder + 1);
+        if (nextModule) {
+            selectModule(nextModule);
         }
+    }
 
-        // Search Modules
-        function setupEventListeners() {
-            // Module search
-            moduleSearch.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                document.querySelectorAll('.module-item').forEach(item => {
-                    const title = item.querySelector('.module-title').textContent.toLowerCase();
-                    const number = item.querySelector('.module-number').textContent.toLowerCase();
-                    
-                    if (title.includes(searchTerm) || number.includes(searchTerm)) {
-                        item.style.display = 'block';
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
+    function updateNavigationButtons() {
+        if (!state.currentModule) {
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            return;
+        }
+        
+        const currentOrder = parseInt(state.currentModule.order);
+        prevBtn.disabled = currentOrder === 0;
+        nextBtn.disabled = currentOrder === state.modules.length - 1;
+    }
+
+    // Content Toggle
+    function toggleContent() {
+        moduleContent.classList.toggle('active');
+        contentToggle.textContent = moduleContent.classList.contains('active') ? 
+            '📖 Hide Notes' : '📖 Show Notes';
+    }
+
+    // Mark Complete
+    async function markComplete() {
+        if (!state.currentModule) return;
+        
+        state.completedModules.add(state.currentModule.id);
+        
+        // Update UI
+        const moduleElement = document.querySelector(`[data-module-id="${state.currentModule.id}"]`);
+        if (moduleElement) {
+            moduleElement.classList.add('completed');
+        }
+        
+        // Save to server
+        try {
+            const token = localStorage.getItem('auth_token');
+            await fetch(`${API_BASE}/api/save-module-progress`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    course_id: state.courseId,
+                    module_id: state.currentModule.id,
+                    completed: true
+                })
             });
-            
-            // Keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    closePasswordModal();
-                }
-                
-                if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
-                    previousModule();
-                }
-                
-                if (e.key === 'ArrowRight' && !nextBtn.disabled) {
-                    nextModule();
-                }
-                
-                if (e.key === ' ' || e.key === 'Spacebar') {
-                    e.preventDefault();
-                    // Toggle play/pause if video is playing
-                }
-            });
+        } catch (error) {
+            console.error('Failed to save progress:', error);
         }
-
-        // Hide Loading Screen
-        function hideLoading() {
-            loadingScreen.style.display = 'none';
-            courseContainer.style.display = 'flex';
-        }
-
-        // Auto-select first unlocked module
-        function autoSelectFirstModule() {
-            const unlockedModule = state.modules.find(module => !module.locked);
-            if (unlockedModule) {
-                selectModule(unlockedModule);
-            }
-        }
-
-        // Initialize after data load
+        
+        // Auto-advance to next module
         setTimeout(() => {
-            if (state.modules.length > 0) {
-                autoSelectFirstModule();
+            nextModule();
+        }, 1000);
+    }
+
+    // Download Resources
+    function downloadResource(resource) {
+        // Implement download logic
+        alert(`Downloading: ${resource.title}`);
+    }
+
+    function downloadResources() {
+        alert('Downloading all resources for this module...');
+    }
+
+    // Save Module Progress
+    async function saveModuleProgress(moduleId) {
+        try {
+            const token = localStorage.getItem('auth_token');
+            await fetch(`${API_BASE}/api/track-video-watch`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    course_id: state.courseId,
+                    module_id: moduleId,
+                    action: 'started_watching'
+                })
+            });
+        } catch (error) {
+            console.error('Failed to save progress:', error);
+        }
+    }
+
+    // Fullscreen
+    function toggleFullscreen() {
+        const container = document.querySelector('.main-content');
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable fullscreen: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    // Exit Course
+    function exitCourse() {
+        if (confirm('Exit course player?')) {
+            window.location.href = 'videos.html';
+        }
+    }
+
+    // Search Modules
+    function setupEventListeners() {
+        // Module search
+        moduleSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            document.querySelectorAll('.module-item').forEach(item => {
+                const title = item.querySelector('.module-title').textContent.toLowerCase();
+                const number = item.querySelector('.module-number').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || number.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePasswordModal();
             }
-        }, 500);
-    </script>
+            
+            if (passwordModal.classList.contains('active') && e.key === 'Enter') {
+                verifyModulePassword();
+            }
+            
+            if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
+                previousModule();
+            }
+            
+            if (e.key === 'ArrowRight' && !nextBtn.disabled) {
+                nextModule();
+            }
+            
+            if (e.key === ' ' || e.key === 'Spacebar') {
+                e.preventDefault();
+                // Toggle play/pause if video is playing
+            }
+        });
+    }
+
+    // Hide Loading Screen
+    function hideLoading() {
+        loadingScreen.style.display = 'none';
+        courseContainer.style.display = 'flex';
+    }
+
+    // Auto-select first unlocked module
+    function autoSelectFirstModule() {
+        const unlockedModule = state.modules.find(module => !module.locked);
+        if (unlockedModule) {
+            selectModule(unlockedModule);
+        }
+    }
+
+    // Initialize after data load
+    setTimeout(() => {
+        if (state.modules.length > 0) {
+            autoSelectFirstModule();
+        }
+    }, 500);
+</script>
 </body>
 </html>
