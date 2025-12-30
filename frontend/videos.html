@@ -20,7 +20,6 @@
             position: fixed;
             top: 0;
             left: 0;
-            cursor: none !important;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             -khtml-user-select: none;
@@ -79,6 +78,16 @@
             margin: 30px 0;
             font-weight: bold;
             text-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
+        }
+
+        .black-screen-info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 0, 0, 0.1);
+            border-radius: 5px;
+            border: 1px solid rgba(255, 0, 0, 0.2);
         }
 
         /* Invisible overlay that captures screenshots */
@@ -673,14 +682,15 @@
 <body>
     <!-- BLACK SCREEN OVERLAY -->
     <div id="black-screen">
-        <div class="black-screen-text">🚨 SECURITY BREACH DETECTED</div>
+        <div class="black-screen-text">🚨 LIVE RECORDING DETECTED</div>
         <div class="black-screen-subtext">
-            Screen capture attempt detected. Video playback has been terminated.
-            This incident has been logged with your user information.
+            Screen recording software detected. Video playback has been terminated.<br>
+            Recording will resume automatically when recording stops.
         </div>
-        <div class="black-screen-timer" id="black-screen-timer">30</div>
-        <div class="black-screen-subtext">
-            Screen will unlock in <span id="countdown">30</span> seconds
+        <div class="black-screen-timer" id="black-screen-timer">--</div>
+        <div class="black-screen-info">
+            Status: <span id="recording-status">Monitoring for recording...</span><br>
+            Detection Method: <span id="detection-method">Screen capture API</span>
         </div>
     </div>
 
@@ -693,24 +703,25 @@
     <!-- Security Screen -->
     <div id="security-screen">
         <h1>🚨 SECURITY BREACH DETECTED 🚨</h1>
-        <h2>SCREEN CAPTURE ATTEMPT BLOCKED</h2>
-        <p>Our system has detected screen recording or screenshot software.</p>
-        <p>Video playback has been <strong>IMMEDIATELY TERMINATED</strong>.</p>
+        <h2>MULTIPLE RECORDING ATTEMPTS BLOCKED</h2>
+        <p>Multiple screen recording attempts detected within a short period.</p>
+        <p>Video access has been <strong>PERMANENTLY TERMINATED</strong> for this session.</p>
         <div style="background: rgba(255, 0, 0, 0.1); padding: 20px; border-radius: 10px; margin: 30px 0; max-width: 700px; border: 1px solid rgba(255, 0, 0, 0.3);">
             <p style="color: #ff9999; font-size: 16px;">
-                <strong>⚠️ WARNING:</strong> All screen capture attempts are logged with:
+                <strong>⚠️ WARNING:</strong> All recording attempts are logged with:
             </p>
             <p style="color: #ff7777; font-size: 14px; margin-top: 10px;">
                 • Your username and IP address<br>
                 • Timestamp and method used<br>
+                • Number of recording attempts<br>
                 • This incident has been recorded
             </p>
         </div>
         <p style="color: #ff6666; font-size: 16px;">
-            Repeated violations may result in permanent account suspension.
+            Your account has been flagged for security review.
         </p>
         <button onclick="resetSecurity()">
-            🔓 TEMPORARILY RESUME (ONE-TIME ONLY)
+            🔓 REQUEST TEMPORARY ACCESS
         </button>
         <p style="color: #666; font-size: 12px; margin-top: 30px;">
             Incident ID: <span id="incident-id">XXXX-XXXX-XXXX</span> | Time: <span id="incident-time">00:00:00</span>
@@ -720,9 +731,9 @@
     <!-- Loading Screen -->
     <div id="loading-screen">
         <div class="spinner"></div>
-        <p>ACTIVATING ANTI-CAPTURE SYSTEM...</p>
+        <p>ACTIVATING ANTI-RECORDING SYSTEM...</p>
         <p style="font-size: 16px; color: #00cc00; margin-top: 20px;">
-            Initializing screenshot protection protocols...
+            Initializing live recording detection...
         </p>
         <div class="progress-container">
             <div id="load-progress"></div>
@@ -733,8 +744,8 @@
     <div id="password-modal">
         <div class="password-box">
             <h2>🔐 SECURE VIDEO ACCESS</h2>
-            <p>This content is protected by advanced anti-capture technology.<br>
-               Unauthorized recording or screenshot attempts will be blocked.</p>
+            <p>This content is protected by live recording detection.<br>
+               Screen recording attempts will automatically block playback.</p>
             <input type="password" 
                    class="password-input" 
                    id="password-input" 
@@ -753,10 +764,10 @@
                 </button>
             </div>
             <p style="font-size: 14px; color: #666; margin-top: 30px;">
-                🔒 Screenshot & Recording Protection: ACTIVE<br>
-                📍 Watermarking: ENABLED<br>
-                ⚠️ Security Logging: ENABLED<br>
-                🚫 Black Screen on Detection: ACTIVE
+                🔒 Live Recording Detection: ACTIVE<br>
+                ⏱️ Real-time Monitoring: ENABLED<br>
+                🚫 Auto-block on Recording: ACTIVE<br>
+                🔄 Auto-resume when safe: ENABLED
             </p>
         </div>
     </div>
@@ -792,22 +803,338 @@
     const STATE = {
         videoLoaded: false,
         sessionToken: null,
-        securityActive: false,
-        blackScreenActive: false,
-        blackScreenTimer: null,
+        recordingDetected: false,
+        recordingCheckInterval: null,
+        recordingStartTime: null,
+        recordingActive: false,
+        recordingResumeTimeout: null,
         violations: 0,
-        maxViolations: 3,
+        maxViolations: 5,
         securityChecks: []
     };
 
     // ===========================================
-    // BLACK SCREEN FUNCTIONS
+    // RECORDING DETECTION SYSTEM
     // ===========================================
-    function showBlackScreen() {
+    function initRecordingDetection() {
+        console.log("🎥 Initializing live recording detection...");
+        
+        // 1. Detect screen sharing/recording
+        detectScreenSharing();
+        
+        // 2. Monitor for recording indicators
+        startRecordingMonitoring();
+        
+        // 3. Set up performance monitoring
+        setupPerformanceMonitoring();
+        
+        // 4. Detect external recording software
+        detectExternalRecording();
+        
+        showSecurityInfo('✅ Live recording detection active');
+        updateSecurityStatus('Monitoring for recording...');
+    }
+
+    function detectScreenSharing() {
+        // Override getDisplayMedia to detect when recording starts
+        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+            const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
+            navigator.mediaDevices.getDisplayMedia = function(constraints) {
+                console.log("⚠️ getDisplayMedia API called - Recording likely starting");
+                triggerRecordingDetection('getDisplayMedia_api', 'Browser screen sharing started');
+                
+                // Allow the recording to start, but monitor it
+                return originalGetDisplayMedia.call(this, constraints).then(stream => {
+                    console.log("🎬 Screen sharing stream obtained");
+                    monitorRecordingStream(stream);
+                    return stream;
+                });
+            };
+        }
+        
+        // Also monitor for existing MediaRecorder API usage
+        if (window.MediaRecorder) {
+            const originalMediaRecorder = window.MediaRecorder;
+            window.MediaRecorder = function(stream, options) {
+                console.log("⚠️ MediaRecorder created - Recording likely starting");
+                triggerRecordingDetection('MediaRecorder_api', 'Browser recording started');
+                
+                const recorder = new originalMediaRecorder(stream, options);
+                monitorMediaRecorder(recorder);
+                return recorder;
+            };
+            window.MediaRecorder.prototype = originalMediaRecorder.prototype;
+        }
+    }
+
+    function monitorRecordingStream(stream) {
+        STATE.recordingActive = true;
+        STATE.recordingStartTime = Date.now();
+        
+        // Check if this is a screen sharing stream
+        const videoTracks = stream.getVideoTracks();
+        videoTracks.forEach(track => {
+            if (track.label.toLowerCase().includes('screen') || 
+                track.label.toLowerCase().includes('window') ||
+                track.label.toLowerCase().includes('desktop')) {
+                console.log("🖥️ Screen sharing detected:", track.label);
+                triggerBlackScreen('screen_sharing', `Screen: ${track.label}`);
+            }
+        });
+        
+        // Monitor when recording stops
+        stream.getTracks().forEach(track => {
+            track.addEventListener('ended', () => {
+                console.log("✅ Recording stream ended");
+                STATE.recordingActive = false;
+                if (STATE.recordingDetected) {
+                    stopRecordingDetection();
+                }
+            });
+        });
+    }
+
+    function monitorMediaRecorder(recorder) {
+        recorder.addEventListener('start', () => {
+            console.log("🎥 MediaRecorder started");
+            STATE.recordingActive = true;
+            STATE.recordingStartTime = Date.now();
+            triggerBlackScreen('media_recorder', 'Browser MediaRecorder active');
+        });
+        
+        recorder.addEventListener('stop', () => {
+            console.log("✅ MediaRecorder stopped");
+            STATE.recordingActive = false;
+            if (STATE.recordingDetected) {
+                stopRecordingDetection();
+            }
+        });
+    }
+
+    function startRecordingMonitoring() {
+        // Check periodically for recording indicators
+        STATE.recordingCheckInterval = setInterval(() => {
+            // Method 1: Check CPU usage (recording increases CPU)
+            checkCPUUsage();
+            
+            // Method 2: Check frame rate (recording can affect it)
+            checkFrameRate();
+            
+            // Method 3: Check for recording overlays
+            checkForRecordingOverlays();
+            
+            // Method 4: Check window/tab visibility
+            checkVisibilityChanges();
+            
+            // Method 5: Check for external recording hints
+            checkExternalRecordingHints();
+            
+        }, 2000); // Check every 2 seconds
+    }
+
+    function checkCPUUsage() {
+        // Monitor performance for recording indicators
+        if (window.performance && window.performance.memory) {
+            try {
+                const memory = window.performance.memory;
+                const usedHeap = memory.usedJSHeapSize;
+                const totalHeap = memory.totalJSHeapSize;
+                const heapPercentage = (usedHeap / totalHeap) * 100;
+                
+                // High heap usage can indicate recording
+                if (heapPercentage > 85 && !STATE.recordingDetected && STATE.videoLoaded) {
+                    console.warn("⚠️ High memory usage detected:", heapPercentage.toFixed(2) + "%");
+                    triggerRecordingDetection('high_memory_usage', `Memory: ${heapPercentage.toFixed(2)}%`);
+                }
+            } catch (e) {
+                // Memory API not available in all browsers
+            }
+        }
+    }
+
+    function checkFrameRate() {
+        // Simple frame rate monitoring
+        if (!STATE.lastFrameTime) {
+            STATE.lastFrameTime = Date.now();
+            STATE.frameCount = 0;
+        }
+        
+        STATE.frameCount++;
+        const now = Date.now();
+        const elapsed = now - STATE.lastFrameTime;
+        
+        if (elapsed >= 1000) { // Every second
+            const fps = Math.round((STATE.frameCount * 1000) / elapsed);
+            STATE.frameCount = 0;
+            STATE.lastFrameTime = now;
+            
+            // Very low FPS can indicate recording
+            if (fps < 10 && STATE.videoLoaded && !STATE.recordingDetected) {
+                console.warn("⚠️ Low frame rate detected:", fps + " FPS");
+                triggerRecordingDetection('low_frame_rate', `FPS: ${fps}`);
+            }
+        }
+        
+        // Request next frame
+        requestAnimationFrame(checkFrameRate);
+    }
+
+    function checkForRecordingOverlays() {
+        // Check for common recording software indicators
+        const indicators = [
+            'OBS', 'Streamlabs', 'NVIDIA', 'AMD', 'Intel', 
+            'Camtasia', 'Bandicam', 'Fraps', 'Action!',
+            'recording', 'capture', 'stream'
+        ];
+        
+        // Check window title
+        if (document.title) {
+            indicators.forEach(indicator => {
+                if (document.title.toLowerCase().includes(indicator.toLowerCase()) && 
+                    STATE.videoLoaded && !STATE.recordingDetected) {
+                    triggerRecordingDetection('window_title', `Title contains: ${indicator}`);
+                }
+            });
+        }
+        
+        // Check for recording notification elements
+        const recordingElements = document.querySelectorAll('[class*="record"], [id*="record"], [class*="obs"], [id*="obs"]');
+        if (recordingElements.length > 0 && STATE.videoLoaded && !STATE.recordingDetected) {
+            triggerRecordingDetection('recording_elements', 'DOM elements indicate recording');
+        }
+    }
+
+    function checkVisibilityChanges() {
+        // Recording software often changes visibility
+        if (document.hidden && STATE.videoLoaded && !STATE.recordingDetected) {
+            console.warn("⚠️ Page hidden during playback");
+            triggerRecordingDetection('page_hidden', 'Tab/window hidden');
+        }
+    }
+
+    function checkExternalRecordingHints() {
+        // Check for common external recording patterns
+        
+        // 1. Check for fullscreen exit patterns
+        if (!document.fullscreenElement && STATE.wasFullscreen && STATE.videoLoaded) {
+            console.warn("⚠️ Fullscreen exited unexpectedly");
+            triggerRecordingDetection('fullscreen_exit', 'Unexpected fullscreen exit');
+        }
+        STATE.wasFullscreen = !!document.fullscreenElement;
+        
+        // 2. Check for mouse movement patterns (recording software might capture mouse)
+        if (STATE.lastMouseMove) {
+            const timeSinceMouseMove = Date.now() - STATE.lastMouseMove;
+            // No mouse movement for 30 seconds but video playing could indicate recording
+            if (timeSinceMouseMove > 30000 && STATE.videoLoaded && !STATE.recordingDetected) {
+                triggerRecordingDetection('no_mouse_movement', 'No mouse movement for 30s');
+            }
+        }
+    }
+
+    function detectExternalRecording() {
+        // Mouse movement monitoring
+        document.addEventListener('mousemove', function(e) {
+            STATE.lastMouseMove = Date.now();
+            STATE.mouseMoveCount = (STATE.mouseMoveCount || 0) + 1;
+            
+            // Too much mouse movement could indicate screen recording
+            if (STATE.mouseMoveCount > 100 && STATE.videoLoaded && !STATE.recordingDetected) {
+                console.warn("⚠️ Excessive mouse movement detected");
+                triggerRecordingDetection('excessive_mouse', 'High mouse movement rate');
+            }
+        });
+        
+        // Reset mouse count every second
+        setInterval(() => {
+            STATE.mouseMoveCount = 0;
+        }, 1000);
+        
+        // Keyboard monitoring
+        document.addEventListener('keydown', function(e) {
+            // Common recording hotkeys (but don't block immediately)
+            const recordingHotkeys = [
+                {key: 'F9', desc: 'Common recording hotkey'},
+                {key: 'F10', desc: 'Common recording hotkey'},
+                {key: 'F11', desc: 'Common recording hotkey'},
+                {key: 'F12', desc: 'Common recording hotkey'}
+            ];
+            
+            recordingHotkeys.forEach(hotkey => {
+                if (e.key === hotkey.key && STATE.videoLoaded) {
+                    console.log(`⚠️ Recording hotkey pressed: ${hotkey.key}`);
+                    // Just log, don't block yet
+                    logRecordingHint('recording_hotkey', hotkey.desc);
+                }
+            });
+        });
+    }
+
+    function setupPerformanceMonitoring() {
+        // Monitor for performance degradation (indicative of recording)
+        if (window.performance && performance.now) {
+            STATE.performanceChecks = [];
+            
+            setInterval(() => {
+                const start = performance.now();
+                
+                // Do a small calculation to measure performance
+                let sum = 0;
+                for (let i = 0; i < 1000000; i++) {
+                    sum += Math.random();
+                }
+                
+                const end = performance.now();
+                const duration = end - start;
+                
+                STATE.performanceChecks.push(duration);
+                if (STATE.performanceChecks.length > 10) {
+                    STATE.performanceChecks.shift();
+                }
+                
+                // Calculate average
+                if (STATE.performanceChecks.length >= 5) {
+                    const avg = STATE.performanceChecks.reduce((a, b) => a + b) / STATE.performanceChecks.length;
+                    
+                    // If performance suddenly degrades, could be recording
+                    if (duration > avg * 2 && STATE.videoLoaded && !STATE.recordingDetected) {
+                        console.warn("⚠️ Performance degradation detected");
+                        triggerRecordingDetection('performance_degradation', `Duration: ${duration.toFixed(2)}ms vs avg: ${avg.toFixed(2)}ms`);
+                    }
+                }
+            }, 5000);
+        }
+    }
+
+    // ===========================================
+    // RECORDING DETECTION RESPONSE
+    // ===========================================
+    function triggerRecordingDetection(method, details) {
+        if (!STATE.videoLoaded || STATE.recordingDetected) return;
+        
+        console.log(`🎬 Recording detected via ${method}: ${details}`);
+        STATE.recordingDetected = true;
+        STATE.violations++;
+        
+        // Show black screen
+        showBlackScreen(method, details);
+        
+        // Log the incident
+        logSecurityIncident('recording_detected', `${method}: ${details}`);
+        
+        // Set up resume check
+        checkForRecordingStop();
+    }
+
+    function triggerBlackScreen(method, details) {
         if (STATE.blackScreenActive) return;
         
         STATE.blackScreenActive = true;
-        STATE.violations++;
+        
+        // Update black screen info
+        document.getElementById('recording-status').textContent = 'RECORDING ACTIVE';
+        document.getElementById('detection-method').textContent = details;
+        document.getElementById('black-screen-timer').textContent = 'REC';
         
         // Show black screen
         document.getElementById('black-screen').classList.add('active');
@@ -819,228 +1146,63 @@
         // Clear video
         document.getElementById('video-wrapper').innerHTML = '';
         
-        // Start countdown
-        let countdown = 30;
-        const timerElement = document.getElementById('black-screen-timer');
-        const countdownElement = document.getElementById('countdown');
-        
-        timerElement.textContent = countdown;
-        countdownElement.textContent = countdown;
-        
-        STATE.blackScreenTimer = setInterval(() => {
-            countdown--;
-            timerElement.textContent = countdown;
-            countdownElement.textContent = countdown;
-            
-            if (countdown <= 0) {
-                clearBlackScreen();
-            }
-        }, 1000);
-        
-        // Log the incident
-        logSecurityIncident('black_screen_triggered', `Violation ${STATE.violations}/${STATE.maxViolations}`);
-        
-        console.log(`🚫 BLACK SCREEN ACTIVATED - Violation ${STATE.violations}/${STATE.maxViolations}`);
+        console.log(`🚫 Black screen activated - ${method}: ${details}`);
     }
 
-    function clearBlackScreen() {
-        if (!STATE.blackScreenActive) return;
+    function checkForRecordingStop() {
+        // Check every 5 seconds if recording has stopped
+        const checkInterval = setInterval(() => {
+            if (!STATE.recordingActive) {
+                // Wait a bit more to ensure recording is really stopped
+                setTimeout(() => {
+                    if (!STATE.recordingActive) {
+                        clearInterval(checkInterval);
+                        stopRecordingDetection();
+                    }
+                }, 3000);
+            }
+        }, 5000);
         
+        STATE.recordingResumeTimeout = setTimeout(() => {
+            // Auto-resume after 2 minutes even if still "detected"
+            // (prevents permanent blocking from false positives)
+            clearInterval(checkInterval);
+            stopRecordingDetection();
+        }, 120000); // 2 minutes
+    }
+
+    function stopRecordingDetection() {
+        if (!STATE.recordingDetected) return;
+        
+        STATE.recordingDetected = false;
         STATE.blackScreenActive = false;
         
         // Hide black screen
         document.getElementById('black-screen').classList.remove('active');
         
-        // Clear timer
-        if (STATE.blackScreenTimer) {
-            clearInterval(STATE.blackScreenTimer);
-            STATE.blackScreenTimer = null;
+        // Clear any resume timeout
+        if (STATE.recordingResumeTimeout) {
+            clearTimeout(STATE.recordingResumeTimeout);
+            STATE.recordingResumeTimeout = null;
         }
         
         // If too many violations, show security screen
         if (STATE.violations >= STATE.maxViolations) {
             document.getElementById('security-screen').classList.add('active');
         } else {
-            // Show video again after delay
+            // Resume video after delay
             setTimeout(() => {
                 if (STATE.videoLoaded && STATE.sessionToken) {
                     document.getElementById('video-container').classList.add('active');
                     document.getElementById('controls').classList.add('active');
-                    showSecurityInfo(`⚠️ Screen unlocked. Violations: ${STATE.violations}/${STATE.maxViolations}`);
+                    loadVideoContent(); // Reload video
+                    showSecurityInfo(`✅ Recording stopped. Video resumed. Violations: ${STATE.violations}/${STATE.maxViolations}`);
+                    updateSecurityStatus('Monitoring...');
                 }
-            }, 1000);
-        }
-    }
-
-    // ===========================================
-    // SCREENSHOT DETECTION
-    // ===========================================
-    function initScreenshotDetection() {
-        console.log("🔍 Initializing screenshot detection...");
-        
-        // 1. Block all screenshot shortcuts
-        blockScreenshotShortcuts();
-        
-        // 2. Detect screen recording attempts
-        detectScreenRecording();
-        
-        // 3. Detect DevTools
-        detectDevTools();
-        
-        // 4. Start periodic security checks
-        startSecurityMonitoring();
-        
-        showSecurityInfo('✅ Screenshot protection active');
-    }
-
-    function blockScreenshotShortcuts() {
-        const blockedKeys = new Set([
-            'PrintScreen', 'Snapshot', 'Print',
-            44, // Print Screen key code
-            'F13' // Some systems use F13
-        ]);
-        
-        document.addEventListener('keydown', function(e) {
-            // Print Screen
-            if (blockedKeys.has(e.key) || e.keyCode === 44) {
-                e.preventDefault();
-                e.stopPropagation();
-                triggerBlackScreen('print_screen_key', e.key);
-                return false;
-            }
-            
-            // Windows + Shift + S (Snipping Tool)
-            if ((e.key === 's' || e.key === 'S') && e.shiftKey && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                e.stopPropagation();
-                triggerBlackScreen('snipping_tool', 'Win+Shift+S');
-                return false;
-            }
-            
-            // Alt + Print Screen
-            if (e.key === 'PrintScreen' && e.altKey) {
-                e.preventDefault();
-                e.stopPropagation();
-                triggerBlackScreen('active_window_screenshot', 'Alt+PrintScreen');
-                return false;
-            }
-            
-            // Mac Screenshot (Cmd + Shift + 3/4)
-            if (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4')) {
-                e.preventDefault();
-                e.stopPropagation();
-                triggerBlackScreen('mac_screenshot', `Cmd+Shift+${e.key}`);
-                return false;
-            }
-            
-            // F12 / DevTools
-            if (e.key === 'F12' || e.keyCode === 123 || 
-                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
-                e.preventDefault();
-                e.stopPropagation();
-                triggerBlackScreen('devtools_shortcut', e.key);
-                return false;
-            }
-        }, true);
-        
-        // Also block context menu
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            triggerBlackScreen('right_click', 'Context menu');
-            return false;
-        });
-    }
-
-    function detectScreenRecording() {
-        // Try to detect screen recording APIs
-        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-            const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
-            navigator.mediaDevices.getDisplayMedia = function() {
-                triggerBlackScreen('screen_recording_api', 'getDisplayMedia');
-                return Promise.reject(new Error('Screen recording blocked by security system'));
-            };
+            }, 2000);
         }
         
-        // Monitor visibility changes (some recorders hide the window)
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden && STATE.videoLoaded) {
-                triggerBlackScreen('tab_hidden', 'Tab switched during playback');
-            }
-        });
-        
-        // Monitor fullscreen exit
-        document.addEventListener('fullscreenchange', function() {
-            if (!document.fullscreenElement && STATE.videoLoaded) {
-                setTimeout(() => {
-                    if (!document.fullscreenElement) {
-                        triggerBlackScreen('fullscreen_exit', 'Possible recording software');
-                    }
-                }, 1000);
-            }
-        });
-    }
-
-    function detectDevTools() {
-        // Monitor for DevTools opening
-        setInterval(() => {
-            const widthDiff = Math.abs(window.outerWidth - window.innerWidth);
-            const heightDiff = Math.abs(window.outerHeight - window.innerHeight);
-            
-            if (widthDiff > 200 || heightDiff > 200) {
-                triggerBlackScreen('devtools_detected', 'Window size difference');
-            }
-            
-            // Debugger detection
-            try {
-                const start = Date.now();
-                debugger;
-                const end = Date.now();
-                if (end - start > 100) {
-                    triggerBlackScreen('debugger_active', 'Debugger detected');
-                }
-            } catch (e) {
-                triggerBlackScreen('debugger_exception', 'Debugger active');
-            }
-        }, 2000);
-    }
-
-    function startSecurityMonitoring() {
-        // Periodic security checks
-        setInterval(() => {
-            // Check if page is embedded in iframe
-            if (window.self !== window.top && STATE.videoLoaded) {
-                triggerBlackScreen('iframe_embedding', 'Page loaded in iframe');
-            }
-            
-            // Check for clipboard access attempts
-            if (navigator.clipboard && STATE.videoLoaded) {
-                // We can't directly monitor clipboard, but we can detect focus changes
-            }
-        }, 3000);
-    }
-
-    function triggerBlackScreen(method, details) {
-        if (!STATE.videoLoaded || STATE.blackScreenActive) return;
-        
-        // Add to security checks log
-        STATE.securityChecks.push({
-            method: method,
-            details: details,
-            timestamp: new Date().toISOString()
-        });
-        
-        // Trigger black screen
-        showBlackScreen();
-        
-        // Send to server log
-        sendSecurityLog({
-            type: 'screenshot_attempt',
-            method: method,
-            details: details,
-            violations: STATE.violations,
-            user: localStorage.getItem('username') || 'unknown',
-            timestamp: new Date().toISOString()
-        });
+        console.log("✅ Recording detection stopped - video can resume");
     }
 
     // ===========================================
@@ -1246,13 +1408,14 @@
                 // Update state
                 STATE.videoLoaded = true;
                 
-                // Initialize screenshot detection
-                initScreenshotDetection();
+                // Initialize recording detection
+                initRecordingDetection();
                 
                 // Log success
                 logEvent('video_loaded');
                 
-                showSecurityInfo('✅ Secure video loaded. Black screen protection active.');
+                showSecurityInfo('✅ Secure video loaded. Live recording detection active.');
+                updateSecurityStatus('Ready - Monitoring for recording');
                 console.log('✅ Video loaded successfully');
             } else {
                 throw new Error(data.error || 'Failed to load video');
@@ -1292,9 +1455,25 @@
             setTimeout(() => {
                 const user = localStorage.getItem('username') || 'User';
                 const time = new Date().toLocaleTimeString();
-                info.textContent = `👤 ${user} | 🕒 ${time} | 🚫 Black Screen Active`;
+                info.textContent = `👤 ${user} | 🕒 ${time} | 🎥 Recording Monitor`;
                 info.style.color = 'rgba(255, 255, 255, 0.1)';
             }, 3000);
+        }
+    }
+
+    function updateSecurityStatus(status) {
+        const statusElement = document.getElementById('security-status');
+        if (statusElement) {
+            statusElement.textContent = status;
+            statusElement.style.display = 'block';
+            
+            if (status.includes('RECORDING')) {
+                statusElement.style.color = '#ff0000';
+                statusElement.style.borderColor = 'rgba(255, 0, 0, 0.5)';
+            } else {
+                statusElement.style.color = '#00ff00';
+                statusElement.style.borderColor = 'rgba(0, 255, 0, 0.3)';
+            }
         }
     }
 
@@ -1314,6 +1493,14 @@
 
     function exitPlayer() {
         if (confirm('⚠️ Exit secure video player?\n\nAll security protections will be disabled.')) {
+            // Cleanup
+            if (STATE.recordingCheckInterval) {
+                clearInterval(STATE.recordingCheckInterval);
+            }
+            if (STATE.recordingResumeTimeout) {
+                clearTimeout(STATE.recordingResumeTimeout);
+            }
+            
             // Clear session
             STATE.sessionToken = null;
             STATE.videoLoaded = false;
@@ -1336,6 +1523,7 @@
         document.getElementById('controls').classList.add('active');
         STATE.violations = Math.max(0, STATE.violations - 2);
         showSecurityInfo('✅ Security resumed');
+        updateSecurityStatus('Temporary access granted');
     }
 
     function logEvent(event) {
@@ -1345,12 +1533,22 @@
         });
     }
 
+    function logRecordingHint(method, details) {
+        console.log(`💡 Recording hint: ${method} - ${details}`);
+        STATE.securityChecks.push({
+            method: method,
+            details: details,
+            timestamp: new Date().toISOString(),
+            type: 'hint'
+        });
+    }
+
     function logSecurityIncident(method, details) {
         console.warn(`🚨 Security Incident: ${method} - ${details}`);
         
         // Send to server
         sendSecurityLog({
-            type: 'security_incident',
+            type: 'recording_incident',
             method: method,
             details: details,
             user: localStorage.getItem('username') || 'unknown',
@@ -1387,6 +1585,11 @@
     window.addEventListener('unload', function() {
         if (STATE.videoLoaded) {
             logEvent('page_closed_during_playback');
+        }
+        
+        // Cleanup intervals
+        if (STATE.recordingCheckInterval) {
+            clearInterval(STATE.recordingCheckInterval);
         }
     });
     </script>
