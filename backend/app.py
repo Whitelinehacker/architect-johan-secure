@@ -1322,6 +1322,42 @@ def verify_practice_password(current_user):
         logger.error(f"Practice password verification error: {e}")
         return jsonify({'error': 'Password verification failed'}), 500
 
+# EXAM LEVEL PASSWORD VERIFICATION - NEW
+@app.route('/api/verify-exam-level-password', methods=['POST'])
+@token_required
+def verify_exam_level_password(current_user):
+    """Verify password for exam level access"""
+    try:
+        data = request.get_json()
+        password = data.get('password')
+        exam_level = data.get('exam_level')
+        
+        if not password or not exam_level:
+            return jsonify({'error': 'Password and exam level are required'}), 400
+        
+        # Check if it's an exam level
+        if exam_level in EXAM_LEVEL_PASSWORDS:
+            expected_password = EXAM_LEVEL_PASSWORDS[exam_level]
+        else:
+            return jsonify({'error': 'Invalid exam level'}), 404
+        
+        if password == expected_password:
+            # Log successful access
+            log_practice_access(current_user, exam_level, request.remote_addr, 'success')
+            
+            return jsonify({
+                'success': True,
+                'message': 'Password verified successfully'
+            }), 200
+        else:
+            # Log failed attempt
+            log_practice_access(current_user, exam_level, request.remote_addr, 'failed')
+            return jsonify({'error': 'Incorrect password'}), 401
+            
+    except Exception as e:
+        logger.error(f"Exam level password verification error: {e}")
+        return jsonify({'error': 'Password verification failed'}), 500
+
 # FORGOT PASSWORD ROUTES
 @app.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
