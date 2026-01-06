@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Architect Johan — Secure Video Player</title>
+    <title>Architect Johan — Secure Course Player</title>
     <style>
+        /* Reset & Base Styles */
         * {
             margin: 0;
             padding: 0;
@@ -13,8 +14,6 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
-            cursor: default !important;
-            touch-action: none;
         }
 
         body {
@@ -37,8 +36,6 @@
             display: none;
             justify-content: center;
             align-items: center;
-            color: white;
-            text-align: center;
             backdrop-filter: blur(20px);
         }
 
@@ -55,105 +52,379 @@
             100% { opacity: 1; }
         }
 
-        /* Video Container */
-        .video-container {
+        /* Header */
+        .header {
+            background: rgba(0, 0, 0, 0.95);
+            padding: 15px 30px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff00;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            font-size: 28px;
+        }
+
+        .course-title {
+            font-size: 20px;
+            color: #fff;
+            text-align: center;
+            flex: 1;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .header-btn.exit {
+            background: rgba(255, 0, 0, 0.2);
+            border-color: rgba(255, 0, 0, 0.3);
+            color: #ff4444;
+        }
+
+        /* Main Course Container */
+        #course-modules-section {
             position: fixed;
-            top: 0;
+            top: 60px;
             left: 0;
             width: 100%;
-            height: 100%;
+            height: calc(100% - 60px);
             background: #000;
+            display: flex;
+        }
+
+        /* Modules Sidebar */
+        #modules-sidebar {
+            width: 320px;
+            background: rgba(20, 20, 30, 0.95);
+            border-right: 1px solid rgba(0, 255, 0, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-header {
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h3 {
+            color: #00ff00;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .progress-text {
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00cc00);
+            border-radius: 3px;
+            width: 5%;
+            transition: width 0.5s ease;
+        }
+
+        .modules-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .module-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            position: relative;
+        }
+
+        .module-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(0, 255, 0, 0.2);
+        }
+
+        .module-item.active {
+            background: rgba(0, 255, 0, 0.1);
+            border-color: #00ff00;
+        }
+
+        .module-item.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+            position: relative;
+        }
+
+        .module-item.locked::after {
+            content: '🔒';
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .module-item.locked:hover::before {
+            content: 'Complete previous modules to unlock';
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #ff4444;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 100;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .module-number {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .module-status {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .module-title {
+            color: #fff;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .module-duration {
+            color: #aaa;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .sidebar-footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-toggle {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Main Video Area */
+        #main-video-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .video-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #current-module-title {
+            color: #fff;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .security-badge {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff4444;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #video-player-container {
+            flex: 1;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid rgba(0, 255, 0, 0.1);
+            position: relative;
+            min-height: 0;
+        }
+
+        .video-placeholder {
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            color: #888;
+            text-align: center;
+            padding: 40px;
         }
 
-        .video-wrapper {
-            width: 100%;
-            height: 100%;
-            position: relative;
+        .placeholder-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
         }
 
-        #video-frame {
-            width: 100%;
-            height: 100%;
-            border: none;
+        .security-note {
+            margin-top: 20px;
+            color: #ff4444;
+            font-size: 14px;
         }
 
-        /* Controls Overlay */
-        .controls-overlay {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        .video-controls {
+            margin-top: 20px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .controls-overlay:hover {
-            opacity: 1;
-        }
-
-        .controls-left, .controls-right {
-            display: flex;
-            gap: 20px;
-            align-items: center;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
         .control-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px;
+            padding: 12px 24px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            color: #00ff00;
+            border-radius: 8px;
             cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .control-btn:hover:not(:disabled) {
+            background: rgba(0, 255, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .security-btn {
+            background: rgba(255, 0, 0, 0.1);
+            border-color: rgba(255, 0, 0, 0.3);
+            color: #ff4444;
+        }
+
+        .module-description {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .module-description h4 {
+            color: #00ff00;
+            margin-bottom: 10px;
             font-size: 16px;
-            transition: background 0.3s;
         }
 
-        .control-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+        #description-text {
+            color: #aaa;
+            line-height: 1.6;
+            font-size: 14px;
         }
 
-        .video-title {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            font-size: 18px;
-            color: #fff;
-            background: rgba(0,0,0,0.5);
-            padding: 10px 20px;
-            border-radius: 5px;
-            z-index: 1000;
+        /* Lock overlay for locked modules */
+        .lock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #ff4444;
+            text-align: center;
+            padding: 20px;
+            z-index: 10;
+            backdrop-filter: blur(5px);
         }
 
-        .close-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 0, 0, 0.5);
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            z-index: 1000;
-            transition: background 0.3s;
+        .lock-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
         }
 
-        .close-btn:hover {
-            background: rgba(255, 0, 0, 0.7);
-        }
-
-        /* Loading */
+        /* Loading Screen */
         .loading-screen {
             position: fixed;
             top: 0;
@@ -183,13 +454,68 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Security Toast */
+        .security-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.95);
+            color: #ff4444;
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            z-index: 10000;
+            font-size: 14px;
+            animation: slideIn 0.3s ease;
+            backdrop-filter: blur(10px);
+            max-width: 300px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .video-security-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+
+        .security-notice {
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
         /* Warning Message */
         .warning-message {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(255, 0, 0, 0.9);
+            background: rgba(255, 0, 0, 0.95);
             color: white;
             padding: 30px;
             border-radius: 10px;
@@ -198,6 +524,8 @@
             display: none;
             max-width: 600px;
             width: 90%;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
         }
 
         .warning-icon {
@@ -214,11 +542,61 @@
             color: white;
             padding: 10px 15px;
             border-radius: 5px;
-            font-size: 14px;
+            font-size: 12px;
             z-index: 1000;
             display: flex;
             align-items: center;
             gap: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            #modules-sidebar {
+                width: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 10px;
+            }
+            
+            .course-title {
+                order: -1;
+                width: 100%;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+            
+            #course-modules-section {
+                flex-direction: column;
+                top: 120px;
+                height: calc(100% - 120px);
+            }
+            
+            #modules-sidebar {
+                width: 100%;
+                height: 200px;
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+            }
+            
+            #main-video-area {
+                padding: 10px;
+            }
+            
+            .video-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-btn {
+                width: 100%;
+                max-width: 300px;
+            }
         }
     </style>
 </head>
@@ -242,7 +620,7 @@
         <div class="warning-icon">⚠️</div>
         <h3>EXTREME SECURITY MODE ACTIVE</h3>
         <p>During video playback:</p>
-        <ul style="text-align: left; margin: 15px 0; padding-left: 20px;">
+        <ul style="text-align: left; margin: 15px 0; padding-left: 20px; font-size: 14px;">
             <li>ALL keyboard keys are blocked (except Space, Enter, Arrows)</li>
             <li>Right-click is completely disabled</li>
             <li>Screen capture (Print Screen) is blocked</li>
@@ -265,364 +643,846 @@
     <!-- Loading Screen -->
     <div id="loading-screen" class="loading-screen">
         <div class="spinner"></div>
-        <p>Initializing Extreme Security Mode...</p>
+        <p>Initializing Secure Course Player...</p>
     </div>
 
-    <!-- Main Video Content -->
-    <div id="video-content" style="display: none;">
-        <div class="video-title" id="current-video-title">Loading Video...</div>
+    <!-- Header -->
+    <header class="header">
+        <a href="home.html" class="logo">
+            <span class="logo-icon">🔐</span>
+            Architect Johan
+        </a>
         
-        <button class="close-btn" onclick="closePlayer()">✕ Close Player</button>
+        <div class="course-title">CEH v13 - Certified Ethical Hacker Course</div>
         
-        <div class="video-container">
-            <div class="video-wrapper">
-                <div id="video-embed-container"></div>
+        <div class="header-controls">
+            <button class="header-btn" onclick="showSecurityInfo()">🛡️ Security Info</button>
+            <button class="header-btn" onclick="toggleFullscreen()">📺 Fullscreen</button>
+            <button class="header-btn exit" onclick="exitCourse()">❌ Exit</button>
+        </div>
+    </header>
+
+    <!-- Main Course Content -->
+    <div id="course-modules-section" style="display: none;">
+        <!-- Modules Sidebar -->
+        <div id="modules-sidebar">
+            <div class="sidebar-header">
+                <h3>📚 Course Modules (0-20)</h3>
+                <div class="progress-text">Progress: <span id="progress-percentage">5%</span></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+            </div>
+            
+            <div class="modules-list" id="modules-list">
+                <!-- Modules will be dynamically loaded here -->
+            </div>
+            
+            <div class="sidebar-footer">
+                <button onclick="toggleSidebar()" class="sidebar-toggle">📋 Toggle Sidebar</button>
             </div>
         </div>
-
-        <div class="controls-overlay">
-            <div class="controls-left">
-                <button class="control-btn" onclick="showSecurityInfo()">🛡️ Security Info</button>
-                <button class="control-btn" onclick="toggleFullscreen()">📺 Fullscreen</button>
+        
+        <!-- Main Video Area -->
+        <div id="main-video-area">
+            <div class="video-header">
+                <h2 id="current-module-title">Select a Module to Start Learning</h2>
+                <div class="video-security-indicator">
+                    <span class="security-badge">🔒 EXTREME SECURITY MODE ACTIVE</span>
+                </div>
             </div>
-            <div class="controls-right">
-                <button class="control-btn" onclick="prevVideo()">⏮️ Previous</button>
-                <button class="control-btn" onclick="nextVideo()">⏭️ Next</button>
-                <button class="control-btn" onclick="closePlayer()">❌ Exit</button>
+            
+            <div id="video-player-container">
+                <!-- Video player will load here -->
+                <div class="video-placeholder" id="video-placeholder">
+                    <div class="placeholder-icon">🎬</div>
+                    <h3>Secure Video Player</h3>
+                    <p>Select a module from the sidebar to begin watching</p>
+                    <p class="security-note">🔐 All videos are protected with extreme security measures</p>
+                </div>
+            </div>
+            
+            <div class="video-controls">
+                <button onclick="prevModule()" class="control-btn" id="prev-btn" disabled>⏮ Previous Module</button>
+                <button onclick="nextModule()" class="control-btn" id="next-btn" disabled>Next Module ⏭</button>
+                <button onclick="markAsComplete()" class="control-btn" id="complete-btn">✅ Mark as Complete</button>
+                <button onclick="showSecurityInfo()" class="control-btn security-btn">🛡️ Security Info</button>
+            </div>
+            
+            <div class="module-description" id="module-description">
+                <h4>Module Description</h4>
+                <p id="description-text">Select a module to view its description</p>
             </div>
         </div>
     </div>
 
 <script>
-    // ==================== EXTREME VIDEO SECURITY SYSTEM ====================
+    // ==================== SECURE COURSE MODULES SYSTEM ====================
     
-    // Global security state
-    let securityViolationCount = 0;
-    const MAX_VIOLATIONS = 3;
-    let isVideoPlaying = false;
-    let extremeLockdownActive = false;
-    let keyboardLockEnabled = true;
+    const API_BASE = 'https://architect-johan-secure.onrender.com';
     
-    // Video modules data
-    const videoModules = {
-        'module_00': {
-            title: 'CEH v13 - Module 00: Course Introduction',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k3zomd0RrNpQBNExqG2" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+    // Module data with titles and descriptions
+    const courseModules = [
+        {
+            id: 'module_00',
+            number: '00',
+            title: 'Course Introduction & Setup',
+            description: 'Welcome to CEH v13 course. Introduction to ethical hacking concepts, course structure, and setup requirements. Learn about the certification path, exam details, and course resources.',
+            duration: '45:30',
+            unlocked: true,
+            embedCode: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe width="100%" height="100%" src="https://www.dailymotion.com/embed/video/k6V2CaHv7bDeQlExqG2?queue-enable=false&sharing-enable=false&ui-logo=false&ui-start-screen-info=false&mute=false" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute; top:0; left:0; width:100%; height:100%;"></iframe></div>'
         },
-        'module_01': {
-            title: 'Module 01: Introduction to Ethical Hacking',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k1vhCWkSps1VSUEy9U4" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_01',
+            number: '01',
+            title: 'Introduction to Ethical Hacking',
+            description: 'Understanding ethical hacking, legal aspects, hacking methodologies, and key security concepts. Learn about different types of hackers, hacking phases, and legal frameworks.',
+            duration: '58:20',
+            unlocked: true,
+            embedCode: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe width="100%" height="100%" src="https://www.dailymotion.com/embed/video/koTNweSut799lhEy9U4?queue-enable=false&sharing-enable=false&ui-logo=false&ui-start-screen-info=false&mute=false" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute; top:0; left:0; width:100%; height:100%;"></iframe></div>'
         },
-        'module_02': {
-            title: 'Module 02: Footprinting and Reconnaissance',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k2Xw6PB8SwpUfaEykbO" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_02',
+            number: '02',
+            title: 'Footprinting and Reconnaissance',
+            description: 'Information gathering techniques, footprinting methodologies, and reconnaissance tools. Learn passive and active reconnaissance methods, DNS enumeration, and network mapping.',
+            duration: '1:05:45',
+            unlocked: false,
+            lockedReason: 'Complete Module 1 to unlock'
         },
-        'module_03': {
-            title: 'Module 03: Scanning Networks',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=klOjN0GkwtqElYEykbK" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_03',
+            number: '03',
+            title: 'Scanning Networks',
+            description: 'Network scanning techniques, port scanning methods, and vulnerability scanning. Learn about Nmap, ping sweeps, port states, and service detection.',
+            duration: '1:12:30',
+            unlocked: false,
+            lockedReason: 'Complete Module 2 to unlock'
         },
-        'module_04': {
-            title: 'Module 04: Enumeration',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k4cysXB8MpQghuEykbQ" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_04',
+            number: '04',
+            title: 'Enumeration',
+            description: 'System enumeration, extracting information from targets, and enumeration tools. Learn about NetBIOS, SNMP, LDAP, and NTP enumeration techniques.',
+            duration: '1:08:15',
+            unlocked: false,
+            lockedReason: 'Complete Module 3 to unlock'
         },
-        'module_05': {
-            title: 'Module 05: Vulnerability Analysis',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k3BFq72v2QGxQGEykbM" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_05',
+            number: '05',
+            title: 'Vulnerability Analysis',
+            description: 'Identifying and analyzing system vulnerabilities, vulnerability assessment tools. Learn about vulnerability scanners, risk assessment, and CVSS scoring.',
+            duration: '1:15:40',
+            unlocked: false,
+            lockedReason: 'Complete Module 4 to unlock'
         },
-        'module_06': {
-            title: 'Module 06: System Hacking',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k7allvp1n5EYSjEykbU" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_06',
+            number: '06',
+            title: 'System Hacking',
+            description: 'System hacking techniques, password cracking, privilege escalation. Learn about password attacks, hash cracking, and privilege escalation methods.',
+            duration: '1:20:25',
+            unlocked: false,
+            lockedReason: 'Complete Module 5 to unlock'
         },
-        'module_07': {
-            title: 'Module 07: Malware Threats',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=kEFBB4AVjJzAFYEykc4" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_07',
+            number: '07',
+            title: 'Malware Threats',
+            description: 'Understanding malware, viruses, trojans, ransomware, and malware analysis. Learn about malware types, infection vectors, and analysis tools.',
+            duration: '1:10:50',
+            unlocked: false,
+            lockedReason: 'Complete Module 6 to unlock'
         },
-        'module_08': {
-            title: 'Module 08: Sniffing',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5PLtgsU1WWUFeEykc0" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_08',
+            number: '08',
+            title: 'Sniffing',
+            description: 'Network sniffing techniques, packet analysis, and sniffing tools. Learn about ARP poisoning, MAC flooding, and packet sniffing tools.',
+            duration: '1:18:35',
+            unlocked: false,
+            lockedReason: 'Complete Module 7 to unlock'
         },
-        'module_09': {
-            title: 'Module 09: Social Engineering',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5dCDj8wGJFMUBEykda" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_09',
+            number: '09',
+            title: 'Social Engineering',
+            description: 'Social engineering attacks, human psychology, and prevention techniques. Learn about phishing, pretexting, baiting, and tailgating.',
+            duration: '1:05:20',
+            unlocked: false,
+            lockedReason: 'Complete Module 8 to unlock'
         },
-        'module_10': {
-            title: 'Module 10: Denial-of-Service (DoS) & DDoS Attacks',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k6wvuJ9RoCEaQnEykc2" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_10',
+            number: '10',
+            title: 'Denial-of-Service',
+            description: 'DoS and DDoS attacks, attack vectors, and mitigation strategies. Learn about SYN floods, UDP floods, and amplification attacks.',
+            duration: '1:15:10',
+            unlocked: false,
+            lockedReason: 'Complete Module 9 to unlock'
         },
-        'module_11': {
-            title: 'Module 11: Session Hijacking',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k4edWCOT7cdMHdEAl1g" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_11',
+            number: '11',
+            title: 'Session Hijacking',
+            description: 'Session hijacking techniques, session fixation, and protection methods. Learn about cookie stealing, session prediction, and MITM attacks.',
+            duration: '1:12:45',
+            unlocked: false,
+            lockedReason: 'Complete Module 10 to unlock'
         },
-        'module_12': {
-            title: 'Module 12: Evading IDS, Firewalls & Honeypots',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k52xAG2SCFrbegEAn1U" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_12',
+            number: '12',
+            title: 'Evading IDS, Firewalls and Honeypots',
+            description: 'Bypassing security systems, intrusion detection, and evasion techniques. Learn about IDS/IPS evasion, firewall rules, and honeypot detection.',
+            duration: '1:25:30',
+            unlocked: false,
+            lockedReason: 'Complete Module 11 to unlock'
         },
-        'module_13': {
-            title: 'Module 13: Hacking Web Servers',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k3CMfyJwmlBwKPEAl1e" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_13',
+            number: '13',
+            title: 'Hacking Web Servers',
+            description: 'Web server attacks, server vulnerabilities, and web server security. Learn about Apache, IIS, Nginx vulnerabilities and attacks.',
+            duration: '1:30:15',
+            unlocked: false,
+            lockedReason: 'Complete Module 12 to unlock'
         },
-        'module_14': {
-            title: 'Module 14: Hacking Web Applications',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5Q7RoQ3HLu7ZiEAnNa" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_14',
+            number: '14',
+            title: 'Hacking Web Applications',
+            description: 'Web application vulnerabilities, OWASP Top 10, and exploitation techniques. Learn about XSS, CSRF, and injection attacks.',
+            duration: '1:35:40',
+            unlocked: false,
+            lockedReason: 'Complete Module 13 to unlock'
         },
-        'module_15': {
-            title: 'Module 15: SQL Injection',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5qMEMk6fLvZt4EAoMW" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_15',
+            number: '15',
+            title: 'SQL Injection',
+            description: 'SQL injection attacks, blind SQLi, and prevention techniques. Learn about union-based, error-based, and time-based SQL injection.',
+            duration: '1:28:25',
+            unlocked: false,
+            lockedReason: 'Complete Module 14 to unlock'
         },
-        'module_16': {
-            title: 'Module 16: Hacking Wireless Networks',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k2j2U1QCiSdsEkEAOsa" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_16',
+            number: '16',
+            title: 'Hacking Wireless Networks',
+            description: 'Wireless security, WEP/WPA cracking, and wireless attack techniques. Learn about wardriving, evil twin attacks, and KRACK attacks.',
+            duration: '1:22:10',
+            unlocked: false,
+            lockedReason: 'Complete Module 15 to unlock'
         },
-        'module_17': {
-            title: 'Module 17: Hacking Mobile Platforms',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k4L3EM7fPpfBk8EAPJq" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_17',
+            number: '17',
+            title: 'Hacking Mobile Platforms',
+            description: 'Mobile security threats, Android/iOS vulnerabilities, and mobile hacking. Learn about mobile app reversing, jailbreaking, and rooting.',
+            duration: '1:18:45',
+            unlocked: false,
+            lockedReason: 'Complete Module 16 to unlock'
         },
-        'module_18': {
-            title: 'Module 18: IoT and OT Hacking',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5nsfAxj4X5ILBEBgba" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_18',
+            number: '18',
+            title: 'IoT and OT Hacking',
+            description: 'Internet of Things security, OT systems, and IoT vulnerabilities. Learn about IoT protocols, firmware analysis, and OT attacks.',
+            duration: '1:20:30',
+            unlocked: false,
+            lockedReason: 'Complete Module 17 to unlock'
         },
-        'module_19': {
-            title: 'Module 19: Cloud Computing',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5nsfAxj4X5ILBEBgba" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_19',
+            number: '19',
+            title: 'Cloud Computing',
+            description: 'Cloud security, cloud vulnerabilities, and cloud attack vectors. Learn about AWS, Azure, GCP security and attacks.',
+            duration: '1:15:55',
+            unlocked: false,
+            lockedReason: 'Complete Module 18 to unlock'
         },
-        'module_20': {
-            title: 'Module 20: Cryptography',
-            embed: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5nsfAxj4X5ILBEBgba" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        {
+            id: 'module_20',
+            number: '20',
+            title: 'Cryptography',
+            description: 'Cryptographic concepts, encryption algorithms, and cryptographic attacks. Learn about symmetric/asymmetric encryption, hashing, and digital signatures.',
+            duration: '1:32:20',
+            unlocked: false,
+            lockedReason: 'Complete Module 19 to unlock'
         }
-    };
+    ];
     
-    let currentModuleId = 'module_00';
-    let moduleOrder = Object.keys(videoModules);
+    let currentModuleIndex = 0;
+    let completedModules = new Set(['module_00']);
+    let extremeSecurityActive = true;
+    let isInitialized = false;
+    let devToolsCheckInterval;
     
-    // DOM Elements
-    const loadingScreen = document.getElementById('loading-screen');
-    const videoContent = document.getElementById('video-content');
-    const currentVideoTitle = document.getElementById('current-video-title');
-    const warningMessage = document.getElementById('warning-message');
-    const keyboardLock = document.getElementById('keyboard-lock');
-    const videoEmbedContainer = document.getElementById('video-embed-container');
+    // ==================== KEYBOARD LOCKDOWN SYSTEM ====================
     
-    // ==================== EXTREME KEYBOARD LOCKDOWN ====================
-    
-    // Block ALL keyboard inputs when video is playing
-    function enableExtremeLockdown() {
-        extremeLockdownActive = true;
-        keyboardLock.style.display = 'flex';
+    function enableKeyboardLockdown() {
+        // Block ALL keyboard shortcuts
+        document.addEventListener('keydown', blockKeyboardShortcuts, true);
+        document.addEventListener('keyup', blockKeyboardShortcuts, true);
+        document.addEventListener('keypress', blockKeyboardShortcuts, true);
         
-        // Add ALL event listeners with capture phase
-        document.addEventListener('keydown', blockAllKeys, true);
-        document.addEventListener('keyup', blockAllKeys, true);
-        document.addEventListener('keypress', blockAllKeys, true);
-        document.addEventListener('keydown', blockAllKeys);
-        document.addEventListener('keyup', blockAllKeys);
-        document.addEventListener('keypress', blockAllKeys);
+        // Block print screen
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'PrintScreen' || e.key === 'Snapshot') {
+                e.preventDefault();
+                e.stopPropagation();
+                showSecurityToast('Print Screen blocked');
+                return false;
+            }
+        }, true);
         
-        // Also block for iframe/content
-        try {
-            const iframes = document.querySelectorAll('iframe');
-            iframes.forEach(iframe => {
-                try {
-                    iframe.contentWindow.addEventListener('keydown', blockAllKeys, true);
-                    iframe.contentWindow.addEventListener('keyup', blockAllKeys, true);
-                    iframe.contentWindow.addEventListener('keypress', blockAllKeys, true);
-                } catch (e) {}
-            });
-        } catch (e) {}
-        
-        showSecurityAlert('EXTREME SECURITY: All keyboard keys locked', 3000);
+        // Show keyboard lock indicator
+        document.getElementById('keyboard-lock').style.display = 'flex';
     }
     
-    function disableExtremeLockdown() {
-        extremeLockdownActive = false;
-        keyboardLock.style.display = 'none';
+    function disableKeyboardLockdown() {
+        // Remove event listeners
+        document.removeEventListener('keydown', blockKeyboardShortcuts, true);
+        document.removeEventListener('keyup', blockKeyboardShortcuts, true);
+        document.removeEventListener('keypress', blockKeyboardShortcuts, true);
         
-        // Remove ALL event listeners
-        document.removeEventListener('keydown', blockAllKeys, true);
-        document.removeEventListener('keyup', blockAllKeys, true);
-        document.removeEventListener('keypress', blockAllKeys, true);
-        document.removeEventListener('keydown', blockAllKeys);
-        document.removeEventListener('keyup', blockAllKeys);
-        document.removeEventListener('keypress', blockAllKeys);
+        // Hide keyboard lock indicator
+        document.getElementById('keyboard-lock').style.display = 'none';
     }
     
-    function blockAllKeys(e) {
-        if (!extremeLockdownActive) return;
+    function blockKeyboardShortcuts(e) {
+        if (!extremeSecurityActive) return;
         
-        // Define VERY LIMITED allowed keys
-        const allowedKeys = [
-            ' ',         // Space bar (play/pause)
-            'Enter',     // Enter
-            'Escape',    // Escape (for closing)
-            'ArrowLeft', // Left arrow
-            'ArrowRight',// Right arrow
-            'ArrowUp',   // Up arrow
-            'ArrowDown'  // Down arrow
-        ];
-        
-        // Check if key is allowed
-        if (!allowedKeys.includes(e.key)) {
+        // Block ALL Ctrl combinations
+        if (e.ctrlKey) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
             
-            // Block ALL F-keys
-            if (e.key.startsWith('F') && /^F[1-9][0-4]?$/.test(e.key)) {
-                showSecurityAlert(`Function key ${e.key} BLOCKED`);
-                logSecurityEvent(`function_key_blocked: ${e.key}`);
+            // Show specific message based on key
+            if (e.key === 'c' || e.key === 'C') {
+                showSecurityToast('Copy (Ctrl+C) disabled');
+            } else if (e.key === 'v' || e.key === 'V') {
+                showSecurityToast('Paste (Ctrl+V) disabled');
+            } else if (e.key === 'x' || e.key === 'X') {
+                showSecurityToast('Cut (Ctrl+X) disabled');
+            } else if (e.key === 's' || e.key === 'S') {
+                showSecurityToast('Save (Ctrl+S) disabled');
+            } else if (e.key === 'u' || e.key === 'U') {
+                showSecurityToast('View Source (Ctrl+U) disabled');
+            } else if (e.key === 'p' || e.key === 'P') {
+                showSecurityToast('Print (Ctrl+P) disabled');
+            } else if (e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                showSecurityToast('Refresh (Ctrl+R) disabled');
                 return false;
+            } else {
+                showSecurityToast('Keyboard shortcut disabled');
             }
-            
-            // Block Print Screen
-            if (e.key === 'PrintScreen' || e.key === 'Snapshot') {
-                showSecurityAlert('SCREEN CAPTURE BLOCKED');
-                logSecurityEvent('print_screen_blocked');
-                return false;
-            }
-            
-            // Block Windows/Mac keys
-            if (e.key === 'Meta' || e.key === 'OS' || e.key === 'Win' || e.metaKey) {
-                showSecurityAlert('WINDOWS/MAC KEY BLOCKED');
-                logSecurityEvent('windows_key_blocked');
-                return false;
-            }
-            
-            // Block ALL Ctrl combinations
-            if (e.ctrlKey) {
-                showSecurityAlert('CTRL KEY BLOCKED');
-                logSecurityEvent('ctrl_key_blocked');
-                return false;
-            }
-            
-            // Block ALL Alt combinations
-            if (e.altKey) {
-                showSecurityAlert('ALT KEY BLOCKED');
-                logSecurityEvent('alt_key_blocked');
-                return false;
-            }
-            
-            // Block ALL Shift combinations
-            if (e.shiftKey) {
-                showSecurityAlert('SHIFT KEY BLOCKED');
-                logSecurityEvent('shift_key_blocked');
-                return false;
-            }
-            
-            // Block Tab
-            if (e.key === 'Tab') {
-                showSecurityAlert('TAB KEY BLOCKED');
-                logSecurityEvent('tab_key_blocked');
-                return false;
-            }
-            
-            // Block ALL letter keys
-            if (/^[a-zA-Z]$/.test(e.key)) {
-                showSecurityAlert(`LETTER KEY ${e.key.toUpperCase()} BLOCKED`);
-                logSecurityEvent(`letter_key_blocked: ${e.key}`);
-                return false;
-            }
-            
-            // Block ALL number keys
-            if (/^[0-9]$/.test(e.key)) {
-                showSecurityAlert(`NUMBER KEY ${e.key} BLOCKED`);
-                logSecurityEvent(`number_key_blocked: ${e.key}`);
-                return false;
-            }
-            
-            // Block ALL special characters
-            const specialChars = ['!','@','#','$','%','^','&','*','(',')','-','_','=','+','[',']','{','}','\\','|',';',':',"'",'"',',','.','<','>','/','?','`','~'];
-            if (specialChars.includes(e.key)) {
-                showSecurityAlert(`SPECIAL KEY ${e.key} BLOCKED`);
-                logSecurityEvent(`special_key_blocked: ${e.key}`);
-                return false;
-            }
-            
-            // Default block message
-            showSecurityAlert(`KEY ${e.key} BLOCKED`);
-            logSecurityEvent(`key_blocked: ${e.key}`);
             return false;
         }
         
-        // Even for allowed keys, prevent some defaults
-        if (e.key === 'Escape') {
+        // Block ALL Alt combinations
+        if (e.altKey) {
             e.preventDefault();
-            showSecurityAlert('Press Exit button to close player');
+            e.stopPropagation();
+            showSecurityToast('Alt key combinations disabled');
+            return false;
+        }
+        
+        // Block F12 for DevTools
+        if (e.key === 'F12') {
+            e.preventDefault();
+            e.stopPropagation();
+            showSecurityAlert('Developer Tools Blocked', 'F12 key is disabled in secure mode.');
+            return false;
+        }
+        
+        // Block Ctrl+Shift+I/J/C
+        if (e.ctrlKey && e.shiftKey) {
+            if (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c') {
+                e.preventDefault();
+                e.stopPropagation();
+                showSecurityAlert('Developer Tools Blocked', 'Developer tools access is disabled.');
+                return false;
+            }
+        }
+        
+        // Block Windows/Mac key
+        if (e.key === 'Meta' || e.key === 'OS' || e.key === 'Win') {
+            e.preventDefault();
+            e.stopPropagation();
+            showSecurityToast('System key disabled');
+            return false;
+        }
+        
+        // Allow only specific navigation keys
+        const allowedKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ', 'Enter', 'Escape'];
+        if (!allowedKeys.includes(e.key)) {
+            e.preventDefault();
+            e.stopPropagation();
             return false;
         }
     }
     
-    // ==================== COMPLETE RIGHT-CLICK DISABLE ====================
+    // ==================== RIGHT-CLICK & CONTEXT MENU BLOCK ====================
     
-    // Prevent ALL right-click events
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        showSecurityAlert('RIGHT-CLICK COMPLETELY DISABLED');
-        logSecurityEvent('right_click_completely_blocked');
-        return false;
-    }, true);
-    
-    // Prevent ALL mouse button combinations
-    document.addEventListener('mousedown', function(e) {
-        if (e.button === 1 || e.button === 2) { // Middle or right click
+    function blockRightClick() {
+        document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            showSecurityAlert('MOUSE BUTTONS BLOCKED');
-            logSecurityEvent('mouse_button_blocked');
+            showSecurityToast('Right-click disabled');
             return false;
-        }
-    }, true);
-    
-    // Block ALL touch gestures
-    document.addEventListener('touchstart', function(e) {
-        if (e.touches.length > 1) {
-            e.preventDefault();
-            e.stopPropagation();
-            showSecurityAlert('MULTI-TOUCH GESTURES BLOCKED');
-            logSecurityEvent('multi_touch_blocked');
-        }
-    }, { passive: false, capture: true });
-    
-    // ==================== SCREEN CAPTURE PROTECTION ====================
-    
-    // Disable screen capture APIs
-    Object.defineProperty(HTMLMediaElement.prototype, 'captureStream', {
-        get: function() {
-            showSecurityAlert('SCREEN CAPTURE API BLOCKED');
-            logSecurityEvent('screen_capture_api_blocked');
-            return undefined;
-        }
-    });
-    
-    // Disable getDisplayMedia
-    if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-        const originalGetDisplayMedia = navigator.mediaDevices.getDisplayMedia;
-        navigator.mediaDevices.getDisplayMedia = function() {
-            showSecurityAlert('SCREEN SHARING BLOCKED');
-            logSecurityEvent('screen_sharing_blocked');
-            return Promise.reject(new Error('Screen sharing is disabled by security policy'));
-        };
+        }, true);
+        
+        // Block middle click too
+        document.addEventListener('mousedown', function(e) {
+            if (e.button === 1 || e.button === 2) {
+                e.preventDefault();
+                e.stopPropagation();
+                showSecurityToast('Mouse button disabled');
+                return false;
+            }
+        }, true);
     }
     
     // ==================== DEVELOPER TOOLS PROTECTION ====================
     
-    // Detect dev tools opening
-    const devToolsCheck = setInterval(function() {
-        const widthThreshold = window.outerWidth - window.innerWidth > 160;
-        const heightThreshold = window.outerHeight - window.innerHeight > 160;
+    function protectDeveloperTools() {
+        // Detect devtools opening via window resize
+        const interval = setInterval(() => {
+            if (!extremeSecurityActive) return;
+            
+            const threshold = 160;
+            const widthDiff = window.outerWidth - window.innerWidth;
+            const heightDiff = window.outerHeight - window.innerHeight;
+            
+            if (widthDiff > threshold || heightDiff > threshold) {
+                showSecurityAlert('SECURITY VIOLATION DETECTED', 'Developer tools are not allowed on this page. The page will reload.');
+                
+                // Block all content
+                document.body.innerHTML = `
+                    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;color:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:999999;padding:20px;text-align:center;">
+                        <div style="font-size:48px;margin-bottom:20px;color:#ff4444;">⚠️</div>
+                        <h2 style="color:#ff4444;margin-bottom:10px;">SECURITY VIOLATION DETECTED</h2>
+                        <p style="color:#aaa;margin-bottom:30px;line-height:1.6;">
+                            Developer tools are not allowed on this page.<br>
+                            For security reasons, the page will reload automatically.
+                        </p>
+                        <p style="color:#888;font-size:12px;margin-top:20px;">
+                            Reloading in <span id="reload-countdown">5</span> seconds...
+                        </p>
+                    </div>
+                `;
+                
+                // Countdown and reload
+                let countdown = 5;
+                const countdownEl = document.getElementById('reload-countdown');
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    if (countdownEl) countdownEl.textContent = countdown;
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        clearInterval(interval);
+                        location.reload();
+                    }
+                }, 1000);
+                
+                clearInterval(interval);
+            }
+        }, 1000);
         
-        if (widthThreshold || heightThreshold) {
-            showSecurityAlert('DEVELOPER TOOLS DETECTED - Closing player');
-            logSecurityEvent('devtools_detected_player_closed');
-            closePlayer();
+        return interval;
+    }
+    
+    // ==================== VIDEO DOWNLOAD PROTECTION ====================
+    
+    function protectVideoDownload() {
+        // Disable right-click on video container
+        const videoContainer = document.getElementById('video-player-container');
+        if (videoContainer) {
+            videoContainer.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                showSecurityToast('Video download protection active');
+                return false;
+            }, true);
         }
-    }, 1000);
-    
-    // ==================== SECURITY FUNCTIONS ====================
-    
-    function showSecurityAlert(message, duration = 3000) {
-        securityViolationCount++;
         
+        // Block video element downloads
+        Object.defineProperty(HTMLMediaElement.prototype, 'src', {
+            get: function() {
+                return this._src || '';
+            },
+            set: function(value) {
+                this._src = value;
+                if (value && value.includes('blob:')) {
+                    showSecurityToast('Video download blocked');
+                    return;
+                }
+            }
+        });
+    }
+    
+    // ==================== MODULE MANAGEMENT ====================
+    
+    function initializeModules() {
+        const modulesList = document.getElementById('modules-list');
+        modulesList.innerHTML = '';
+        
+        courseModules.forEach((module, index) => {
+            const moduleEl = document.createElement('div');
+            moduleEl.className = `module-item ${module.unlocked ? '' : 'locked'} ${index === currentModuleIndex ? 'active' : ''}`;
+            moduleEl.dataset.index = index;
+            
+            moduleEl.innerHTML = `
+                <div class="module-header">
+                    <span class="module-number">Module ${module.number}</span>
+                    <span class="module-status">${module.unlocked ? '🔓 Available' : '🔒 Locked'}</span>
+                </div>
+                <div class="module-title">${module.title}</div>
+                <div class="module-duration">${module.duration}</div>
+            `;
+            
+            if (!module.unlocked) {
+                moduleEl.addEventListener('click', () => {
+                    showLockedMessage(module.lockedReason || 'This module is locked. Please complete previous modules.');
+                });
+            } else {
+                moduleEl.addEventListener('click', () => {
+                    selectModule(index);
+                });
+            }
+            
+            modulesList.appendChild(moduleEl);
+        });
+        
+        updateProgress();
+    }
+    
+    function selectModule(index) {
+        // Remove active class from all modules
+        document.querySelectorAll('.module-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        // Add active class to selected module
+        const selectedModule = document.querySelector(`.module-item[data-index="${index}"]`);
+        if (selectedModule) {
+            selectedModule.classList.add('active');
+        }
+        
+        currentModuleIndex = index;
+        const module = courseModules[index];
+        
+        // Update UI
+        document.getElementById('current-module-title').textContent = `Module ${module.number}: ${module.title}`;
+        document.getElementById('description-text').textContent = module.description;
+        
+        // Load video
+        loadVideo(module);
+        
+        // Update navigation buttons
+        updateNavigationButtons();
+        
+        // Update complete button
+        updateCompleteButton();
+        
+        // Log activity
+        logModuleAccess(module.id);
+    }
+    
+    function loadVideo(module) {
+        const videoContainer = document.getElementById('video-player-container');
+        
+        if (module.unlocked && module.embedCode) {
+            videoContainer.innerHTML = `
+                <div class="video-security-overlay">
+                    <div class="security-notice">🎬 Playing in Secure Mode</div>
+                </div>
+                ${module.embedCode}
+            `;
+            
+            // Add video protection
+            protectVideoDownload();
+        } else {
+            videoContainer.innerHTML = `
+                <div class="video-placeholder">
+                    <div class="lock-overlay">
+                        <div class="lock-icon">🔒</div>
+                        <h3>Module Locked</h3>
+                        <p>${module.lockedReason || 'Complete previous modules to unlock'}</p>
+                        <p style="font-size:12px; color:#888; margin-top:10px;">
+                            Contact support for access issues
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    function prevModule() {
+        if (currentModuleIndex > 0) {
+            // Find previous unlocked module
+            let prevIndex = currentModuleIndex - 1;
+            while (prevIndex >= 0 && !courseModules[prevIndex].unlocked) {
+                prevIndex--;
+            }
+            
+            if (prevIndex >= 0) {
+                selectModule(prevIndex);
+            }
+        }
+    }
+    
+    function nextModule() {
+        if (currentModuleIndex < courseModules.length - 1) {
+            // Find next unlocked module
+            let nextIndex = currentModuleIndex + 1;
+            while (nextIndex < courseModules.length && !courseModules[nextIndex].unlocked) {
+                nextIndex++;
+            }
+            
+            if (nextIndex < courseModules.length) {
+                selectModule(nextIndex);
+            }
+        }
+    }
+    
+    function updateNavigationButtons() {
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        
+        // Check if there's a previous unlocked module
+        let hasPrev = false;
+        for (let i = currentModuleIndex - 1; i >= 0; i--) {
+            if (courseModules[i].unlocked) {
+                hasPrev = true;
+                break;
+            }
+        }
+        
+        // Check if there's a next unlocked module
+        let hasNext = false;
+        for (let i = currentModuleIndex + 1; i < courseModules.length; i++) {
+            if (courseModules[i].unlocked) {
+                hasNext = true;
+                break;
+            }
+        }
+        
+        prevBtn.disabled = !hasPrev;
+        nextBtn.disabled = !hasNext;
+    }
+    
+    function updateCompleteButton() {
+        const completeBtn = document.getElementById('complete-btn');
+        const currentModule = courseModules[currentModuleIndex];
+        
+        if (currentModule.unlocked) {
+            completeBtn.disabled = false;
+            completeBtn.style.display = 'inline-block';
+        } else {
+            completeBtn.disabled = true;
+            completeBtn.style.display = 'none';
+        }
+    }
+    
+    async function markAsComplete() {
+        const currentModule = courseModules[currentModuleIndex];
+        if (!currentModule.unlocked) return;
+        
+        // Mark as completed locally
+        completedModules.add(currentModule.id);
+        
+        // Save to server
+        try {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                const response = await fetch(`${API_BASE}/api/complete-module`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        module_id: currentModule.id,
+                        course_id: 'ceh_v13'
+                    })
+                });
+                
+                if (response.ok) {
+                    showSecurityToast(`✅ Module ${currentModule.number} marked as complete!`);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to save completion:', error);
+        }
+        
+        // Unlock next module if available
+        if (currentModuleIndex < courseModules.length - 1) {
+            const nextModule = courseModules[currentModuleIndex + 1];
+            if (!nextModule.unlocked) {
+                nextModule.unlocked = true;
+                showSecurityToast(`🔓 Module ${nextModule.number} unlocked!`);
+                
+                // Save unlock to server
+                try {
+                    const token = localStorage.getItem('auth_token');
+                    if (token) {
+                        await fetch(`${API_BASE}/api/unlock-module`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                module_id: nextModule.id
+                            })
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to save unlock:', error);
+                }
+                
+                // Refresh modules list
+                initializeModules();
+                updateProgress();
+            }
+        }
+        
+        // Update progress
+        updateProgress();
+    }
+    
+    function updateProgress() {
+        const unlockedCount = courseModules.filter(m => m.unlocked).length;
+        const progress = Math.round((unlockedCount / courseModules.length) * 100);
+        
+        document.getElementById('progress-percentage').textContent = `${progress}%`;
+        document.getElementById('progress-fill').style.width = `${progress}%`;
+    }
+    
+    // ==================== UI HELPER FUNCTIONS ====================
+    
+    function showSecurityToast(message) {
+        // Remove existing toast
+        const existingToast = document.querySelector('.security-toast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        // Create new toast
+        const toast = document.createElement('div');
+        toast.className = 'security-toast';
+        toast.innerHTML = `
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span style="color:#ff4444;">⚠️</span>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 300);
+            }
+        }, 3000);
+    }
+    
+    function showLockedMessage(message) {
+        showSecurityToast(`🔒 ${message}`);
+    }
+    
+    function showSecurityAlert(title, message) {
+        // Remove existing alert
+        const existingAlert = document.querySelector('.security-alert-modal');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'security-alert-modal';
+        alertDiv.innerHTML = `
+            <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:flex;justify-content:center;align-items:center;z-index:999999;backdrop-filter:blur(10px);">
+                <div style="background:rgba(30,30,30,0.95);padding:40px;border-radius:15px;border:2px solid #ff4444;max-width:500px;text-align:center;">
+                    <div style="font-size:48px;color:#ff4444;margin-bottom:20px;">⚠️</div>
+                    <h2 style="color:#ff4444;margin-bottom:10px;">${title}</h2>
+                    <p style="color:#aaa;margin-bottom:30px;line-height:1.6;">${message}</p>
+                    <button onclick="this.parentNode.parentNode.remove()" style="padding:10px 30px;background:#ff4444;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">
+                        I Understand
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(alertDiv);
+    }
+    
+    function toggleSidebar() {
+        const sidebar = document.getElementById('modules-sidebar');
+        const toggleBtn = document.querySelector('.sidebar-toggle');
+        
+        if (sidebar.style.display === 'none') {
+            sidebar.style.display = 'block';
+            toggleBtn.textContent = '📋 Hide Sidebar';
+        } else {
+            sidebar.style.display = 'none';
+            toggleBtn.textContent = '📋 Show Sidebar';
+        }
+    }
+    
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                showSecurityToast(`Fullscreen error: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+    
+    function showSecurityInfo() {
+        showSecurityAlert('Extreme Security Mode Active', `
+            <div style="text-align:left;">
+                <p><strong>Security Features Enabled:</strong></p>
+                <ul style="margin:15px 0;padding-left:20px;">
+                    <li>All keyboard shortcuts disabled (Ctrl+C, Ctrl+V, etc.)</li>
+                    <li>Right-click completely blocked</li>
+                    <li>Developer tools protection active</li>
+                    <li>Video download protection enabled</li>
+                    <li>Print screen blocked</li>
+                    <li>Copy/paste disabled</li>
+                    <li>View source disabled</li>
+                    <li>Inspect element blocked</li>
+                    <li>Page refresh disabled</li>
+                </ul>
+                <p style="margin-top:20px;color:#00ff00;">
+                    🔐 This content is protected by Architect Johan Security System
+                </p>
+            </div>
+        `);
+    }
+    
+    function showWarning() {
+        document.getElementById('warning-message').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function hideWarning() {
+        document.getElementById('warning-message').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    
+    function showSecurityOverlay(message) {
         const overlay = document.getElementById('security-overlay');
         const alertText = document.getElementById('security-alert-text');
         const countdown = document.getElementById('countdown');
@@ -630,11 +1490,8 @@
         alertText.textContent = message;
         overlay.style.display = 'flex';
         
-        // Log security event
-        logSecurityEvent(`SECURITY_VIOLATION_${securityViolationCount}: ${message}`);
-        
         // Countdown timer
-        let seconds = Math.floor(duration / 1000);
+        let seconds = 3;
         countdown.textContent = seconds;
         
         const countdownInterval = setInterval(() => {
@@ -644,33 +1501,41 @@
             if (seconds <= 0) {
                 clearInterval(countdownInterval);
                 overlay.style.display = 'none';
-                
-                // If too many violations, force close
-                if (securityViolationCount >= MAX_VIOLATIONS) {
-                    forceClosePlayer('Too many security violations detected');
-                }
             }
         }, 1000);
         
-        // Auto-close after duration
+        // Auto-close after 3 seconds
         setTimeout(() => {
             overlay.style.display = 'none';
             clearInterval(countdownInterval);
-        }, duration);
+        }, 3000);
     }
     
-    function forceClosePlayer(reason) {
-        alert(`SECURITY ALERT: ${reason}. Player is closing.`);
-        disableExtremeLockdown();
-        clearInterval(devToolsCheck);
-        window.close();
-        if (window.opener) {
-            window.opener.focus();
+    async function logModuleAccess(moduleId) {
+        try {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                await fetch(`${API_BASE}/api/track-video-watch`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        course_id: 'ceh_v13',
+                        module_id: moduleId,
+                        action: 'started_watching'
+                    })
+                });
+            }
+        } catch (error) {
+            // Silent fail
         }
     }
     
     async function logSecurityEvent(event) {
         try {
+            const token = localStorage.getItem('auth_token');
             await fetch(`${API_BASE}/api/security/log`, {
                 method: 'POST',
                 headers: {
@@ -678,11 +1543,10 @@
                 },
                 body: JSON.stringify({ 
                     event: event,
-                    page: 'video-player',
+                    page: 'course-player',
                     timestamp: new Date().toISOString(),
                     userAgent: navigator.userAgent,
-                    video: videoModules[currentModuleId]?.title,
-                    violations: securityViolationCount
+                    video: courseModules[currentModuleIndex]?.title
                 })
             });
         } catch (error) {
@@ -690,209 +1554,101 @@
         }
     }
     
-    // ==================== VIDEO PLAYER FUNCTIONS ====================
+    function exitCourse() {
+        if (confirm('Are you sure you want to exit the course player? Your progress will be saved.')) {
+            // Disable security before leaving
+            extremeSecurityActive = false;
+            disableKeyboardLockdown();
+            if (devToolsCheckInterval) {
+                clearInterval(devToolsCheckInterval);
+            }
+            
+            // Return to videos page
+            window.location.href = 'videos.html';
+        }
+    }
     
-    const API_BASE = 'https://architect-johan-secure.onrender.com';
+    // ==================== INITIALIZATION ====================
     
-    // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-        // Get module from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const moduleId = urlParams.get('module') || 'module_00';
-        
-        if (videoModules[moduleId]) {
-            currentModuleId = moduleId;
+        // Check authentication
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            window.location.href = 'index.html';
+            return;
         }
         
         // Show warning first
         showWarning();
         
-        // Load video after warning
+        // Initialize after warning
         setTimeout(() => {
             hideWarning();
-            loadVideo();
+            
+            // Hide loading screen
+            document.getElementById('loading-screen').style.display = 'none';
+            
+            // Show course modules section
+            document.getElementById('course-modules-section').style.display = 'flex';
+            
+            // Initialize modules
+            initializeModules();
+            
+            // Enable security features
+            enableKeyboardLockdown();
+            blockRightClick();
+            devToolsCheckInterval = protectDeveloperTools();
+            protectVideoDownload();
+            
+            // Log security initialization
+            logSecurityEvent('course_player_initialized');
+            
+            // Select first module by default
+            setTimeout(() => {
+                selectModule(0);
+                isInitialized = true;
+            }, 100);
+            
         }, 2000);
     });
     
-    function showWarning() {
-        warningMessage.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-    }
-    
-    function hideWarning() {
-        warningMessage.style.display = 'none';
-        document.body.style.overflow = '';
-    }
-    
-    function loadVideo() {
-        loadingScreen.style.display = 'flex';
-        
-        // Set video title
-        currentVideoTitle.textContent = videoModules[currentModuleId].title;
-        
-        // Load video embed
-        videoEmbedContainer.innerHTML = videoModules[currentModuleId].embed;
-        
-        // Enable EXTREME lockdown
-        setTimeout(() => {
-            enableExtremeLockdown();
-            isVideoPlaying = true;
-            
-            // Show content
-            loadingScreen.style.display = 'none';
-            videoContent.style.display = 'block';
-            
-            // Auto-hide controls after 5 seconds
-            setTimeout(() => {
-                document.querySelector('.controls-overlay').style.opacity = '0';
-            }, 5000);
-        }, 1000);
-    }
-    
-    function showSecurityInfo() {
-        showSecurityAlert('EXTREME SECURITY MODE: All keys blocked during playback', 5000);
-    }
-    
-    function toggleFullscreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                showSecurityAlert('Fullscreen not supported: ' + err.message);
-            });
-        } else {
-            document.exitFullscreen();
-        }
-    }
-    
-    function prevVideo() {
-        const currentIndex = moduleOrder.indexOf(currentModuleId);
-        if (currentIndex > 0) {
-            currentModuleId = moduleOrder[currentIndex - 1];
-            loadVideo();
-        } else {
-            showSecurityAlert('This is the first video');
-        }
-    }
-    
-    function nextVideo() {
-        const currentIndex = moduleOrder.indexOf(currentModuleId);
-        if (currentIndex < moduleOrder.length - 1) {
-            currentModuleId = moduleOrder[currentIndex + 1];
-            loadVideo();
-        } else {
-            showSecurityAlert('This is the last video');
-        }
-    }
-    
-    function closePlayer() {
-        if (confirm('Are you sure you want to close the video player?')) {
-            // Disable lockdown before closing
-            disableExtremeLockdown();
-            isVideoPlaying = false;
-            clearInterval(devToolsCheck);
-            
-            // Return to course page
-            if (window.opener) {
-                window.close();
-                window.opener.focus();
-            } else {
-                window.location.href = 'course-player.html';
-            }
-        }
-    }
-    
-    // Prevent window closing without confirmation
+    // Prevent leaving page without confirmation
     window.addEventListener('beforeunload', function(e) {
-        if (isVideoPlaying) {
+        if (isInitialized) {
             e.preventDefault();
-            e.returnValue = 'Video is playing. Are you sure you want to leave?';
-            return 'Video is playing. Are you sure you want to leave?';
+            e.returnValue = 'Are you sure you want to leave? Video progress may be lost.';
+            return 'Are you sure you want to leave? Video progress may be lost.';
         }
     });
     
-    // ==================== ADDITIONAL SECURITY MEASURES ====================
-    
-    // Block drag and drop
-    document.addEventListener('dragstart', function(e) {
-        e.preventDefault();
-        showSecurityAlert('Drag & Drop disabled');
-        return false;
-    }, true);
-    
-    document.addEventListener('drop', function(e) {
-        e.preventDefault();
-        showSecurityAlert('Drop function disabled');
-        return false;
-    }, true);
-    
-    // Block text selection
-    document.addEventListener('selectstart', function(e) {
-        e.preventDefault();
-        return false;
-    }, true);
-    
-    // Block copy/paste
-    document.addEventListener('copy', function(e) {
-        e.preventDefault();
-        showSecurityAlert('Copy function disabled');
-        return false;
-    }, true);
-    
-    document.addEventListener('cut', function(e) {
-        e.preventDefault();
-        showSecurityAlert('Cut function disabled');
-        return false;
-    }, true);
-    
-    document.addEventListener('paste', function(e) {
-        e.preventDefault();
-        showSecurityAlert('Paste function disabled');
-        return false;
-    }, true);
-    
-    // Block view source
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
-            e.preventDefault();
-            showSecurityAlert('View source disabled');
-            return false;
+    // Clean up on exit
+    window.addEventListener('unload', function() {
+        if (devToolsCheckInterval) {
+            clearInterval(devToolsCheckInterval);
         }
-    }, true);
+        extremeSecurityActive = false;
+        disableKeyboardLockdown();
+    });
     
-    // Block download
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && (e.key === 's' || e.key === 'S')) {
-            e.preventDefault();
-            showSecurityAlert('Save function disabled');
-            return false;
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        .security-alert-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 999999;
         }
-    }, true);
-    
-    // Block print
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && (e.key === 'p' || e.key === 'P')) {
-            e.preventDefault();
-            showSecurityAlert('Print function disabled');
-            return false;
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
         }
-    }, true);
-    
-    // Block inspect element
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
-            e.preventDefault();
-            showSecurityAlert('Inspect element disabled');
-            return false;
-        }
-    }, true);
-    
-    // Block refresh
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && (e.key === 'r' || e.key === 'R')) {
-            e.preventDefault();
-            showSecurityAlert('Refresh disabled');
-            return false;
-        }
-    }, true);
+    `;
+    document.head.appendChild(style);
 </script>
 </body>
 </html>
