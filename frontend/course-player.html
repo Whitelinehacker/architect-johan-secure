@@ -9,6 +9,11 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            cursor: default !important;
         }
 
         body {
@@ -16,6 +21,7 @@
             background: #0f0f0f;
             color: #ffffff;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         /* Header */
@@ -497,13 +503,33 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 99999;
+            background: rgba(0, 0, 0, 0.98);
+            z-index: 999999;
             display: none;
             justify-content: center;
             align-items: center;
             color: white;
             text-align: center;
+            backdrop-filter: blur(20px);
+        }
+
+        .security-message {
+            font-size: 24px;
+            color: #ff4444;
+            margin-bottom: 20px;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .security-details {
+            font-size: 14px;
+            color: #aaa;
+            margin-top: 20px;
         }
 
         /* Footer */
@@ -600,10 +626,16 @@
     <!-- Security Overlay -->
     <div id="security-overlay" class="security-overlay">
         <div class="security-content">
-            <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
-            <div class="security-message">Security Alert</div>
-            <p style="font-size: 14px; margin-top: 20px; color: #ff4444;">
-                Security violation detected. Unauthorized access attempt logged.
+            <div style="font-size: 64px; margin-bottom: 20px; color: #ff4444;">⚠️</div>
+            <div class="security-message" id="security-alert-text">SECURITY VIOLATION DETECTED</div>
+            <p style="font-size: 16px; margin-top: 20px; color: #ff9999;">
+                Unauthorized access attempt has been logged
+            </p>
+            <p class="security-details">
+                All security violations are recorded and monitored
+            </p>
+            <p class="security-details" style="margin-top: 30px; font-size: 12px; color: #666;">
+                This page will resume in <span id="countdown">5</span> seconds...
             </p>
         </div>
     </div>
@@ -772,146 +804,300 @@
     </div>
 
 <script>
-    // ==================== ENHANCED SECURITY FUNCTIONS ====================
+    // ==================== EXTREME SECURITY MEASURES ====================
     
-    // Security: Prevent right-click, F12, Ctrl+Shift+I, Ctrl+U, etc.
+    // Global security state
+    let securityViolationCount = 0;
+    const MAX_VIOLATIONS = 3;
+    
+    // Function to show security alert with timer
+    function showSecurityAlert(message, duration = 5000) {
+        securityViolationCount++;
+        
+        const overlay = document.getElementById('security-overlay');
+        const alertText = document.getElementById('security-alert-text');
+        const countdown = document.getElementById('countdown');
+        
+        alertText.textContent = message;
+        overlay.style.display = 'flex';
+        
+        // Log security event
+        logSecurityEvent(`SECURITY_VIOLATION_${securityViolationCount}: ${message}`);
+        
+        // Countdown timer
+        let seconds = Math.floor(duration / 1000);
+        countdown.textContent = seconds;
+        
+        const countdownInterval = setInterval(() => {
+            seconds--;
+            countdown.textContent = seconds;
+            
+            if (seconds <= 0) {
+                clearInterval(countdownInterval);
+                overlay.style.display = 'none';
+                
+                // If too many violations, force logout
+                if (securityViolationCount >= MAX_VIOLATIONS) {
+                    forceLogout('Too many security violations detected');
+                }
+            }
+        }, 1000);
+        
+        // Auto-close after duration
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            clearInterval(countdownInterval);
+        }, duration);
+    }
+    
+    // Force logout function
+    function forceLogout(reason) {
+        localStorage.removeItem('auth_token');
+        alert(`Security Alert: ${reason}. You have been logged out.`);
+        window.location.href = 'index.html';
+    }
+    
+    // ==================== COMPLETE RIGHT-CLICK DISABLE ====================
+    
+    // Prevent all right-click events
     document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
-        showSecurityAlert('Right-click is disabled for security.');
-        logSecurityEvent('right_click_blocked');
+        e.stopPropagation();
+        showSecurityAlert('Right-click is disabled for security protection');
+        logSecurityEvent('right_click_attempt_blocked');
+        return false;
     });
     
-    // Block all developer tool shortcuts and Print Screen
+    // Also prevent long-press on touch devices
+    document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+            e.preventDefault();
+            showSecurityAlert('Multi-touch gestures are disabled');
+            logSecurityEvent('multi_touch_attempt_blocked');
+        }
+    }, { passive: false });
+    
+    document.addEventListener('touchend', function(e) {
+        const touchDuration = e.timeStamp - e.target.timeStamp;
+        if (touchDuration > 1000) { // Long press detection
+            e.preventDefault();
+            showSecurityAlert('Long-press is disabled');
+            logSecurityEvent('long_press_attempt_blocked');
+        }
+    }, { passive: false });
+    
+    // ==================== COMPLETE KEYBOARD LOCKDOWN ====================
+    
+    // Block ALL function keys and special keys
     document.addEventListener('keydown', function(e) {
-        const blockedCombinations = [
-            {key: 'F12', ctrl: false, shift: false, alt: false, meta: false},
-            {key: 'F11', ctrl: false, shift: false, alt: false, meta: false},
-            {key: 'F10', ctrl: false, shift: false, alt: false, meta: false},
-            {key: 'PrintScreen', ctrl: false, shift: false, alt: false, meta: false},
-            {key: 'I', ctrl: true, shift: true, alt: false, meta: false},
-            {key: 'J', ctrl: true, shift: true, alt: false, meta: false},
-            {key: 'C', ctrl: true, shift: true, alt: false, meta: false},
-            {key: 'U', ctrl: true, shift: false, alt: false, meta: false},
-            {key: 'S', ctrl: true, shift: false, alt: false, meta: false},
-            {key: 'P', ctrl: true, shift: false, alt: false, meta: false},
-            {key: 'O', ctrl: true, shift: false, alt: false, meta: false},
-            {key: 'F', ctrl: true, shift: false, alt: false, meta: false},
-            {key: 'F', ctrl: true, shift: true, alt: false, meta: false},
-            {key: 'H', ctrl: true, shift: false, alt: false, meta: false},
-            {key: 'J', ctrl: true, shift: false, alt: false, meta: false},
-            {key: 'K', ctrl: true, shift: false, alt: false, meta: false},
-            {key: 'L', ctrl: true, shift: false, alt: false, meta: false}
-        ];
+        // Detect OS
+        const isWindows = navigator.platform.indexOf('Win') > -1;
+        const isMac = navigator.platform.indexOf('Mac') > -1;
         
-        for (const combo of blockedCombinations) {
-            if (e.key === combo.key && 
-                e.ctrlKey === combo.ctrl && 
-                e.shiftKey === combo.shift && 
-                e.altKey === combo.alt &&
-                e.metaKey === combo.meta) {
+        // Block ALL F-keys (F1 through F24)
+        if (e.key.startsWith('F') && /^F[1-9][0-4]?$/.test(e.key)) {
+            e.preventDefault();
+            e.stopPropagation();
+            showSecurityAlert(`Function key ${e.key} is disabled`);
+            logSecurityEvent(`function_key_blocked: ${e.key}`);
+            return false;
+        }
+        
+        // Block Print Screen
+        if (e.key === 'PrintScreen' || e.key === 'Snapshot') {
+            e.preventDefault();
+            e.stopPropagation();
+            showSecurityAlert('Screen capture is disabled');
+            logSecurityEvent('print_screen_blocked');
+            return false;
+        }
+        
+        // Block Windows/Mac/Linux keys
+        if (e.key === 'Meta' || e.key === 'OS' || e.key === 'Win' || e.metaKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            showSecurityAlert('System key (Windows/Mac) is disabled');
+            logSecurityEvent('system_key_blocked');
+            return false;
+        }
+        
+        // Block ALL Control combinations
+        if (e.ctrlKey) {
+            // Block Ctrl + any key combinations
+            const blockedCtrlCombos = ['I', 'J', 'U', 'S', 'P', 'O', 'F', 'H', 'N', 'T', 'W', 'Q', 'R', 'D', 'G'];
+            if (blockedCtrlCombos.includes(e.key.toUpperCase())) {
                 e.preventDefault();
-                showSecurityAlert(`Security shortcut blocked: ${e.key}`);
-                logSecurityEvent(`keyboard_shortcut_blocked: ${e.key}`);
+                e.stopPropagation();
+                showSecurityAlert(`Ctrl+${e.key} is disabled`);
+                logSecurityEvent(`ctrl_combo_blocked: ${e.key}`);
+                return false;
+            }
+            
+            // Block Ctrl + Shift combinations
+            if (e.shiftKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                showSecurityAlert('Ctrl+Shift combinations are disabled');
+                logSecurityEvent('ctrl_shift_combo_blocked');
+                return false;
+            }
+            
+            // Block Ctrl + Alt combinations
+            if (e.altKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                showSecurityAlert('Ctrl+Alt combinations are disabled');
+                logSecurityEvent('ctrl_alt_combo_blocked');
                 return false;
             }
         }
         
-        // Block Windows key combinations
-        if (e.key === 'Meta' || e.metaKey) {
-            showSecurityAlert('Windows/Mac key combinations are disabled');
-            e.preventDefault();
-            logSecurityEvent('windows_key_blocked');
-            return false;
+        // Block ALL Alt combinations
+        if (e.altKey) {
+            // Block Alt + F4
+            if (e.key === 'F4') {
+                e.preventDefault();
+                e.stopPropagation();
+                showSecurityAlert('Alt+F4 is disabled');
+                logSecurityEvent('alt_f4_blocked');
+                return false;
+            }
+            
+            // Block Alt + Tab
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                e.stopPropagation();
+                showSecurityAlert('Alt+Tab is disabled');
+                logSecurityEvent('alt_tab_blocked');
+                return false;
+            }
+            
+            // Block Alt + Space
+            if (e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                showSecurityAlert('Alt+Space is disabled');
+                logSecurityEvent('alt_space_blocked');
+                return false;
+            }
+            
+            // Block Alt + Enter
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                showSecurityAlert('Alt+Enter is disabled');
+                logSecurityEvent('alt_enter_blocked');
+                return false;
+            }
         }
         
-        // Block Ctrl+Shift combinations
-        if (e.ctrlKey && e.shiftKey) {
-            showSecurityAlert('Ctrl+Shift combination blocked');
-            e.preventDefault();
-            logSecurityEvent('ctrl_shift_combo_blocked');
-            return false;
+        // Block Escape key for password modal control only
+        if (e.key === 'Escape') {
+            const passwordModal = document.getElementById('password-modal');
+            if (!passwordModal.classList.contains('active')) {
+                e.preventDefault();
+                e.stopPropagation();
+                showSecurityAlert('Escape key is disabled');
+                logSecurityEvent('escape_key_blocked');
+                return false;
+            }
         }
         
-        // Block Alt combinations
-        if (e.altKey && (e.key === 'F4' || e.key === 'Tab' || e.key === 'Enter')) {
-            showSecurityAlert('Alt combination blocked');
+        // Block Tab key navigation out of page
+        if (e.key === 'Tab') {
+            const activeEl = document.activeElement;
+            const allFocusable = document.querySelectorAll('button, input, [tabindex]');
+            const first = allFocusable[0];
+            const last = allFocusable[allFocusable.length - 1];
+            
+            if (e.shiftKey && activeEl === first) {
+                e.preventDefault();
+                e.stopPropagation();
+                last.focus();
+            } else if (!e.shiftKey && activeEl === last) {
+                e.preventDefault();
+                e.stopPropagation();
+                first.focus();
+            }
+        }
+    }, true); // Use capture phase to catch all events
+    
+    // ==================== MOUSE AND TRACKPAD SECURITY ====================
+    
+    // Prevent middle-click
+    document.addEventListener('auxclick', function(e) {
+        if (e.button === 1) { // Middle mouse button
             e.preventDefault();
-            logSecurityEvent('alt_combo_blocked');
+            e.stopPropagation();
+            showSecurityAlert('Middle-click is disabled');
+            logSecurityEvent('middle_click_blocked');
             return false;
         }
     });
     
-    // Prevent dragging
-    document.addEventListener('dragstart', function(e) {
-        e.preventDefault();
-        return false;
+    // Prevent mouse wheel for navigation
+    document.addEventListener('wheel', function(e) {
+        if (e.ctrlKey) { // Ctrl + Wheel for zoom
+            e.preventDefault();
+            e.stopPropagation();
+            showSecurityAlert('Zoom function is disabled');
+            logSecurityEvent('zoom_attempt_blocked');
+            return false;
+        }
+    }, { passive: false });
+    
+    // ==================== BROWSER WINDOW SECURITY ====================
+    
+    // Prevent window resize
+    window.addEventListener('resize', function() {
+        logSecurityEvent('window_resize_detected');
     });
     
-    // Prevent text selection
-    document.addEventListener('selectstart', function(e) {
-        e.preventDefault();
-        return false;
+    // Prevent window move
+    window.addEventListener('move', function() {
+        logSecurityEvent('window_move_detected');
     });
     
-    // Disable copy/paste
-    document.addEventListener('copy', function(e) {
-        e.preventDefault();
-        showSecurityAlert('Copy function is disabled');
-        logSecurityEvent('copy_blocked');
-        return false;
+    // Prevent beforeunload (closing tab/window)
+    window.addEventListener('beforeunload', function(e) {
+        // Allow only if user is logging out
+        if (!window.location.href.includes('index.html')) {
+            e.preventDefault();
+            e.returnValue = 'Are you sure you want to leave? Your progress may not be saved.';
+            logSecurityEvent('window_close_attempted');
+        }
     });
     
-    document.addEventListener('cut', function(e) {
-        e.preventDefault();
-        showSecurityAlert('Cut function is disabled');
-        logSecurityEvent('cut_blocked');
-        return false;
-    });
+    // ==================== ADVANCED DEVELOPER TOOLS DETECTION ====================
     
-    document.addEventListener('paste', function(e) {
-        e.preventDefault();
-        showSecurityAlert('Paste function is disabled');
-        logSecurityEvent('paste_blocked');
-        return false;
-    });
-    
-    // Detect if dev tools are open (advanced)
+    // Multiple methods to detect dev tools
     function detectDevTools() {
+        // Method 1: Check window size difference
         const widthThreshold = window.outerWidth - window.innerWidth > 160;
         const heightThreshold = window.outerHeight - window.innerHeight > 160;
         
         if (widthThreshold || heightThreshold) {
-            showSecurityAlert('Developer tools detected!');
+            showSecurityAlert('Developer tools detected and blocked');
             logSecurityEvent('devtools_opened_detected');
             return true;
         }
         return false;
     }
     
-    // Periodic dev tools check
+    // Continuous dev tools monitoring
     setInterval(detectDevTools, 1000);
     
-    // Function to show security alert
-    function showSecurityAlert(message) {
-        const overlay = document.getElementById('security-overlay');
-        overlay.querySelector('.security-message').textContent = message;
-        overlay.style.display = 'flex';
-        
-        // Play alert sound
-        try {
-            const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
-            audio.volume = 0.3;
-            audio.play().catch(() => {});
-        } catch (e) {}
-        
-        setTimeout(() => {
-            overlay.style.display = 'none';
-        }, 3000);
-        
-        logSecurityEvent(`Security Alert: ${message}`);
+    // ==================== IFRAME PROTECTION ====================
+    
+    // Prevent being embedded in iframe
+    if (window.self !== window.top) {
+        showSecurityAlert('Unauthorized iframe embedding detected');
+        logSecurityEvent('iframe_embedding_detected');
+        window.top.location.href = window.self.location.href;
     }
     
-    // Log security events to server
+    // ==================== LOG SECURITY EVENT ====================
+    
     async function logSecurityEvent(event) {
         try {
             await fetch(`${API_BASE}/api/security/log`, {
@@ -922,7 +1108,10 @@
                 body: JSON.stringify({ 
                     event: event,
                     page: 'course-player',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    violations: securityViolationCount
                 })
             });
         } catch (error) {
@@ -939,7 +1128,7 @@
         modules: [],
         completedModules: new Set(),
         currentModule: null,
-        // Video embeds data
+        // Video embeds data from your file
         videoEmbeds: {
             'module_00': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k3zomd0RrNpQBNExqG2" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
             'module_01': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k1vhCWkSps1VSUEy9U4" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
@@ -984,6 +1173,15 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
+        // Apply CSS security styles
+        document.body.style.cssText = `
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            cursor: default !important;
+        `;
+        
         // Check authentication
         if (!checkAuth()) {
             window.location.href = 'index.html';
@@ -1192,15 +1390,15 @@
             <head>
                 <title>${module.title} - Architect Johan</title>
                 <style>
-                    body { margin: 0; padding: 0; background: #000; }
+                    body { margin: 0; padding: 0; background: #000; overflow: hidden; }
                     .video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+                    body * { user-select: none !important; cursor: default !important; }
                 </style>
                 <script>
                     // Security: Block all shortcuts
                     document.addEventListener('contextmenu', e => e.preventDefault());
                     document.addEventListener('keydown', e => {
-                        const blocked = ['F12', 'PrintScreen', 'F11', 'F10'];
-                        if (blocked.includes(e.key) || e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) {
+                        if (e.key === 'F12' || e.key === 'PrintScreen' || e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) {
                             e.preventDefault();
                             return false;
                         }
@@ -1216,7 +1414,7 @@
         `;
         
         // Open in new window
-        const newWindow = window.open('', '_blank');
+        const newWindow = window.open('', '_blank', 'width=1280,height=720,toolbar=no,menubar=no,scrollbars=no,resizable=yes');
         newWindow.document.write(modulePlayer);
         newWindow.document.close();
         
@@ -1354,11 +1552,6 @@
         loadingScreen.style.display = 'none';
         mainContent.style.display = 'block';
     }
-
-    // Auto-focus password input on modal show
-    passwordModal.addEventListener('shown', function() {
-        passwordInput.focus();
-    });
 
     // Close modal on escape key
     document.addEventListener('keydown', function(e) {
