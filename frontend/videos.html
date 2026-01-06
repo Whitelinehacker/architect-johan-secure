@@ -22,7 +22,7 @@
 
         /* Header */
         .header {
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(10px);
             padding: 20px 40px;
             position: sticky;
@@ -239,6 +239,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            font-size: 14px;
         }
 
         .action-btn.primary {
@@ -390,6 +391,7 @@
             .nav-links {
                 flex-wrap: wrap;
                 justify-content: center;
+                gap: 15px;
             }
             
             .categories-grid {
@@ -398,6 +400,40 @@
             
             .main-container {
                 padding: 20px;
+            }
+            
+            .page-title {
+                font-size: 28px;
+            }
+            
+            .category-actions {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 15px 20px;
+            }
+            
+            .logo {
+                font-size: 24px;
+            }
+            
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+            
+            .category-content {
+                padding: 15px;
+            }
+            
+            .category-title {
+                font-size: 18px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
             }
         }
     </style>
@@ -507,11 +543,13 @@
             .then(response => {
                 if (!response.ok) {
                     localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_info');
                     window.location.href = 'index.html';
                 }
             })
             .catch(() => {
                 localStorage.removeItem('auth_token');
+                localStorage.removeItem('user_info');
                 window.location.href = 'index.html';
             });
             
@@ -574,7 +612,8 @@
             card.innerHTML = `
                 <img src="${category.thumbnail}" 
                      alt="${category.title}" 
-                     class="category-thumbnail">
+                     class="category-thumbnail"
+                     onerror="this.src='https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'">
                 <div class="category-content">
                     <div class="category-title">
                         <span>${category.title}</span>
@@ -603,9 +642,9 @@
                     ` : ''}
                     
                     <div class="category-actions">
-                        ${category.locked ? 
-                            `<button class="action-btn secondary" onclick="requestAccess('${category.id}')">
-                                🔒 Request Access
+                        ${category.requires_password ? 
+                            `<button class="action-btn primary" onclick="accessCourse('${category.id}')">
+                                🔑 Enter Password
                             </button>` : 
                             `<button class="action-btn primary" onclick="accessCourse('${category.id}')">
                                 🎬 Start Learning
@@ -622,27 +661,15 @@
         }
 
         // Access Course
-       function accessCourse(categoryId) {
-    const category = state.categories[categoryId];
-    if (!category) return;
-
-    if (category.requires_password) {
-        openPasswordModal(category);
-    } else {
-        // Open course player in new tab
-        window.open(`course-player.html?course=${categoryId}`, '_blank');
-    }
-}
-
-        // Request Access
-        function requestAccess(categoryId) {
+        function accessCourse(categoryId) {
             const category = state.categories[categoryId];
             if (!category) return;
 
             if (category.requires_password) {
                 openPasswordModal(category);
             } else {
-                alert('This course requires special access. Please contact support.');
+                // Open course player in new tab
+                window.open(`course-player.html?course=${categoryId}`, '_blank');
             }
         }
 
@@ -677,6 +704,7 @@
         function closePasswordModal() {
             passwordModalEl.classList.remove('active');
             state.currentCategory = null;
+            passwordInputEl.value = '';
         }
 
         async function submitPassword() {
@@ -711,23 +739,61 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Password verified, redirect to video player
+                    // Password verified, redirect to course player
                     closePasswordModal();
-                    window.location.href = data.redirect_url || `video-player.html?category=${categoryId}`;
+                    
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else if (categoryId === 'ceh_v13') {
+                        window.open('course-player.html', '_blank');
+                    } else {
+                        window.open(`course-player.html?course=${categoryId}`, '_blank');
+                    }
                 } else {
                     showPasswordError(data.error || 'Incorrect password');
                     passwordInputEl.value = '';
                     passwordInputEl.focus();
+                    
+                    // Track failed attempts
+                    if (!state.passwordAttempts[categoryId]) {
+                        state.passwordAttempts[categoryId] = 0;
+                    }
+                    state.passwordAttempts[categoryId]++;
+                    
+                    if (state.passwordAttempts[categoryId] >= 3) {
+                        showPasswordError('Too many failed attempts. Please try again later.');
+                        setTimeout(() => {
+                            closePasswordModal();
+                        }, 2000);
+                    }
                 }
             } catch (error) {
                 showPasswordError('Network error. Please try again.');
+                console.error('Password verification error:', error);
             }
         }
 
         function showPasswordError(message) {
             passwordErrorEl.textContent = message;
             passwordErrorEl.style.display = 'block';
+            
+            // Shake animation
+            passwordErrorEl.style.animation = 'none';
+            setTimeout(() => {
+                passwordErrorEl.style.animation = 'shake 0.5s ease';
+            }, 10);
         }
+
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
 
         // No Content Message
         function showNoContent() {
@@ -763,7 +829,14 @@
                 submitPassword();
             }
         });
+
+        // Prevent right-click on images
+        document.addEventListener('contextmenu', function(e) {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+                return false;
+            }
+        });
     </script>
 </body>
 </html>
-
