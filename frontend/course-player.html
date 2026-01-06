@@ -598,22 +598,55 @@
                 max-width: 300px;
             }
         }
+
+
+        #video-player-container {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Ensure iframe / video fills container correctly */
+#video-player-container iframe,
+#video-player-container video {
+    width: 100% !important;
+    height: 100% !important;
+    aspect-ratio: 16 / 9;
+    object-fit: contain; /* prevents cropping */
+}
+
+/* Fix embedded iframe wrapper divs (Dailymotion / YouTube) */
+#video-player-container > div {
+    width: 100%;
+    height: 100%;
+}
+
+/* Mobile safety */
+@media (max-width: 768px) {
+    #video-player-container {
+        aspect-ratio: 16 / 9;
+    }
+}
     </style>
 </head>
 <body>
     <!-- Security Overlay -->
-    <div id="security-overlay" class="security-overlay">
-        <div class="security-content">
-            <div style="font-size: 64px; margin-bottom: 20px; color: #ff4444;">⚠️</div>
-            <div class="security-message" id="security-alert-text">EXTREME SECURITY MODE</div>
-            <p style="font-size: 16px; margin-top: 20px; color: #ff9999;">
-                All keyboard shortcuts, right-click, and screen capture are disabled
-            </p>
-            <p class="security-details" style="margin-top: 30px; font-size: 12px; color: #666;">
-                Security will auto-resume in <span id="countdown">3</span> seconds...
-            </p>
-        </div>
+  <div id="security-overlay" class="security-overlay">
+    <div class="security-content">
+        <div style="font-size:64px;margin-bottom:20px;color:#ff4444;">⚠️</div>
+        <div class="security-message" id="security-alert-text">EXTREME SECURITY MODE</div>
+        <p style="font-size:16px;margin-top:20px;color:#ff9999;">
+            All keyboard shortcuts, right-click, and screen capture are disabled
+        </p>
+        <p style="margin-top:30px;font-size:12px;color:#666;">
+            Security will auto-resume in <span id="countdown">3</span> seconds...
+        </p>
     </div>
+</div>
 
     <!-- Warning Message -->
     <div id="warning-message" class="warning-message">
@@ -647,20 +680,15 @@
     </div>
 
     <!-- Header -->
-    <header class="header">
-        <a href="home.html" class="logo">
-            <span class="logo-icon">🔐</span>
-            Architect Johan
-        </a>
-        
-        <div class="course-title">CEH v13 - Certified Ethical Hacker Course</div>
-        
-        <div class="header-controls">
-            <button class="header-btn" onclick="showSecurityInfo()">🛡️ Security Info</button>
-            <button class="header-btn" onclick="toggleFullscreen()">📺 Fullscreen</button>
-            <button class="header-btn exit" onclick="exitCourse()">❌ Exit</button>
-        </div>
-    </header>
+  <header class="header">
+    <a href="home.html" class="logo">🔐 Architect Johan</a>
+    <div class="course-title">CEH v13 - Certified Ethical Hacker</div>
+    <div class="header-controls">
+        <button class="header-btn" onclick="showSecurityInfo()">🛡️ Security Info</button>
+        <button class="header-btn" onclick="toggleFullscreen()">📺 Fullscreen</button>
+        <button class="header-btn exit" onclick="exitCourse()">❌ Exit</button>
+    </div>
+</header>
 
     <!-- Main Course Content -->
     <div id="course-modules-section" style="display: none;">
