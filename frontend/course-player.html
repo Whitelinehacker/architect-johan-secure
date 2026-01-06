@@ -522,6 +522,33 @@
             font-size: 14px;
         }
 
+        /* Progress Bar */
+        .progress-container {
+            margin: 20px 0;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #00ff00;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .hero-content {
@@ -567,33 +594,6 @@
                 grid-template-columns: 1fr;
             }
         }
-
-        /* Progress Bar */
-        .progress-container {
-            margin: 20px 0;
-        }
-
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #aaa;
-        }
-
-        .progress-bar {
-            height: 6px;
-            background: #333;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #00ff00;
-            border-radius: 3px;
-            transition: width 0.3s;
-        }
     </style>
 </head>
 <body>
@@ -603,7 +603,7 @@
             <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
             <div class="security-message">Security Alert</div>
             <p style="font-size: 14px; margin-top: 20px; color: #ff4444;">
-                Security violation detected.
+                Security violation detected. Unauthorized access attempt logged.
             </p>
         </div>
     </div>
@@ -772,7 +772,7 @@
     </div>
 
 <script>
-    // ==================== SECURITY FUNCTIONS ====================
+    // ==================== ENHANCED SECURITY FUNCTIONS ====================
     
     // Security: Prevent right-click, F12, Ctrl+Shift+I, Ctrl+U, etc.
     document.addEventListener('contextmenu', function(e) {
@@ -781,16 +781,26 @@
         logSecurityEvent('right_click_blocked');
     });
     
-    // Block all developer tool shortcuts
+    // Block all developer tool shortcuts and Print Screen
     document.addEventListener('keydown', function(e) {
         const blockedCombinations = [
             {key: 'F12', ctrl: false, shift: false, alt: false, meta: false},
+            {key: 'F11', ctrl: false, shift: false, alt: false, meta: false},
+            {key: 'F10', ctrl: false, shift: false, alt: false, meta: false},
+            {key: 'PrintScreen', ctrl: false, shift: false, alt: false, meta: false},
             {key: 'I', ctrl: true, shift: true, alt: false, meta: false},
             {key: 'J', ctrl: true, shift: true, alt: false, meta: false},
             {key: 'C', ctrl: true, shift: true, alt: false, meta: false},
             {key: 'U', ctrl: true, shift: false, alt: false, meta: false},
             {key: 'S', ctrl: true, shift: false, alt: false, meta: false},
-            {key: 'P', ctrl: true, shift: false, alt: false, meta: false}
+            {key: 'P', ctrl: true, shift: false, alt: false, meta: false},
+            {key: 'O', ctrl: true, shift: false, alt: false, meta: false},
+            {key: 'F', ctrl: true, shift: false, alt: false, meta: false},
+            {key: 'F', ctrl: true, shift: true, alt: false, meta: false},
+            {key: 'H', ctrl: true, shift: false, alt: false, meta: false},
+            {key: 'J', ctrl: true, shift: false, alt: false, meta: false},
+            {key: 'K', ctrl: true, shift: false, alt: false, meta: false},
+            {key: 'L', ctrl: true, shift: false, alt: false, meta: false}
         ];
         
         for (const combo of blockedCombinations) {
@@ -800,35 +810,99 @@
                 e.altKey === combo.alt &&
                 e.metaKey === combo.meta) {
                 e.preventDefault();
-                showSecurityAlert('Developer tools are disabled for security.');
+                showSecurityAlert(`Security shortcut blocked: ${e.key}`);
                 logSecurityEvent(`keyboard_shortcut_blocked: ${e.key}`);
                 return false;
             }
         }
         
+        // Block Windows key combinations
+        if (e.key === 'Meta' || e.metaKey) {
+            showSecurityAlert('Windows/Mac key combinations are disabled');
+            e.preventDefault();
+            logSecurityEvent('windows_key_blocked');
+            return false;
+        }
+        
+        // Block Ctrl+Shift combinations
         if (e.ctrlKey && e.shiftKey) {
-            showSecurityAlert('Shortcut blocked for security.');
+            showSecurityAlert('Ctrl+Shift combination blocked');
             e.preventDefault();
             logSecurityEvent('ctrl_shift_combo_blocked');
             return false;
         }
+        
+        // Block Alt combinations
+        if (e.altKey && (e.key === 'F4' || e.key === 'Tab' || e.key === 'Enter')) {
+            showSecurityAlert('Alt combination blocked');
+            e.preventDefault();
+            logSecurityEvent('alt_combo_blocked');
+            return false;
+        }
     });
     
-    // Detect if dev tools are open
-    let devtools = /./;
-    devtools.toString = function() {
-        showSecurityAlert('Developer tools detected!');
-        logSecurityEvent('devtools_opened_detected');
-        return '';
-    };
+    // Prevent dragging
+    document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
     
-    console.log('%c', devtools);
+    // Prevent text selection
+    document.addEventListener('selectstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // Disable copy/paste
+    document.addEventListener('copy', function(e) {
+        e.preventDefault();
+        showSecurityAlert('Copy function is disabled');
+        logSecurityEvent('copy_blocked');
+        return false;
+    });
+    
+    document.addEventListener('cut', function(e) {
+        e.preventDefault();
+        showSecurityAlert('Cut function is disabled');
+        logSecurityEvent('cut_blocked');
+        return false;
+    });
+    
+    document.addEventListener('paste', function(e) {
+        e.preventDefault();
+        showSecurityAlert('Paste function is disabled');
+        logSecurityEvent('paste_blocked');
+        return false;
+    });
+    
+    // Detect if dev tools are open (advanced)
+    function detectDevTools() {
+        const widthThreshold = window.outerWidth - window.innerWidth > 160;
+        const heightThreshold = window.outerHeight - window.innerHeight > 160;
+        
+        if (widthThreshold || heightThreshold) {
+            showSecurityAlert('Developer tools detected!');
+            logSecurityEvent('devtools_opened_detected');
+            return true;
+        }
+        return false;
+    }
+    
+    // Periodic dev tools check
+    setInterval(detectDevTools, 1000);
     
     // Function to show security alert
     function showSecurityAlert(message) {
         const overlay = document.getElementById('security-overlay');
         overlay.querySelector('.security-message').textContent = message;
         overlay.style.display = 'flex';
+        
+        // Play alert sound
+        try {
+            const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
+            audio.volume = 0.3;
+            audio.play().catch(() => {});
+        } catch (e) {}
         
         setTimeout(() => {
             overlay.style.display = 'none';
@@ -845,7 +919,11 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ event: event })
+                body: JSON.stringify({ 
+                    event: event,
+                    page: 'course-player',
+                    timestamp: new Date().toISOString()
+                })
             });
         } catch (error) {
             // Silent fail for security events
@@ -860,7 +938,31 @@
         courseData: null,
         modules: [],
         completedModules: new Set(),
-        currentModule: null
+        currentModule: null,
+        // Video embeds data
+        videoEmbeds: {
+            'module_00': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k3zomd0RrNpQBNExqG2" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_01': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k1vhCWkSps1VSUEy9U4" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_02': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k2Xw6PB8SwpUfaEykbO" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_03': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=klOjN0GkwtqElYEykbK" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_04': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k4cysXB8MpQghuEykbQ" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_05': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k3BFq72v2QGxQGEykbM" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_06': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k7allvp1n5EYSjEykbU" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_07': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=kEFBB4AVjJzAFYEykc4" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_08': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5PLtgsU1WWUFeEykc0" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_09': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5dCDj8wGJFMUBEykda" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_10': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k6wvuJ9RoCEaQnEykc2" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_11': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k4edWCOT7cdMHdEAl1g" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_12': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k52xAG2SCFrbegEAn1U" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_13': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k3CMfyJwmlBwKPEAl1e" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_14': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5Q7RoQ3HLu7ZiEAnNa" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_15': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5qMEMk6fLvZt4EAoMW" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_16': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k2j2U1QCiSdsEkEAOsa" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_17': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k4L3EM7fPpfBk8EAPJq" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_18': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5nsfAxj4X5ILBEBgba" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_19': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5nsfAxj4X5ILBEBgba" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>',
+            'module_20': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe src="https://geo.dailymotion.com/player.html?video=k5nsfAxj4X5ILBEBgba" style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;" allowfullscreen title="Dailymotion Video Player" allow="web-share"></iframe></div>'
+        }
     };
 
     // DOM Elements
@@ -893,7 +995,27 @@
         
         // Load user progress
         loadUserProgress();
+        
+        // Apply additional security measures
+        applyAdditionalSecurity();
     });
+
+    // Apply additional security measures
+    function applyAdditionalSecurity() {
+        // Disable iframe detection
+        if (window.self !== window.top) {
+            showSecurityAlert('Unauthorized iframe access detected');
+            logSecurityEvent('iframe_access_attempt');
+        }
+        
+        // Disable back button
+        history.pushState(null, null, location.href);
+        window.onpopstate = function() {
+            history.go(1);
+            showSecurityAlert('Back navigation is disabled');
+            logSecurityEvent('back_button_blocked');
+        };
+    }
 
     // Authentication Check
     function checkAuth() {
@@ -935,6 +1057,14 @@
             if (data.success) {
                 state.courseData = data.course;
                 state.modules = data.course.modules;
+                
+                // Lock all modules after the first two
+                state.modules.forEach((module, index) => {
+                    if (index >= 2) {
+                        module.locked = true;
+                    }
+                });
+                
                 renderCourseInfo();
                 renderModulesGrid();
                 hideLoading();
@@ -1052,8 +1182,46 @@
 
     // Open Module
     function openModule(moduleId) {
-        // Redirect to course player with specific module
-        window.location.href = `course-player.html?course=${state.courseId}&module=${moduleId}`;
+        const module = state.modules.find(m => m.id === moduleId);
+        if (!module) return;
+        
+        // Create module player page
+        const modulePlayer = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>${module.title} - Architect Johan</title>
+                <style>
+                    body { margin: 0; padding: 0; background: #000; }
+                    .video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+                </style>
+                <script>
+                    // Security: Block all shortcuts
+                    document.addEventListener('contextmenu', e => e.preventDefault());
+                    document.addEventListener('keydown', e => {
+                        const blocked = ['F12', 'PrintScreen', 'F11', 'F10'];
+                        if (blocked.includes(e.key) || e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) {
+                            e.preventDefault();
+                            return false;
+                        }
+                    });
+                <\/script>
+            </head>
+            <body>
+                <div class="video-container">
+                    ${state.videoEmbeds[moduleId] || '<div style="color: white; text-align: center; padding: 100px;">Video not available</div>'}
+                </div>
+            </body>
+            </html>
+        `;
+        
+        // Open in new window
+        const newWindow = window.open('', '_blank');
+        newWindow.document.write(modulePlayer);
+        newWindow.document.close();
+        
+        // Log video access
+        logUserActivity(`video_accessed_${moduleId}`);
     }
 
     // Review Module
@@ -1136,8 +1304,12 @@
                         </button>
                     `;
                 }
+                
+                // Log successful unlock
+                logUserActivity(`module_unlocked_${state.currentModule.id}`);
             } else {
                 showPasswordError(data.error || 'Incorrect password');
+                logUserActivity(`module_password_failed_${state.currentModule.id}`);
             }
         } catch (error) {
             showPasswordError('Network error. Please try again.');
@@ -1147,6 +1319,26 @@
     function showPasswordError(message) {
         passwordError.textContent = message;
         passwordError.style.display = 'block';
+    }
+
+    // Log user activity
+    async function logUserActivity(action) {
+        try {
+            const token = localStorage.getItem('auth_token');
+            await fetch(`${API_BASE}/api/track-access`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    section: 'course_player',
+                    course: state.courseId
+                })
+            });
+        } catch (error) {
+            // Silent fail
+        }
     }
 
     // Logout
