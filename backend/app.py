@@ -1489,430 +1489,490 @@ def logout(current_user):
         logger.error(f"Logout error: {e}")
         return jsonify({'error': 'Logout failed'}), 500
 
-# VIDEO ROUTES - NEW ADDITIONS
-@app.route('/api/video-categories', methods=['GET'])
-@token_required
-def get_video_categories(current_user):
-    """Get video categories with embed links"""
-    try:
-        categories = {
-            'ceh_v13': {
-                'id': 'ceh_v13',
-                'title': 'CEH v13 - Certified Ethical Hacker',
-                'description': 'Complete Certified Ethical Hacker v13 training course with hands-on labs',
-                'thumbnail': 'https://img.youtube.com/vi/piz1aVOw_3k/maxresdefault.jpg',
-                'level': 'Advanced',
-                'duration': '45:30',
-                'videos_count': 1,
-                'locked': True,
-                'requires_password': True,
-                'password_hint': 'CEH v13 Course Access',
-                'videos': [
-                    {
-                        'id': 'ceh_intro_1',
-                        'title': 'CEH v13 - Introduction to Ethical Hacking',
-                        'description': 'Complete introduction to Certified Ethical Hacker v13 course. Learn the fundamentals of ethical hacking, penetration testing, and cybersecurity.',
-                        'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
-                        'duration': '45:30',
-                        'order': 1,
-                        'locked': True,
-                        'views': 1250,
-                        'upload_date': '2024-01-15',
-                        'category': 'ceh',
-                        'tags': ['ethical hacking', 'ceh', 'cybersecurity', 'penetration testing']
-                    }
-                ]
-            }
-        }
-        
-        return jsonify({
-            'success': True,
-            'message': 'Video categories loaded successfully',
-            'categories': categories
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Error getting video categories: {e}")
-        return jsonify({'error': 'Failed to load video categories'}), 500
+# ===========================================
+# COURSE MODULES ENDPOINTS (NEW)
+# ===========================================
 
-@app.route('/api/video/<video_id>', methods=['GET'])
+@app.route('/api/get-course-modules', methods=['GET'])
 @token_required
-def get_video_details(current_user, video_id):
-    """Get details of a specific video"""
+def get_course_modules_secure(current_user):
+    """Get all course modules with lock status"""
     try:
-        # Video data with your YouTube embed
-        video_data = {
-            'ceh_intro_1': {
-                'id': 'ceh_intro_1',
-                'title': 'CEH v13 - Introduction to Ethical Hacking',
-                'description': '''
-                <strong>Course Overview:</strong><br>
-                Welcome to the Certified Ethical Hacker v13 course!<br><br>
+        # Check user progress from database
+        db = get_db()
+        completed_modules = []
+        
+        if db is not None:
+            progress_coll = get_video_progress_collection()
+            if progress_coll is not None:
+                # Get user's completed modules
+                cursor = progress_coll.find({
+                    'username': current_user,
+                    'course_id': 'ceh_v13',
+                    'completed': True
+                })
                 
-                <strong>What you\'ll learn:</strong>
-                <ul>
-                    <li>Introduction to Ethical Hacking</li>
-                    <li>Footprinting and Reconnaissance</li>
-                    <li>Scanning Networks</li>
-                    <li>Enumeration Techniques</li>
-                    <li>Vulnerability Analysis</li>
-                    <li>System Hacking</li>
-                    <li>Malware Threats</li>
-                    <li>Social Engineering</li>
-                </ul>
-                ''',
-                'embed_code': '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;"><h3>Secure Video Player</h3><p>Password required to access content</p></div></div>',
+                for doc in cursor:
+                    completed_modules.append(doc.get('module_id'))
+        
+        # Course modules data
+        modules = [
+            {
+                'id': 'module_00',
+                'number': '00',
+                'title': 'Course Introduction & Setup',
+                'description': 'Welcome to CEH v13 course. Introduction to ethical hacking concepts.',
                 'duration': '45:30',
-                'views': 1250,
-                'likes': 89,
-                'upload_date': '2024-01-15',
-                'instructor': 'Architect Johan',
-                'category': 'CEH v13',
-                'tags': ['ethical hacking', 'ceh', 'cybersecurity', 'penetration testing', 'hacking'],
-                'resources': [
-                    {'name': 'CEH Syllabus PDF', 'url': '/downloads/ceh-syllabus.pdf'},
-                    {'name': 'Course Notes', 'url': '/downloads/ceh-notes.pdf'},
-                    {'name': 'Practice Questions', 'url': '/downloads/ceh-questions.pdf'}
-                ],
-                'next_video': None,
-                'prev_video': None,
-                'requires_password': True
+                'unlocked': True,
+                'order': 0,
+                'completed': 'module_00' in completed_modules
+            },
+            {
+                'id': 'module_01',
+                'number': '01',
+                'title': 'Introduction to Ethical Hacking',
+                'description': 'Understanding ethical hacking, legal aspects, hacking methodologies.',
+                'duration': '58:20',
+                'unlocked': True,
+                'order': 1,
+                'completed': 'module_01' in completed_modules
+            },
+            {
+                'id': 'module_02',
+                'number': '02',
+                'title': 'Footprinting and Reconnaissance',
+                'description': 'Information gathering techniques and footprinting methodologies.',
+                'duration': '1:05:45',
+                'unlocked': 'module_01' in completed_modules,
+                'locked_reason': 'Complete Module 1 to unlock',
+                'order': 2,
+                'completed': 'module_02' in completed_modules
+            },
+            {
+                'id': 'module_03',
+                'number': '03',
+                'title': 'Scanning Networks',
+                'description': 'Network scanning techniques, port scanning methods.',
+                'duration': '1:12:30',
+                'unlocked': 'module_02' in completed_modules,
+                'locked_reason': 'Complete Module 2 to unlock',
+                'order': 3,
+                'completed': 'module_03' in completed_modules
+            },
+            {
+                'id': 'module_04',
+                'number': '04',
+                'title': 'Enumeration',
+                'description': 'System enumeration, extracting information from targets.',
+                'duration': '1:08:15',
+                'unlocked': 'module_03' in completed_modules,
+                'locked_reason': 'Complete Module 3 to unlock',
+                'order': 4,
+                'completed': 'module_04' in completed_modules
+            },
+            {
+                'id': 'module_05',
+                'number': '05',
+                'title': 'Vulnerability Analysis',
+                'description': 'Identifying and analyzing system vulnerabilities.',
+                'duration': '1:15:40',
+                'unlocked': 'module_04' in completed_modules,
+                'locked_reason': 'Complete Module 4 to unlock',
+                'order': 5,
+                'completed': 'module_05' in completed_modules
+            },
+            {
+                'id': 'module_06',
+                'number': '06',
+                'title': 'System Hacking',
+                'description': 'System hacking techniques, password cracking.',
+                'duration': '1:20:25',
+                'unlocked': 'module_05' in completed_modules,
+                'locked_reason': 'Complete Module 5 to unlock',
+                'order': 6,
+                'completed': 'module_06' in completed_modules
+            },
+            {
+                'id': 'module_07',
+                'number': '07',
+                'title': 'Malware Threats',
+                'description': 'Understanding malware, viruses, trojans.',
+                'duration': '1:10:50',
+                'unlocked': 'module_06' in completed_modules,
+                'locked_reason': 'Complete Module 6 to unlock',
+                'order': 7,
+                'completed': 'module_07' in completed_modules
+            },
+            {
+                'id': 'module_08',
+                'number': '08',
+                'title': 'Sniffing',
+                'description': 'Network sniffing techniques, packet analysis.',
+                'duration': '1:18:35',
+                'unlocked': 'module_07' in completed_modules,
+                'locked_reason': 'Complete Module 7 to unlock',
+                'order': 8,
+                'completed': 'module_08' in completed_modules
+            },
+            {
+                'id': 'module_09',
+                'number': '09',
+                'title': 'Social Engineering',
+                'description': 'Social engineering attacks, human psychology.',
+                'duration': '1:05:20',
+                'unlocked': 'module_08' in completed_modules,
+                'locked_reason': 'Complete Module 8 to unlock',
+                'order': 9,
+                'completed': 'module_09' in completed_modules
+            },
+            {
+                'id': 'module_10',
+                'number': '10',
+                'title': 'Denial-of-Service',
+                'description': 'DoS and DDoS attacks, attack vectors.',
+                'duration': '1:15:10',
+                'unlocked': 'module_09' in completed_modules,
+                'locked_reason': 'Complete Module 9 to unlock',
+                'order': 10,
+                'completed': 'module_10' in completed_modules
+            },
+            {
+                'id': 'module_11',
+                'number': '11',
+                'title': 'Session Hijacking',
+                'description': 'Session hijacking techniques, session fixation.',
+                'duration': '1:12:45',
+                'unlocked': 'module_10' in completed_modules,
+                'locked_reason': 'Complete Module 10 to unlock',
+                'order': 11,
+                'completed': 'module_11' in completed_modules
+            },
+            {
+                'id': 'module_12',
+                'number': '12',
+                'title': 'Evading IDS, Firewalls and Honeypots',
+                'description': 'Bypassing security systems, intrusion detection.',
+                'duration': '1:25:30',
+                'unlocked': 'module_11' in completed_modules,
+                'locked_reason': 'Complete Module 11 to unlock',
+                'order': 12,
+                'completed': 'module_12' in completed_modules
+            },
+            {
+                'id': 'module_13',
+                'number': '13',
+                'title': 'Hacking Web Servers',
+                'description': 'Web server attacks, server vulnerabilities.',
+                'duration': '1:30:15',
+                'unlocked': 'module_12' in completed_modules,
+                'locked_reason': 'Complete Module 12 to unlock',
+                'order': 13,
+                'completed': 'module_13' in completed_modules
+            },
+            {
+                'id': 'module_14',
+                'number': '14',
+                'title': 'Hacking Web Applications',
+                'description': 'Web application vulnerabilities, OWASP Top 10.',
+                'duration': '1:35:40',
+                'unlocked': 'module_13' in completed_modules,
+                'locked_reason': 'Complete Module 13 to unlock',
+                'order': 14,
+                'completed': 'module_14' in completed_modules
+            },
+            {
+                'id': 'module_15',
+                'number': '15',
+                'title': 'SQL Injection',
+                'description': 'SQL injection attacks, blind SQLi.',
+                'duration': '1:28:25',
+                'unlocked': 'module_14' in completed_modules,
+                'locked_reason': 'Complete Module 14 to unlock',
+                'order': 15,
+                'completed': 'module_15' in completed_modules
+            },
+            {
+                'id': 'module_16',
+                'number': '16',
+                'title': 'Hacking Wireless Networks',
+                'description': 'Wireless security, WEP/WPA cracking.',
+                'duration': '1:22:10',
+                'unlocked': 'module_15' in completed_modules,
+                'locked_reason': 'Complete Module 15 to unlock',
+                'order': 16,
+                'completed': 'module_16' in completed_modules
+            },
+            {
+                'id': 'module_17',
+                'number': '17',
+                'title': 'Hacking Mobile Platforms',
+                'description': 'Mobile security threats, Android/iOS vulnerabilities.',
+                'duration': '1:18:45',
+                'unlocked': 'module_16' in completed_modules,
+                'locked_reason': 'Complete Module 16 to unlock',
+                'order': 17,
+                'completed': 'module_17' in completed_modules
+            },
+            {
+                'id': 'module_18',
+                'number': '18',
+                'title': 'IoT and OT Hacking',
+                'description': 'Internet of Things security, OT systems.',
+                'duration': '1:20:30',
+                'unlocked': 'module_17' in completed_modules,
+                'locked_reason': 'Complete Module 17 to unlock',
+                'order': 18,
+                'completed': 'module_18' in completed_modules
+            },
+            {
+                'id': 'module_19',
+                'number': '19',
+                'title': 'Cloud Computing',
+                'description': 'Cloud security, cloud vulnerabilities.',
+                'duration': '1:15:55',
+                'unlocked': 'module_18' in completed_modules,
+                'locked_reason': 'Complete Module 18 to unlock',
+                'order': 19,
+                'completed': 'module_19' in completed_modules
+            },
+            {
+                'id': 'module_20',
+                'number': '20',
+                'title': 'Cryptography',
+                'description': 'Cryptographic concepts, encryption algorithms.',
+                'duration': '1:32:20',
+                'unlocked': 'module_19' in completed_modules,
+                'locked_reason': 'Complete Module 19 to unlock',
+                'order': 20,
+                'completed': 'module_20' in completed_modules
             }
-        }
+        ]
         
-        if video_id in video_data:
-            # Log video view
-            log_video_access(current_user, video_id, request.remote_addr, 'viewed')
-            
-            return jsonify({
-                'success': True,
-                'video': video_data[video_id]
-            }), 200
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Video not found'
-            }), 404
-            
-    except Exception as e:
-        logger.error(f"Error getting video details: {e}")
-        return jsonify({'error': 'Failed to get video details'}), 500
-
-@app.route('/api/video/<video_id>/access', methods=['POST'])
-@token_required
-def verify_video_access(current_user, video_id):
-    """Verify password for locked video access"""
-    try:
-        data = request.get_json()
-        password = data.get('password', '')
-        
-        # Check password
-        if password == VIDEO_PASSWORD:
-            log_video_access(current_user, video_id, request.remote_addr, 'accessed')
-            
-            # Generate session token for this video
-            session_token = secrets.token_urlsafe(32)
-            
-            # Store in database
-            users_coll = get_users_collection()
-            if users_coll is not None:
-                users_coll.update_one(
-                    {'username': current_user},
-                    {'$set': {
-                        'video_session': session_token,
-                        'video_session_expiry': datetime.datetime.utcnow() + datetime.timedelta(hours=2)
-                    }}
-                )
-            
-            return jsonify({
-                'success': True,
-                'message': 'Access granted',
-                'session_token': session_token,
-                'embed_code': get_video_embed_code()
-            }), 200
-        else:
-            log_video_access(current_user, video_id, request.remote_addr, 'failed_access')
-            return jsonify({'error': 'Incorrect password'}), 401
-            
-    except Exception as e:
-        logger.error(f"Video access error: {e}")
-        return jsonify({'error': 'Access verification failed'}), 500
-
-def get_video_embed_code():
-    """Return the secure video embed code"""
-    embed = '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
-        <iframe src="https://www.dailymotion.com/embed/video/k3GVPS1YgJ0NZGExqG2"
-                style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;"
-                allowfullscreen title="Dailymotion Video Player"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                frameborder="0"></iframe></div>'''
-    return embed
-
-@app.route('/api/video/<video_id>/like', methods=['POST'])
-@token_required
-def like_video(current_user, video_id):
-    """Like a video"""
-    try:
-        # Log the like activity
-        log_user_activity(current_user, f'liked_video_{video_id}', request.remote_addr)
+        # Calculate progress
+        unlocked_count = len([m for m in modules if m['unlocked']])
+        completed_count = len([m for m in modules if m.get('completed', False)])
         
         return jsonify({
             'success': True,
-            'message': 'Video liked successfully',
-            'likes_count': 90  # Example count
+            'modules': modules,
+            'total_modules': len(modules),
+            'unlocked_count': unlocked_count,
+            'completed_count': completed_count,
+            'progress_percentage': int((completed_count / len(modules)) * 100)
         }), 200
         
     except Exception as e:
-        logger.error(f"Error liking video: {e}")
-        return jsonify({'error': 'Failed to like video'}), 500
+        logger.error(f"Get course modules error: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': 'Failed to load course modules'}), 500
 
-@app.route('/api/video/<video_id>/bookmark', methods=['POST'])
+@app.route('/api/unlock-module', methods=['POST'])
 @token_required
-def bookmark_video(current_user, video_id):
-    """Bookmark a video"""
+def unlock_module(current_user):
+    """Unlock a module for the user"""
     try:
         data = request.get_json()
-        notes = data.get('notes', '')
+        module_id = data.get('module_id')
         
-        # Save bookmark to database if available
+        if not module_id:
+            return jsonify({'error': 'Module ID is required'}), 400
+        
+        # Get module number
+        module_num = None
+        if module_id.startswith('module_'):
+            try:
+                module_num = int(module_id.split('_')[1])
+            except:
+                pass
+        
+        if module_num is None or module_num < 0 or module_num > 20:
+            return jsonify({'error': 'Invalid module ID'}), 400
+        
+        # Check if previous module is completed
+        if module_num > 0:
+            prev_module_id = f'module_{str(module_num - 1).zfill(2)}'
+            
+            db = get_db()
+            if db is not None:
+                progress_coll = get_video_progress_collection()
+                
+                completed = progress_coll.find_one({
+                    'username': current_user,
+                    'course_id': 'ceh_v13',
+                    'module_id': prev_module_id,
+                    'completed': True
+                })
+                
+                if not completed:
+                    return jsonify({
+                        'success': False,
+                        'error': f'Complete {prev_module_id} first',
+                        'required_module': prev_module_id
+                    }), 403
+        
+        return jsonify({
+            'success': True,
+            'message': 'Module unlocked successfully',
+            'module_id': module_id
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Unlock module error: {e}")
+        return jsonify({'error': 'Failed to unlock module'}), 500
+
+@app.route('/api/complete-module', methods=['POST'])
+@token_required
+def complete_module(current_user):
+    """Mark a module as completed"""
+    try:
+        data = request.get_json()
+        module_id = data.get('module_id')
+        course_id = data.get('course_id', 'ceh_v13')
+        
+        if not module_id:
+            return jsonify({'error': 'Module ID is required'}), 400
+        
+        # Validate module ID
+        valid_modules = [f'module_{str(i).zfill(2)}' for i in range(21)]
+        if module_id not in valid_modules:
+            return jsonify({'error': 'Invalid module ID'}), 400
+        
+        # Save to database
         db = get_db()
         if db is not None:
-            bookmarks_collection = db.video_bookmarks
-            bookmarks_collection.update_one(
+            progress_coll = get_video_progress_collection()
+            
+            result = progress_coll.update_one(
                 {
                     'username': current_user,
-                    'video_id': video_id
+                    'course_id': course_id,
+                    'module_id': module_id
                 },
                 {
                     '$set': {
-                        'notes': notes,
-                        'bookmarked_at': datetime.datetime.utcnow()
+                        'completed': True,
+                        'completed_at': datetime.datetime.utcnow(),
+                        'progress': 100,
+                        'last_watched': datetime.datetime.utcnow()
+                    },
+                    '$setOnInsert': {
+                        'first_watched': datetime.datetime.utcnow()
                     }
                 },
                 upsert=True
             )
-        
-        log_user_activity(current_user, f'bookmarked_video_{video_id}', request.remote_addr)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Video bookmarked successfully'
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Error bookmarking video: {e}")
-        return jsonify({'error': 'Failed to bookmark video'}), 500
-
-@app.route('/api/video/<video_id>/progress', methods=['POST'])
-@token_required
-def save_video_progress(current_user, video_id):
-    """Save user's video progress"""
-    try:
-        data = request.get_json()
-        progress = data.get('progress', 0)  # Percentage 0-100
-        current_time = data.get('current_time', 0)  # Current time in seconds
-        
-        # Save to database if available
-        db = get_db()
-        if db is not None:
-            progress_collection = db.video_progress
-            progress_collection.update_one(
-                {
-                    'username': current_user,
-                    'video_id': video_id
-                },
-                {
-                    '$set': {
-                        'progress': progress,
-                        'current_time': current_time,
-                        'last_updated': datetime.datetime.utcnow(),
-                        'completed': progress >= 95  # Mark as completed if >95%
-                    }
-                },
-                upsert=True
-            )
+            
+            if result.upserted_id or result.modified_count > 0:
+                # Log activity
+                log_user_activity(current_user, f'module_completed_{module_id}', request.remote_addr)
+                
+                # Also log video access
+                log_video_access(current_user, module_id, request.remote_addr, 'completed')
         
         return jsonify({
             'success': True,
-            'message': 'Progress saved successfully'
+            'message': 'Module marked as completed',
+            'module_id': module_id
         }), 200
         
     except Exception as e:
-        logger.error(f"Error saving progress: {e}")
-        return jsonify({'error': 'Failed to save progress'}), 500
+        logger.error(f"Complete module error: {e}")
+        return jsonify({'error': 'Failed to complete module'}), 500
 
-@app.route('/api/video/<video_id>/progress', methods=['GET'])
+@app.route('/api/get-user-progress', methods=['GET'])
 @token_required
-def get_single_video_progress(current_user, video_id):
-    """Get user's video progress for specific video"""
+def get_user_progress(current_user):
+    """Get user's course progress"""
     try:
-        # Get from database if available
+        course_id = request.args.get('course_id', 'ceh_v13')
+        
         db = get_db()
-        progress = 0
+        completed_modules = []
+        
         if db is not None:
-            progress_collection = db.video_progress
-            progress_data = progress_collection.find_one({
+            progress_coll = get_video_progress_collection()
+            
+            # Get all completed modules for this course
+            cursor = progress_coll.find({
                 'username': current_user,
-                'video_id': video_id
+                'course_id': course_id,
+                'completed': True
             })
-            if progress_data:
-                progress = progress_data.get('progress', 0)
+            
+            for doc in cursor:
+                completed_modules.append(doc.get('module_id'))
+        
+        total_modules = 21  # Modules 0-20
+        progress_percentage = int((len(completed_modules) / total_modules) * 100)
         
         return jsonify({
             'success': True,
-            'progress': progress
+            'completed_modules': completed_modules,
+            'total_modules': total_modules,
+            'progress_percentage': progress_percentage,
+            'completed_count': len(completed_modules)
         }), 200
         
     except Exception as e:
-        logger.error(f"Error getting progress: {e}")
-        return jsonify({
-            'success': True,
-            'progress': 0
-        }), 200
+        logger.error(f"Get user progress error: {e}")
+        return jsonify({'error': 'Failed to get progress'}), 500
 
 # ===========================================
-# SECURE VIDEO ENDPOINTS
-# ===========================================
-
-@app.route('/api/secure-video/verify', methods=['POST'])
-@token_required
-def verify_video_access_secure(current_user):
-    """Secure video password verification"""
-    try:
-        data = request.get_json()
-        password = data.get('password', '')
-        
-        if password == VIDEO_PASSWORD:
-            # Generate session token
-            session_token = secrets.token_urlsafe(32)
-            
-            # Store in database
-            users_coll = get_users_collection()
-            if users_coll is not None:
-                users_coll.update_one(
-                    {'username': current_user},
-                    {'$set': {
-                        'secure_video_session': session_token,
-                        'secure_video_expiry': datetime.datetime.utcnow() + datetime.timedelta(hours=2)
-                    }}
-                )
-            
-            # Log successful access
-            log_user_activity(current_user, 'video_access_granted', request.remote_addr)
-            
-            return jsonify({
-                'success': True,
-                'session_token': session_token,
-                'message': 'Access granted'
-            }), 200
-        else:
-            # Log failed attempt
-            log_user_activity(current_user, 'video_access_failed', request.remote_addr)
-            return jsonify({'error': 'Invalid password'}), 401
-            
-    except Exception as e:
-        logger.error(f"Secure video verification error: {e}")
-        return jsonify({'error': 'Server error'}), 500
-
-@app.route('/api/secure-video/get-embed', methods=['GET'])
-@token_required
-def get_video_embed_secure(current_user):
-    """Get encrypted video embed"""
-    try:
-        # Verify session token
-        token = request.headers.get('X-Session-Token')
-        
-        users_coll = get_users_collection()
-        if users_coll is None:
-            return jsonify({'error': 'Database error'}), 500
-        
-        user = users_coll.find_one({'username': current_user})
-        
-        if user and user.get('secure_video_session') == token and \
-           user.get('secure_video_expiry', datetime.datetime.utcnow()) > datetime.datetime.utcnow():
-            
-            # Your Dailymotion embed
-            embed = '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
-                <iframe src="https://www.dailymotion.com/embed/video/k3GVPS1YgJ0NZGExqG2"
-                        style="width:100%; height:100%; position:absolute; left:0px; top:0px; overflow:hidden; border:none;"
-                        allowfullscreen title="Dailymotion Video Player"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        frameborder="0"></iframe></div>'''
-            
-            # Log embed access
-            log_user_activity(current_user, 'video_embed_accessed', request.remote_addr)
-            
-            return jsonify({
-                'success': True,
-                'embed': embed
-            }), 200
-        else:
-            return jsonify({'error': 'Invalid or expired session'}), 401
-            
-    except Exception as e:
-        logger.error(f"Get embed error: {e}")
-        return jsonify({'error': 'Server error'}), 500
-
-@app.route('/api/security/log', methods=['POST'])
-def log_security_event():
-    """Log security events from frontend"""
-    try:
-        data = request.get_json()
-        event = data.get('event', 'unknown')
-        
-        # Simple logging
-        logger.warning(f"SECURITY EVENT: {event}")
-        
-        # Store in MongoDB if available
-        db = get_db()
-        if db is not None:
-            db.security_logs.insert_one({
-                'event': event,
-                'timestamp': datetime.datetime.utcnow(),
-                'user_agent': request.headers.get('User-Agent'),
-                'ip': request.remote_addr
-            })
-        
-        return jsonify({'success': True}), 200
-        
-    except Exception as e:
-        logger.error(f"Security log error: {e}")
-        return jsonify({'error': 'Logging failed'}), 500
-
-# ===========================================
-# COURSE VIDEO ENDPOINTS (NEW)
+# VIDEO LIBRARY ENDPOINT (UPDATED)
 # ===========================================
 
 @app.route('/api/video-library', methods=['GET'])
 @token_required
 def get_video_library(current_user):
-    """Get categorized video library"""
+    """Get categorized video library with user-specific lock status"""
     try:
+        # Get user progress
+        db = get_db()
+        completed_modules = []
+        
+        if db is not None:
+            progress_coll = get_video_progress_collection()
+            if progress_coll is not None:
+                cursor = progress_coll.find({
+                    'username': current_user,
+                    'course_id': 'ceh_v13',
+                    'completed': True
+                })
+                
+                for doc in cursor:
+                    completed_modules.append(doc.get('module_id'))
+        
+        # Check if user has completed any CEH modules
+        has_ceh_access = len(completed_modules) > 0 or True  # Temporary: always allow access
+        
         # Categories with thumbnails and descriptions
         categories = {
             'ceh_v13': {
                 'id': 'ceh_v13',
                 'title': 'CEH v13 - Certified Ethical Hacker',
-                'description': 'Complete Ethical Hacking course covering penetration testing, vulnerability assessment, and security tools.',
+                'description': 'Complete Ethical Hacking course covering penetration testing, vulnerability assessment, and security tools. 21 modules from basics to advanced topics.',
                 'thumbnail': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
                 'videos_count': 21,
                 'duration': '28 hours 45 minutes',
                 'level': 'Advanced',
-                'locked': False,
-                'requires_password': True,
+                'locked': not has_ceh_access,
+                'requires_password': not has_ceh_access,
                 'password_hint': 'CEH v13 Course Password: CEH_V13_2024_SECURE',
                 'topics': [
                     'Introduction to Ethical Hacking',
                     'Footprinting and Reconnaissance',
                     'Scanning Networks',
                     'Enumeration',
-                    'Vulnerability Analysis'
+                    'Vulnerability Analysis',
+                    'System Hacking',
+                    'Malware Threats'
                 ]
             },
             'ccna': {
                 'id': 'ccna',
                 'title': 'CCNA - Cisco Certified Network Associate',
-                'description': 'Complete networking fundamentals, routing, switching, and Cisco IOS configuration.',
+                'description': 'Complete networking fundamentals, routing, switching, and Cisco IOS configuration. Perfect for network administrators and engineers.',
                 'thumbnail': 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
                 'videos_count': 12,
                 'duration': '35 hours',
@@ -1931,12 +1991,12 @@ def get_video_library(current_user):
             'python': {
                 'id': 'python',
                 'title': 'Python Programming',
-                'description': 'From basics to advanced Python programming including automation, web development, and data analysis.',
+                'description': 'From basics to advanced Python programming including automation, web development, and data analysis. Hands-on projects included.',
                 'thumbnail': 'https://images.unsplash.com/photo-1526379879527-8559ecfcaec8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
                 'videos_count': 20,
                 'duration': '50 hours',
                 'level': 'Beginner to Advanced',
-                'locked': False,
+                'locked': True,
                 'requires_password': True,
                 'password_hint': 'Python Course Password: Python_2024_Architect',
                 'topics': [
@@ -1946,744 +2006,23 @@ def get_video_library(current_user):
                     'Web Development',
                     'Automation Scripts'
                 ]
-            },
-            'cybersecurity': {
-                'id': 'cybersecurity',
-                'title': 'Cybersecurity Fundamentals',
-                'description': 'Essential cybersecurity concepts, threats, defenses, and best practices.',
-                'thumbnail': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                'videos_count': 10,
-                'duration': '30 hours',
-                'level': 'Beginner',
-                'locked': False,
-                'requires_password': True,
-                'password_hint': 'Cybersecurity Password: Cyber_Sec_2024',
-                'topics': [
-                    'Security Principles',
-                    'Threat Landscape',
-                    'Cryptography',
-                    'Network Security',
-                    'Incident Response'
-                ]
-            },
-            'linux': {
-                'id': 'linux',
-                'title': 'Linux Administration',
-                'description': 'Complete Linux system administration, command line, and server management.',
-                'thumbnail': 'https://images.unsplash.com/photo-1544654803-b69140b285a1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                'videos_count': 18,
-                'duration': '40 hours',
-                'level': 'Intermediate',
-                'locked': True,
-                'requires_password': True,
-                'password_hint': 'Linux Admin Password: Linux_Admin_2024',
-                'topics': [
-                    'Linux Basics',
-                    'File Systems',
-                    'User Management',
-                    'Networking',
-                    'Server Administration'
-                ]
-            },
-            'web_security': {
-                'id': 'web_security',
-                'title': 'Web Application Security',
-                'description': 'Web security vulnerabilities, penetration testing, and secure coding practices.',
-                'thumbnail': 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                'videos_count': 14,
-                'duration': '38 hours',
-                'level': 'Advanced',
-                'locked': True,
-                'requires_password': True,
-                'password_hint': 'Web Security Password: Web_Sec_2024',
-                'topics': [
-                    'OWASP Top 10',
-                    'SQL Injection',
-                    'XSS Attacks',
-                    'CSRF Protection',
-                    'Secure APIs'
-                ]
             }
         }
         
         return jsonify({
             'success': True,
-            'categories': categories
+            'categories': categories,
+            'user_has_ceh_access': has_ceh_access,
+            'completed_modules_count': len(completed_modules)
         }), 200
         
     except Exception as e:
         logger.error(f"Video library error: {e}")
         return jsonify({'error': 'Failed to load video library'}), 500
 
-@app.route('/api/video-courses/<course_id>/modules', methods=['GET'])
-@token_required
-def get_course_modules(current_user, course_id):
-    """Get all modules for a specific course"""
-    try:
-        # Course modules data with working embed codes
-        courses = {
-            'ceh_v13': {
-                'id': 'ceh_v13',
-                'title': 'CEH v13 - Certified Ethical Hacker',
-                'description': 'Complete Ethical Hacking course covering penetration testing, vulnerability assessment, and security tools.',
-                'modules': [
-                    {
-                        'id': 'module_00',
-                        'title': 'Module 00: Course Introduction',
-                        'description': 'Introduction to CEH v13 course, syllabus, and certification path.',
-                        'duration': '45:30',
-                        'video_id': 'ceh_intro_1',
-                        'order': 0,
-                        'locked': False,
-                        'thumbnail': 'https://img.youtube.com/vi/piz1aVOw_3k/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
-                            <iframe width="100%" height="100%" 
-                                    src="https://www.dailymotion.com/embed/video/k6V2CaHv7bDeQlExqG2?queue-enable=false&sharing-enable=false&ui-logo=false&ui-start-screen-info=false&mute=false" 
-                                    frameborder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                    allowfullscreen
-                                    style="position:absolute; top:0; left:0; width:100%; height:100%;">
-                            </iframe>
-                        </div>''',
-                        'requires_password': False
-                    },
-                    {
-                        'id': 'module_01',
-                        'title': 'Module 01: Introduction to Ethical Hacking',
-                        'description': 'Understanding ethical hacking, legal aspects, and key concepts.',
-                        'duration': '58:20',
-                        'video_id': 'ceh_module_01',
-                        'order': 1,
-                        'locked': False,
-                        'thumbnail': 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
-                            <iframe width="100%" height="100%" 
-                                    src="https://www.dailymotion.com/embed/video/koTNweSut799lhEy9U4?queue-enable=false&sharing-enable=false&ui-logo=false&ui-start-screen-info=false&mute=false" 
-                                    frameborder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                    allowfullscreen
-                                    style="position:absolute; top:0; left:0; width:100%; height:100%;">
-                            </iframe>
-                        </div>''',
-                        'requires_password': False
-                    },
-                    {
-                        'id': 'module_02',
-                        'title': 'Module 02: Footprinting and Reconnaissance',
-                        'description': 'Information gathering techniques and footprinting methodologies.',
-                        'duration': '1:05:45',
-                        'video_id': 'ceh_module_02',
-                        'order': 2,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/9bZkp7q19f0/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module2_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module2_2024'
-                    },
-                    {
-                        'id': 'module_03',
-                        'title': 'Module 03: Scanning Networks',
-                        'description': 'Network scanning techniques and port scanning methods.',
-                        'duration': '1:12:30',
-                        'video_id': 'ceh_module_03',
-                        'order': 3,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/L_jWHffIx5E/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module3_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module3_2024'
-                    },
-                    {
-                        'id': 'module_04',
-                        'title': 'Module 04: Enumeration',
-                        'description': 'System enumeration and extracting information from targets.',
-                        'duration': '1:08:15',
-                        'video_id': 'ceh_module_04',
-                        'order': 4,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/CduA0TULnow/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module4_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module4_2024'
-                    },
-                    {
-                        'id': 'module_05',
-                        'title': 'Module 05: Vulnerability Analysis',
-                        'description': 'Identifying and analyzing system vulnerabilities.',
-                        'duration': '1:15:40',
-                        'video_id': 'ceh_module_05',
-                        'order': 5,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/BgxXwKvxY7Y/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module5_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module5_2024'
-                    },
-                    {
-                        'id': 'module_06',
-                        'title': 'Module 06: System Hacking',
-                        'description': 'System hacking techniques and password cracking.',
-                        'duration': '1:20:25',
-                        'video_id': 'ceh_module_06',
-                        'order': 6,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/mWRsgZuwf_8/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module6_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module6_2024'
-                    },
-                    {
-                        'id': 'module_07',
-                        'title': 'Module 07: Malware Threats',
-                        'description': 'Understanding malware, viruses, and trojans.',
-                        'duration': '1:10:50',
-                        'video_id': 'ceh_module_07',
-                        'order': 7,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/OPf0YbXqDm0/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module7_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module7_2024'
-                    },
-                    {
-                        'id': 'module_08',
-                        'title': 'Module 08: Sniffing',
-                        'description': 'Network sniffing techniques and packet analysis.',
-                        'duration': '1:18:35',
-                        'video_id': 'ceh_module_08',
-                        'order': 8,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/7NOSDKb0HlU/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module8_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module8_2024'
-                    },
-                    {
-                        'id': 'module_09',
-                        'title': 'Module 09: Social Engineering',
-                        'description': 'Social engineering attacks and prevention.',
-                        'duration': '1:05:20',
-                        'video_id': 'ceh_module_09',
-                        'order': 9,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/UtNYzv8gLbs/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module9_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module9_2024'
-                    },
-                    {
-                        'id': 'module_10',
-                        'title': 'Module 10: Denial-of-Service',
-                        'description': 'DoS and DDoS attacks and mitigation.',
-                        'duration': '1:15:10',
-                        'video_id': 'ceh_module_10',
-                        'order': 10,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/8SbUC-UaAxE/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module10_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module10_2024'
-                    },
-                    {
-                        'id': 'module_11',
-                        'title': 'Module 11: Session Hijacking',
-                        'description': 'Session hijacking techniques and protection.',
-                        'duration': '1:12:45',
-                        'video_id': 'ceh_module_11',
-                        'order': 11,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/3NnUy1Omm_4/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module11_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module11_2024'
-                    },
-                    {
-                        'id': 'module_12',
-                        'title': 'Module 12: Evading IDS, Firewalls and Honeypots',
-                        'description': 'Bypassing security systems and detection.',
-                        'duration': '1:25:30',
-                        'video_id': 'ceh_module_12',
-                        'order': 12,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/2Vv-BfVoq4g/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module12_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module12_2024'
-                    },
-                    {
-                        'id': 'module_13',
-                        'title': 'Module 13: Hacking Web Servers',
-                        'description': 'Web server attacks and security.',
-                        'duration': '1:30:15',
-                        'video_id': 'ceh_module_13',
-                        'order': 13,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/kffacxfA7G4/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module13_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module13_2024'
-                    },
-                    {
-                        'id': 'module_14',
-                        'title': 'Module 14: Hacking Web Applications',
-                        'description': 'Web application vulnerabilities and exploitation.',
-                        'duration': '1:35:40',
-                        'video_id': 'ceh_module_14',
-                        'order': 14,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/fLexgOhs2SM/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module14_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module14_2024'
-                    },
-                    {
-                        'id': 'module_15',
-                        'title': 'Module 15: SQL Injection',
-                        'description': 'SQL injection attacks and prevention.',
-                        'duration': '1:28:25',
-                        'video_id': 'ceh_module_15',
-                        'order': 15,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/ciNHn38EyRc/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module15_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module15_2024'
-                    },
-                    {
-                        'id': 'module_16',
-                        'title': 'Module 16: Hacking Wireless Networks',
-                        'description': 'Wireless network attacks and security.',
-                        'duration': '1:22:10',
-                        'video_id': 'ceh_module_16',
-                        'order': 16,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/ns1V4eJ2IqQ/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module16_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module16_2024'
-                    },
-                    {
-                        'id': 'module_17',
-                        'title': 'Module 17: Hacking Mobile Platforms',
-                        'description': 'Mobile security threats and protection.',
-                        'duration': '1:18:45',
-                        'video_id': 'ceh_module_17',
-                        'order': 17,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/YQHsXMglC9A/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module17_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module17_2024'
-                    },
-                    {
-                        'id': 'module_18',
-                        'title': 'Module 18: IoT and OT Hacking',
-                        'description': 'IoT security challenges and attacks.',
-                        'duration': '1:20:30',
-                        'video_id': 'ceh_module_18',
-                        'order': 18,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/JwSA3d3cUqg/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module18_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module18_2024'
-                    },
-                    {
-                        'id': 'module_19',
-                        'title': 'Module 19: Cloud Computing',
-                        'description': 'Cloud security threats and protection.',
-                        'duration': '1:15:55',
-                        'video_id': 'ceh_module_19',
-                        'order': 19,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/e-ORhEE9VVg/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module19_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module19_2024'
-                    },
-                    {
-                        'id': 'module_20',
-                        'title': 'Module 20: Cryptography',
-                        'description': 'Cryptography concepts and implementation.',
-                        'duration': '1:32:20',
-                        'video_id': 'ceh_module_20',
-                        'order': 20,
-                        'locked': True,
-                        'thumbnail': 'https://img.youtube.com/vi/NmM9HA2MQGI/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <div style="font-size:48px; margin-bottom:20px;">🔐</div>
-                                <h3>Secure Video Content</h3>
-                                <p>Password required to access this module</p>
-                                <p style="font-size:12px; color:#888; margin-top:10px;">Module Password: CEH_Module20_2024</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'CEH_Module20_2024'
-                    }
-                ],
-                'total_modules': 21,
-                'total_duration': '28 hours 45 minutes',
-                'instructor': 'Architect Johan',
-                'level': 'Advanced',
-                'category': 'Cybersecurity'
-            },
-            'python': {
-                'id': 'python',
-                'title': 'Python Programming Masterclass',
-                'description': 'Complete Python programming course from basics to advanced concepts.',
-                'modules': [
-                    {
-                        'id': 'module_00',
-                        'title': 'Module 00: Python Setup & Introduction',
-                        'description': 'Setting up Python environment and basic concepts.',
-                        'duration': '35:20',
-                        'video_id': 'python_intro',
-                        'order': 0,
-                        'locked': False,
-                        'thumbnail': 'https://img.youtube.com/vi/_uQrJ0TkZlc/maxresdefault.jpg',
-                        'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                                <h3>Secure Video Player</h3>
-                                <p>Python Introduction Video</p>
-                            </div>
-                        </div>''',
-                        'requires_password': True,
-                        'password_hint': 'Python_Intro_2024'
-                    }
-                ],
-                'total_modules': 15,
-                'total_duration': '24 hours',
-                'instructor': 'Architect Johan',
-                'level': 'Beginner to Advanced',
-                'category': 'Programming'
-            }
-        }
-        
-        course = courses.get(course_id)
-        if not course:
-            return jsonify({'error': 'Course not found'}), 404
-        
-        return jsonify({
-            'success': True,
-            'course': course
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Course modules error: {e}")
-        return jsonify({'error': 'Failed to load course modules'}), 500
-
-@app.route('/api/video-module/<module_id>/embed', methods=['GET'])
-@token_required
-def get_module_embed(current_user, module_id):
-    """Get video embed for a specific module"""
-    try:
-        # Module embeds with working Dailymotion videos
-        module_embeds = {
-            'module_00': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
-                <iframe width="100%" height="100%" 
-                        src="https://www.dailymotion.com/embed/video/k6V2CaHv7bDeQlExqG2?queue-enable=false&sharing-enable=false&ui-logo=false&ui-start-screen-info=false&mute=false" 
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen
-                        style="position:absolute; top:0; left:0; width:100%; height:100%;">
-                </iframe>
-            </div>''',
-            'module_01': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
-                <iframe width="100%" height="100%" 
-                        src="https://www.dailymotion.com/embed/video/koTNweSut799lhEy9U4?queue-enable=false&sharing-enable=false&ui-logo=false&ui-start-screen-info=false&mute=false" 
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen
-                        style="position:absolute; top:0; left:0; width:100%; height:100%;">
-                </iframe>
-            </div>'''
-        }
-        
-        if module_id in module_embeds:
-            log_video_access(current_user, module_id, request.remote_addr, 'accessed_embed')
-            return jsonify({
-                'success': True,
-                'embed_code': module_embeds[module_id]
-            }), 200
-        else:
-            # Default placeholder for other modules
-            return jsonify({
-                'success': True,
-                'embed_code': '''<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:#000;">
-                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;text-align:center;">
-                        <div style="font-size:48px; margin-bottom:20px;">🎬</div>
-                        <h3>Video Content</h3>
-                        <p>Module video will be available soon</p>
-                    </div>
-                </div>'''
-            }), 200
-            
-    except Exception as e:
-        logger.error(f"Module embed error: {e}")
-        return jsonify({'error': 'Failed to get embed'}), 500
-
-@app.route('/api/course-video-progress', methods=['GET'])
-@token_required
-def get_course_video_progress(current_user):
-    """Get user's video progress for a course"""
-    try:
-        course_id = request.args.get('course')
-        
-        # Get from MongoDB
-        db = get_db()
-        if db is not None:
-            progress_collection = get_video_progress_collection()
-            
-            # Find user's progress for this course
-            if progress_collection is not None:
-                progress_data = progress_collection.find({
-                    'username': current_user,
-                    'course_id': course_id,
-                    'completed': True
-                })
-                
-                completed_modules = []
-                for doc in progress_data:
-                    completed_modules.append(doc.get('module_id'))
-                
-                return jsonify({
-                    'success': True,
-                    'progress': completed_modules
-                }), 200
-        
-        return jsonify({'success': True, 'progress': []}), 200
-            
-    except Exception as e:
-        logger.error(f"Get video progress error: {e}")
-        return jsonify({'success': True, 'progress': []}), 200
-
-@app.route('/api/save-module-progress', methods=['POST'])
-@token_required
-def save_module_progress(current_user):
-    """Save user's module progress"""
-    try:
-        data = request.get_json()
-        course_id = data.get('course_id')
-        module_id = data.get('module_id')
-        completed = data.get('completed', False)
-        
-        if not course_id or not module_id:
-            return jsonify({'error': 'Missing required fields'}), 400
-        
-        # Save to MongoDB
-        db = get_db()
-        if db is not None:
-            progress_collection = get_video_progress_collection()
-            
-            if progress_collection is not None:
-                progress_collection.update_one(
-                    {
-                        'username': current_user,
-                        'course_id': course_id,
-                        'module_id': module_id
-                    },
-                    {
-                        '$set': {
-                            'completed': completed,
-                            'last_watched': datetime.datetime.utcnow(),
-                            'progress': 100 if completed else 0
-                        },
-                        '$setOnInsert': {
-                            'first_watched': datetime.datetime.utcnow()
-                        }
-                    },
-                    upsert=True
-                )
-        
-        # Log activity
-        log_user_activity(current_user, 
-                         f'module_completed_{course_id}_{module_id}' 
-                         if completed else f'module_started_{course_id}_{module_id}',
-                         request.remote_addr)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Progress saved successfully'
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Save module progress error: {e}")
-        return jsonify({'error': 'Failed to save progress'}), 500
-
-@app.route('/api/verify-module-password', methods=['POST'])
-@token_required
-def verify_module_password(current_user):
-    """Verify password for locked module"""
-    try:
-        data = request.get_json()
-        module_id = data.get('module_id')
-        password = data.get('password')
-        
-        # Define module passwords
-        module_passwords = {
-            'module_02': 'CEH_Module2_2024',
-            'module_03': 'CEH_Module3_2024',
-            'module_04': 'CEH_Module4_2024',
-            'module_05': 'CEH_Module5_2024',
-            'module_06': 'CEH_Module6_2024',
-            'module_07': 'CEH_Module7_2024',
-            'module_08': 'CEH_Module8_2024',
-            'module_09': 'CEH_Module9_2024',
-            'module_10': 'CEH_Module10_2024',
-            'module_11': 'CEH_Module11_2024',
-            'module_12': 'CEH_Module12_2024',
-            'module_13': 'CEH_Module13_2024',
-            'module_14': 'CEH_Module14_2024',
-            'module_15': 'CEH_Module15_2024',
-            'module_16': 'CEH_Module16_2024',
-            'module_17': 'CEH_Module17_2024',
-            'module_18': 'CEH_Module18_2024',
-            'module_19': 'CEH_Module19_2024',
-            'module_20': 'CEH_Module20_2024'
-        }
-        
-        if module_id in module_passwords:
-            if password == module_passwords[module_id]:
-                # Log successful access
-                log_user_activity(current_user, f'module_unlocked_{module_id}', request.remote_addr)
-                return jsonify({'success': True}), 200
-            else:
-                # Log failed attempt
-                log_user_activity(current_user, f'module_password_failed_{module_id}', request.remote_addr)
-                return jsonify({'error': 'Incorrect password'}), 401
-        else:
-            return jsonify({'error': 'Module not found'}), 404
-            
-    except Exception as e:
-        logger.error(f"Module password verification error: {e}")
-        return jsonify({'error': 'Verification failed'}), 500
+# ===========================================
+# TRACK VIDEO WATCH ENDPOINT
+# ===========================================
 
 @app.route('/api/track-video-watch', methods=['POST'])
 @token_required
@@ -2691,20 +2030,90 @@ def track_video_watch(current_user):
     """Track when user starts watching a video"""
     try:
         data = request.get_json()
-        course_id = data.get('course_id')
+        course_id = data.get('course_id', 'ceh_v13')
         module_id = data.get('module_id')
         action = data.get('action', 'started_watching')
         
+        if not module_id:
+            return jsonify({'error': 'Module ID is required'}), 400
+        
+        # Log user activity
         log_user_activity(current_user, f'video_watch_{action}_{course_id}_{module_id}', request.remote_addr)
+        
+        # Also log video access
+        log_video_access(current_user, module_id, request.remote_addr, action)
+        
+        # Save progress
+        db = get_db()
+        if db is not None:
+            progress_coll = get_video_progress_collection()
+            
+            # Update or insert progress record
+            progress_coll.update_one(
+                {
+                    'username': current_user,
+                    'course_id': course_id,
+                    'module_id': module_id
+                },
+                {
+                    '$set': {
+                        'last_watched': datetime.datetime.utcnow(),
+                        'action': action
+                    },
+                    '$setOnInsert': {
+                        'first_watched': datetime.datetime.utcnow(),
+                        'progress': 0,
+                        'completed': False
+                    }
+                },
+                upsert=True
+            )
         
         return jsonify({
             'success': True,
-            'message': 'Video watch tracked'
+            'message': 'Video watch tracked successfully'
         }), 200
         
     except Exception as e:
         logger.error(f"Track video watch error: {e}")
         return jsonify({'error': 'Failed to track video watch'}), 500
+
+# ===========================================
+# SECURITY LOG ENDPOINT
+# ===========================================
+
+@app.route('/api/security/log', methods=['POST'])
+def log_security_event():
+    """Log security events from frontend"""
+    try:
+        data = request.get_json()
+        event = data.get('event', 'unknown')
+        page = data.get('page', 'unknown')
+        video = data.get('video', 'unknown')
+        violations = data.get('violations', 0)
+        
+        # Enhanced logging
+        logger.warning(f"SECURITY EVENT: {event} | Page: {page} | Video: {video} | Violations: {violations}")
+        
+        # Store in MongoDB if available
+        db = get_db()
+        if db is not None:
+            db.security_logs.insert_one({
+                'event': event,
+                'page': page,
+                'video': video,
+                'violations': violations,
+                'timestamp': datetime.datetime.utcnow(),
+                'user_agent': request.headers.get('User-Agent'),
+                'ip': request.remote_addr,
+                'type': 'security_violation'
+            })
+        
+        return jsonify({'success': True, 'logged': True}), 200
+        
+    except Exception as e:
+        logger.error(f"Security log error: {e}")
+        return jsonify({'error': 'Logging failed'}), 500
 
 # ===========================================
 # FILE SERVING ROUTES
@@ -2940,9 +2349,6 @@ def reset_practice_progress(current_user):
     except Exception as e:
         logger.error(f"Reset progress error: {e}")
         return jsonify({'error': 'Failed to reset progress'}), 500
-
-
-# Add these routes to app.py
 
 @app.route('/api/check-username', methods=['POST'])
 def check_username():
