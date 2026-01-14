@@ -1,622 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-4DFDBZPTLD');
+    </script>
+    <script src="js/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberSecure Terminal | Access Portal</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Architect Johan — Secure Login</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/responsive.css">
     <style>
-        /* ===== CSS RESET & BASE STYLES ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', 'SF Pro Display', -apple-system, system-ui, sans-serif;
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 255, 179, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 179, 0.2);
         }
-        
-        :root {
-            --neon-green: #00FFB3;
-            --neon-blue: #2EC6FF;
-            --neon-purple: #B388FF;
-            --cyber-red: #FF004C;
-            --cyber-yellow: #FF8A00;
-            --dark-bg: #0A0E14;
-            --dark-card: rgba(15, 20, 26, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --text-primary: #F0F6FC;
-            --text-secondary: #8B949E;
-            --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            --transition-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+        .auth-switch a {
+            color: #2EC6FF;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease;
         }
-        
-        body {
-            background-color: var(--dark-bg);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow: hidden;
-            position: relative;
+
+        .auth-switch a:hover {
+            color: #00FFB3;
+            text-decoration: underline;
         }
-        
-        /* ===== BACKGROUND ANIMATIONS ===== */
-        #matrix-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            opacity: 0.6;
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 15px;
         }
-        
-        .gradient-fog {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(46, 198, 255, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 80% 20%, rgba(0, 255, 179, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 40% 40%, rgba(179, 136, 255, 0.03) 0%, transparent 40%);
-            z-index: 2;
-            pointer-events: none;
-            animation: fogMove 25s ease-in-out infinite alternate;
+
+        .forgot-password a {
+            color: #2EC6FF;
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.3s ease;
         }
-        
-        @keyframes fogMove {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(-2%, 1%) scale(1.02); }
-            66% { transform: translate(1%, -2%) scale(0.98); }
+
+        .forgot-password a:hover {
+            color: #00FFB3;
+            text-decoration: underline;
         }
-        
-        .floating-particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
-        }
-        
-        .particle {
-            position: absolute;
+
+        /* Additional styles for logo image */
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            border: 2px solid #00FFB3;
             border-radius: 50%;
-            background: var(--neon-green);
-            box-shadow: 0 0 10px var(--neon-green);
-            opacity: 0;
-            animation: floatParticle 15s linear infinite;
-        }
-        
-        @keyframes floatParticle {
-            0% { 
-                transform: translateY(100vh) rotate(0deg); 
-                opacity: 0; 
-            }
-            10% { opacity: 0.7; }
-            90% { opacity: 0.7; }
-            100% { 
-                transform: translateY(-100px) rotate(360deg); 
-                opacity: 0; 
-            }
-        }
-        
-        /* ===== PAGE LOAD ANIMATION ===== */
-        .page-load-animation {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--dark-bg);
-            z-index: 100;
+            background: rgba(0, 255, 179, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 179, 0.5);
+            animation: logoSpin 20s linear infinite;
+            overflow: hidden;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            animation: pageLoadReveal 2.2s var(--transition-smooth) forwards;
+            justify-content: center;
         }
-        
-        @keyframes pageLoadReveal {
-            0% { 
-                opacity: 1; 
-                backdrop-filter: blur(20px);
-                transform: scale(1.1);
-            }
-            70% { 
-                opacity: 1; 
-                backdrop-filter: blur(20px);
-            }
-            100% { 
-                opacity: 0; 
-                backdrop-filter: blur(0);
-                transform: scale(1);
-                visibility: hidden;
-            }
-        }
-        
-        .loader-logo {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 30px;
-            position: relative;
-            animation: logoFloat 3s var(--transition-smooth) infinite alternate;
-        }
-        
-        @keyframes logoFloat {
-            0%, 100% { transform: translateY(0) rotateY(0deg); }
-            50% { transform: translateY(-15px) rotateY(10deg); }
-        }
-        
-        .loader-logo-inner {
+
+        .logo img {
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, var(--neon-green), var(--neon-blue));
-            clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
-            animation: logoRotate 20s linear infinite;
+            object-fit: cover;
+            border-radius: 50%;
         }
-        
-        @keyframes logoRotate {
+
+        /* Fallback if image doesn't load */
+        .logo::before {
+            content: 'AJ';
+            position: absolute;
+            font-size: 20px;
+            font-weight: bold;
+            color: #00FFB3;
+            display: none; /* Hidden when image loads */
+        }
+
+        .logo:not(:has(img))::before {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes logoSpin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
-        .loader-text {
-            font-size: 14px;
-            letter-spacing: 8px;
-            text-transform: uppercase;
-            color: var(--neon-green);
-            opacity: 0.8;
-            animation: loaderTextPulse 2s ease-in-out infinite;
+
+        /* Debug panel styles */
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00FFB3;
+            border-radius: 8px;
+            padding: 10px;
+            color: #00FFB3;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
         }
-        
-        @keyframes loaderTextPulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-        
-        /* ===== MAIN LOGIN CONTAINER ===== */
-        .login-container {
-            position: relative;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 3;
-            padding: 20px;
-            opacity: 0;
-            animation: containerEntrance 1.5s 0.8s var(--transition-smooth) forwards;
-        }
-        
-        @keyframes containerEntrance {
-            0% { 
-                opacity: 0; 
-                transform: translateY(30px) scale(0.95);
-                filter: blur(10px);
-            }
-            100% { 
-                opacity: 1; 
-                transform: translateY(0) scale(1);
-                filter: blur(0);
-            }
-        }
-        
-        /* ===== LOGIN CARD ===== */
-        .login-card {
-            width: 100%;
-            max-width: 420px;
-            background: var(--dark-card);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 40px 35px;
-            box-shadow: 
-                0 20px 60px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(0, 255, 179, 0.05),
-                0 0 60px rgba(0, 255, 179, 0.1) inset;
-            position: relative;
-            overflow: hidden;
-            z-index: 4;
-            animation: cardFloat 8s var(--transition-smooth) infinite alternate;
-        }
-        
-        @keyframes cardFloat {
-            0%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
-            33% { transform: translateY(-10px) rotateX(0.5deg) rotateY(0.5deg); }
-            66% { transform: translateY(-5px) rotateX(-0.5deg) rotateY(-0.5deg); }
-        }
-        
-        .login-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, 
-                rgba(0, 255, 179, 0.03) 0%, 
-                transparent 30%,
-                rgba(46, 198, 255, 0.03) 100%);
-            z-index: -1;
-            pointer-events: none;
-        }
-        
-        .login-card::after {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, 
-                var(--neon-green), 
-                var(--neon-blue), 
-                var(--neon-purple),
-                var(--neon-green));
-            border-radius: 26px;
-            z-index: -2;
-            opacity: 0;
-            transition: opacity 0.6s var(--transition-smooth);
-            animation: cardGlow 4s linear infinite;
-            filter: blur(20px);
-        }
-        
-        @keyframes cardGlow {
-            0%, 100% { opacity: 0.1; }
-            50% { opacity: 0.2; }
-        }
-        
-        /* ===== CARD HEADER ===== */
-        .card-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .logo-container {
-            position: relative;
-            width: 90px;
-            height: 90px;
-            margin: 0 auto 25px;
-            perspective: 1000px;
-        }
-        
-        .logo-3d {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            animation: logo3dRotate 25s linear infinite;
-        }
-        
-        @keyframes logo3dRotate {
-            0% { transform: rotateY(0deg) rotateX(5deg); }
-            100% { transform: rotateY(360deg) rotateX(5deg); }
-        }
-        
-        .logo-front, .logo-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            backface-visibility: hidden;
-            box-shadow: 0 0 30px rgba(0, 255, 179, 0.3);
-        }
-        
-        .logo-front {
-            background: rgba(15, 20, 26, 0.9);
-            border: 2px solid var(--neon-green);
-            transform: translateZ(25px);
-        }
-        
-        .logo-back {
-            background: rgba(46, 198, 255, 0.1);
-            border: 2px solid var(--neon-blue);
-            transform: translateZ(-25px) rotateY(180deg);
-        }
-        
-        .logo-text {
-            font-weight: 700;
-            font-size: 24px;
-            background: linear-gradient(45deg, var(--neon-green), var(--neon-blue));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: 1px;
-        }
-        
-        .card-header h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            background: linear-gradient(45deg, var(--text-primary), var(--neon-blue));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: 0.5px;
-        }
-        
-        .card-header p {
-            color: var(--text-secondary);
-            font-size: 15px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-        
-        .security-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(0, 255, 179, 0.08);
-            border: 1px solid rgba(0, 255, 179, 0.2);
-            border-radius: 20px;
-            padding: 6px 15px;
-            margin-top: 10px;
-            font-size: 13px;
-            color: var(--neon-green);
-            animation: badgePulse 3s ease-in-out infinite;
-        }
-        
-        @keyframes badgePulse {
-            0%, 100% { box-shadow: 0 0 10px rgba(0, 255, 179, 0.2); }
-            50% { box-shadow: 0 0 20px rgba(0, 255, 179, 0.4); }
-        }
-        
-        /* ===== FORM STYLES ===== */
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 28px;
-        }
-        
-        .form-group {
-            position: relative;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            transition: color 0.3s var(--transition-smooth);
-        }
-        
-        .input-container {
-            position: relative;
-        }
-        
-        .form-input {
-            width: 100%;
-            height: 56px;
-            background: rgba(10, 14, 20, 0.6);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 0 20px;
-            font-size: 16px;
-            color: var(--text-primary);
-            transition: all 0.4s var(--transition-smooth);
-            outline: none;
-            letter-spacing: 0.5px;
-        }
-        
-        .form-input::placeholder {
-            color: rgba(139, 148, 158, 0.6);
-            transition: color 0.3s var(--transition-smooth);
-        }
-        
-        .form-input:hover {
-            border-color: rgba(0, 255, 179, 0.3);
-            box-shadow: 0 0 20px rgba(0, 255, 179, 0.1);
-        }
-        
-        .form-input:focus {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 30px rgba(0, 255, 179, 0.2);
-            background: rgba(10, 14, 20, 0.8);
-        }
-        
-        .form-input:focus::placeholder {
-            color: transparent;
-        }
-        
-        /* ===== INPUT BORDER TRACE ANIMATION ===== */
-        .border-trace {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 12px;
-            pointer-events: none;
-            opacity: 0;
-            z-index: 1;
-        }
-        
-        .form-input:focus ~ .border-trace {
-            opacity: 1;
-            animation: borderTrace 1.5s var(--transition-smooth);
-        }
-        
-        @keyframes borderTrace {
-            0% { 
-                box-shadow: 0 0 0 0 var(--neon-green),
-                           inset 0 0 0 1px var(--neon-green);
-                clip-path: polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%);
-            }
-            50% { 
-                box-shadow: 0 0 20px var(--neon-green),
-                           inset 0 0 0 1px var(--neon-green);
-            }
-            100% { 
-                box-shadow: 0 0 0 0 var(--neon-green),
-                           inset 0 0 0 1px var(--neon-green);
-                clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
-            }
-        }
-        
-        /* ===== INPUT WAVE ANIMATION ===== */
-        .wave-effect {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 12px;
-            pointer-events: none;
-            overflow: hidden;
-            z-index: 0;
-            opacity: 0;
-        }
-        
-        .form-input:focus ~ .wave-effect {
-            opacity: 1;
-        }
-        
-        .wave {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 200%;
-            height: 2px;
-            background: linear-gradient(90deg, 
-                transparent, 
-                var(--neon-green), 
-                var(--neon-blue),
-                transparent);
-            animation: waveMove 2s linear infinite;
-            opacity: 0.7;
-        }
-        
-        @keyframes waveMove {
-            0% { transform: translateX(-50%); }
-            100% { transform: translateX(0); }
-        }
-        
-        /* ===== INPUT ICONS ===== */
-        .input-icon {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-            transition: color 0.3s var(--transition-smooth);
-            z-index: 2;
-        }
-        
-        .form-input:focus ~ .input-icon {
-            color: var(--neon-green);
-            animation: iconPulse 1s var(--transition-smooth);
-        }
-        
-        @keyframes iconPulse {
-            0%, 100% { transform: translateY(-50%) scale(1); }
-            50% { transform: translateY(-50%) scale(1.2); }
-        }
-        
-        /* ===== PASSWORD VISIBILITY TOGGLE ===== */
-        .password-toggle {
-            position: absolute;
-            right: 50px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: transparent;
+
+        .debug-toggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #FF004C;
+            color: white;
             border: none;
-            color: var(--text-secondary);
+            border-radius: 4px;
+            padding: 5px 10px;
             cursor: pointer;
-            z-index: 2;
-            transition: color 0.3s var(--transition-smooth);
+            z-index: 1001;
+            font-size: 12px;
         }
-        
-        .password-toggle:hover {
-            color: var(--neon-blue);
+
+        .debug-log {
+            margin: 5px 0;
+            padding: 3px;
+            border-bottom: 1px solid rgba(0, 255, 179, 0.3);
         }
-        
-        /* ===== LOGIN BUTTON ===== */
-        .login-btn-container {
-            position: relative;
-            margin-top: 10px;
-        }
-        
-        .login-btn {
-            width: 100%;
-            height: 56px;
-            background: linear-gradient(135deg, var(--neon-green), var(--neon-blue));
-            border: none;
-            border-radius: 12px;
-            color: var(--dark-bg);
-            font-size: 16px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s var(--transition-smooth);
-            z-index: 1;
-        }
-        
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 
-                0 10px 30px rgba(0, 255, 179, 0.4),
-                0 0 0 1px rgba(0, 255, 179, 0.2);
-            animation: btnPulse 2s infinite;
-        }
-        
-        @keyframes btnPulse {
-            0%, 100% { box-shadow: 0 10px 30px rgba(0, 255, 179, 0.4); }
-            50% { box-shadow: 0 10px 40px rgba(0, 255, 179, 0.6); }
-        }
-        
-        .login-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, 
-                transparent, 
-                rgba(255, 255, 255, 0.2), 
-                transparent);
-            transition: left 0.7s var(--transition-smooth);
-        }
-        
-        .login-btn:hover::before {
-            left: 100%;
-        }
-        
-        /* ===== BUTTON CLICK ANIMATION ===== */
-        .btn-ripple {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.6);
-            transform: scale(0);
-            animation: ripple 0.6s var(--transition-smooth);
-            pointer-events: none;
-        }
-        
-        @keyframes ripple {
-            to {
-                transform: scale(4);
-                opacity: 0;
-            }
-        }
-        
-        /* ===== BUTTON LOADING ANIMATION ===== */
+
+        .debug-success { color: #00FFB3; }
+        .debug-error { color: #FF004C; }
+        .debug-warning { color: #FF8A00; }
+        .debug-info { color: #2EC6FF; }
+
+        /* Loading animation for button */
         .login-btn.loading {
-            pointer-events: none;
-            background: linear-gradient(135deg, #1a3a2c, #1a2f3a);
-            color: transparent;
+            position: relative;
+            overflow: hidden;
         }
-        
+
         .login-btn.loading::after {
             content: '';
             position: absolute;
@@ -624,694 +152,432 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, 
-                transparent, 
-                rgba(0, 255, 179, 0.4), 
-                transparent);
-            animation: loadingShimmer 1.5s infinite;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: loading 1.5s infinite;
         }
-        
-        @keyframes loadingShimmer {
+
+        @keyframes loading {
             0% { left: -100%; }
             100% { left: 100%; }
         }
-        
-        .loading-dots {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: flex;
-            gap: 8px;
-            z-index: 2;
-        }
-        
-        .loading-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--neon-green);
-            animation: loadingDotBounce 1.4s infinite ease-in-out;
-        }
-        
-        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
-        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
-        
-        @keyframes loadingDotBounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-        
-        /* ===== ERROR STATE ===== */
-        .login-card.error {
-            animation: errorShake 0.5s var(--transition-bounce), 
-                       redGlitch 0.3s 0.5s;
-        }
-        
-        @keyframes errorShake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        
-        @keyframes redGlitch {
-            0%, 100% { 
-                box-shadow: 0 0 0 0 rgba(255, 0, 76, 0);
-                border-color: var(--glass-border);
-            }
-            50% { 
-                box-shadow: 0 0 40px rgba(255, 0, 76, 0.6);
-                border-color: var(--cyber-red);
-            }
-        }
-        
-        .error-message {
-            color: var(--cyber-red);
-            font-size: 14px;
-            margin-top: 15px;
-            text-align: center;
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: all 0.4s var(--transition-smooth);
-        }
-        
-        .error-message.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        /* ===== SUCCESS STATE ===== */
-        .success-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 255, 179, 0.1);
-            backdrop-filter: blur(20px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.8s var(--transition-smooth);
-        }
-        
-        .success-overlay.active {
-            opacity: 1;
-            pointer-events: all;
-        }
-        
-        .success-card {
-            background: rgba(15, 20, 26, 0.95);
-            border-radius: 24px;
-            padding: 50px 40px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            border: 1px solid rgba(0, 255, 179, 0.3);
-            box-shadow: 0 20px 60px rgba(0, 255, 179, 0.2);
-            transform: scale(0.8);
-            opacity: 0;
-            animation: successCardEntrance 1s 0.3s var(--transition-elastic) forwards;
-        }
-        
-        @keyframes successCardEntrance {
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-        
-        .checkmark-container {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 30px;
-            position: relative;
-        }
-        
-        .checkmark-circle {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 3px solid rgba(0, 255, 179, 0.2);
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        
-        .checkmark {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        
-        .checkmark-path {
-            stroke: var(--neon-green);
-            stroke-width: 4;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            fill: none;
-            stroke-dasharray: 100;
-            stroke-dashoffset: 100;
-            animation: drawCheckmark 0.8s 0.5s var(--transition-smooth) forwards;
-        }
-        
-        @keyframes drawCheckmark {
-            to {
-                stroke-dashoffset: 0;
-            }
-        }
-        
-        .success-card h2 {
-            font-size: 28px;
-            margin-bottom: 15px;
-            background: linear-gradient(45deg, var(--neon-green), var(--neon-blue));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        
-        .success-card p {
-            color: var(--text-secondary);
-            margin-bottom: 25px;
-            line-height: 1.6;
-        }
-        
-        /* ===== FOOTER ===== */
-        .login-footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 25px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            margin-bottom: 20px;
-        }
-        
-        .footer-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.3s var(--transition-smooth);
-        }
-        
-        .footer-link:hover {
-            color: var(--neon-blue);
-        }
-        
-        .copyright {
-            font-size: 13px;
-            color: rgba(139, 148, 158, 0.6);
-            letter-spacing: 1px;
-        }
-        
-        /* ===== RESPONSIVE DESIGN ===== */
-        @media (max-width: 480px) {
-            .login-card {
-                padding: 30px 25px;
-                border-radius: 20px;
-            }
-            
-            .card-header h1 {
-                font-size: 24px;
-            }
-            
-            .form-input {
-                height: 52px;
-                font-size: 15px;
-            }
-            
-            .login-btn {
-                height: 52px;
-                font-size: 15px;
-            }
-            
-            .footer-links {
-                flex-direction: column;
-                gap: 15px;
-            }
-        }
     </style>
 </head>
-<body>
-    <!-- Page Load Animation -->
-    <div class="page-load-animation">
-        <div class="loader-logo">
-            <div class="loader-logo-inner"></div>
-        </div>
-        <div class="loader-text">CYBERSECURE TERMINAL</div>
+<body class="login-page-body">
+    <!-- Debug Panel -->
+    <button class="debug-toggle" onclick="toggleDebug()">Debug</button>
+    <div class="debug-panel" id="debug-panel">
+        <strong>Debug Console</strong>
+        <div id="debug-logs"></div>
     </div>
-    
-    <!-- Background Elements -->
-    <canvas id="matrix-canvas"></canvas>
-    <div class="gradient-fog"></div>
-    <div class="floating-particles" id="particles-container"></div>
-    
-    <!-- Main Login Container -->
-    <div class="login-container">
+
+    <!-- Matrix background -->
+    <canvas id="matrix-canvas" class="login-background"></canvas>
+
+    <!-- Login container -->
+    <div class="login-content">
         <div class="login-card" id="login-card">
-            <div class="card-header">
-                <div class="logo-container">
-                    <div class="logo-3d">
-                        <div class="logo-front">
-                            <span class="logo-text">CT</span>
-                        </div>
-                        <div class="logo-back"></div>
-                    </div>
+            <div class="login-header">
+                <div class="logo">
+                    <img src="assets/images/cropped_circle_image.png" alt="Architect Johan Logo" 
+                         onerror="this.style.display='none'; this.parentElement.innerHTML='AJ';">
                 </div>
-                <h1>CyberSecure Terminal</h1>
-                <p>Access Authorization Required</p>
-                <div class="security-badge">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>Encrypted Connection</span>
-                </div>
+                <h1>Architect Johan</h1>
+                <p>Secure Access Terminal</p>
             </div>
-            
-            <form class="login-form" id="login-form">
-                <div class="form-group">
-                    <label for="username" class="form-label">User Identification</label>
-                    <div class="input-container">
-                        <input type="text" id="username" class="form-input" placeholder="Enter access credentials" autocomplete="username" required>
-                        <div class="border-trace"></div>
-                        <div class="wave-effect">
-                            <div class="wave"></div>
-                        </div>
-                        <i class="fas fa-user input-icon"></i>
-                    </div>
-                </div>
+
+            <form id="login-form">
+                <input type="hidden" id="csrf_token" name="csrf_token">
                 
                 <div class="form-group">
-                    <label for="password" class="form-label">Security Passcode</label>
-                    <div class="input-container">
-                        <input type="password" id="password" class="form-input" placeholder="Enter encryption key" autocomplete="current-password" required>
-                        <div class="border-trace"></div>
-                        <div class="wave-effect">
-                            <div class="wave"></div>
-                        </div>
-                        <i class="fas fa-key input-icon"></i>
-                        <button type="button" class="password-toggle" id="password-toggle">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                    <label for="username">Username</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            placeholder="Enter your username"
+                            autocomplete="username"
+                            required
+                            maxlength="50"
+                        >
                     </div>
                 </div>
-                
-                <div class="login-btn-container">
-                    <button type="submit" class="login-btn" id="login-btn">
-                        <span class="btn-text">Initialize Access Sequence</span>
-                    </button>
-                    <div class="error-message" id="error-message">
-                        <i class="fas fa-exclamation-circle"></i> Access denied. Invalid credentials.
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                            maxlength="100"
+                        >
                     </div>
+                </div>
+
+                <button type="submit" class="login-btn" id="login-btn">
+                    <span class="btn-text">Initialize Access</span>
+                </button>
+
+                <div class="forgot-password">
+                    <a href="forgot-password.html">Forgot Password?</a>
+                </div>
+
+                <div class="error-message" id="error-message">
+                    Access Denied — Invalid Credentials
+                </div>
+
+                <div class="success-message" id="success-message">
+                    Access Granted — Redirecting to Home...
                 </div>
             </form>
-            
-            <div class="login-footer">
-                <div class="footer-links">
-                    <a href="#" class="footer-link">Forgot Passcode?</a>
-                    <a href="#" class="footer-link">Request Access</a>
-                    <a href="#" class="footer-link">System Status</a>
+
+            <div class="auth-switch">
+                Don't have an account? <a href="signup.html">Create Account</a>
+            </div>
+
+            <div class="security-info">
+                <div class="security-item">
+                    <span class="security-icon">🔒</span>
+                    <span>Encrypted Connection</span>
                 </div>
-                <div class="copyright">
-                    &copy; 2025 CyberSecure Terminal v4.2.1 | All access monitored
+                <div class="security-item">
+                    <span class="security-icon">🛡️</span>
+                    <span>Rate Limiting Active</span>
+                </div>
+                <div class="security-item">
+                    <span class="security-icon">⚡</span>
+                    <span>Secure Authentication</span>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Success Overlay -->
-    <div class="success-overlay" id="success-overlay">
-        <div class="success-card">
-            <div class="checkmark-container">
-                <div class="checkmark-circle"></div>
-                <svg class="checkmark" viewBox="0 0 52 52">
-                    <path class="checkmark-path" d="M14 27l7 7 16-16"/>
+
+            <div class="footer-text">
+                ENCRYPTED CONNECTION ESTABLISHED | CSRF PROTECTION ACTIVE
+            </div>
+
+            <div class="success-overlay" id="success-overlay">
+                <svg viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="25" fill="none" stroke="#00FFB3" stroke-width="3"/>
+                    <path fill="none" stroke="#00FFB3" stroke-width="4" stroke-linecap="round" 
+                          d="M14 27l7 7 16-16" 
+                          style="stroke-dasharray: 48; stroke-dashoffset: 48; animation: drawCheck 0.6s ease-in-out 0.3s forwards;"/>
                 </svg>
             </div>
-            <h2>Access Granted</h2>
-            <p>Authentication successful. Security protocols engaged. Redirecting to secure terminal...</p>
-            <div class="security-badge">
-                <i class="fas fa-lock"></i>
-                <span>Connection Encrypted</span>
-            </div>
         </div>
     </div>
+
     <script src="js/matrix.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/security.js"></script>
     <script>
-        // ===== GLOBAL VARIABLES =====
-        let matrixCanvas, matrixCtx;
-        let particles = [];
-        let animationId;
+        // Debug functions
+        function debugLog(message, type = 'info') {
+            const debugPanel = document.getElementById('debug-logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = `debug-log debug-${type}`;
+            logEntry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            debugPanel.appendChild(logEntry);
+            debugPanel.scrollTop = debugPanel.scrollHeight;
+            console.log(`[DEBUG ${type.toUpperCase()}] ${message}`);
+        }
+
+        function toggleDebug() {
+            const debugPanel = document.getElementById('debug-panel');
+            debugPanel.style.display = debugPanel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Test server connection
+        async function testServerConnection() {
+            try {
+                debugLog('Testing server connection...', 'info');
+                const response = await fetch(`${API_BASE_URL}/api/csrf-token`);
+                debugLog(`Server response: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                return response.ok;
+            } catch (error) {
+                debugLog(`Server connection failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Debug login function
+   async function debugLogin(formData) {
+    try {
+        debugLog('Running login debug analysis...', 'info');
         
-        // ===== PAGE INITIALIZATION =====
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('CyberSecure Terminal Initializing...');
-            
-            // Initialize Matrix background
-            initMatrix();
-            
-            // Initialize floating particles
-            createParticles();
-            animateParticles();
-            
-            // Setup event listeners
-            setupEventListeners();
-            
-            // Auto-focus on username input
-            setTimeout(() => {
-                document.getElementById('username').focus();
-            }, 1200);
+        // Test 1: Simple user existence check
+        debugLog('Testing user existence via simple endpoint...', 'info');
+        const userTest = await fetch(`${API_BASE_URL}/api/test-user/${encodeURIComponent(formData.username)}`);
+        const userData = await userTest.json();
+        debugLog(`User test: ${JSON.stringify(userData)}`, userTest.ok ? 'success' : 'error');
+
+        if (!userData.user_exists) {
+            debugLog('❌ User not found in database', 'error');
+            return false;
+        }
+
+        debugLog('✅ User found in database', 'success');
+
+        // Test 2: Detailed password verification
+        debugLog('Testing password verification specifically...', 'info');
+        const passwordDebug = await fetch(`${API_BASE_URL}/api/debug-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
         });
-        
-        // ===== MATRIX BACKGROUND CANVAS =====
-        function initMatrix() {
-            matrixCanvas = document.getElementById('matrix-canvas');
-            matrixCtx = matrixCanvas.getContext('2d');
+
+        if (passwordDebug.ok) {
+            const passwordData = await passwordDebug.json();
+            debugLog(`Password debug: ${JSON.stringify(passwordData, null, 2)}`, 'success');
             
-            // Set canvas to full window size
-            matrixCanvas.width = window.innerWidth;
-            matrixCanvas.height = window.innerHeight;
-            
-            // Matrix characters
-            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/=%\"'#&_(),.;:?!\\|{}<>[]^~";
-            const charArray = chars.split("");
-            const fontSize = 14;
-            const columns = matrixCanvas.width / fontSize;
-            
-            // Array to track y position of each column
-            const drops = [];
-            for (let i = 0; i < columns; i++) {
-                drops[i] = 1;
+            if (passwordData.password_match) {
+                debugLog('✅ Password verification should work!', 'success');
+            } else {
+                debugLog('❌ Password does not match stored hash', 'error');
             }
-            
-            // Draw function
-            function drawMatrix() {
-                // Semi-transparent black to create trail effect
-                matrixCtx.fillStyle = "rgba(10, 14, 20, 0.04)";
-                matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
-                
-                matrixCtx.fillStyle = "#00FFB3";
-                matrixCtx.font = `${fontSize}px monospace`;
-                
-                for (let i = 0; i < drops.length; i++) {
-                    // Random character
-                    const char = charArray[Math.floor(Math.random() * charArray.length)];
-                    
-                    // Text color with gradient effect
-                    const gradient = matrixCtx.createLinearGradient(0, 0, 0, matrixCanvas.height);
-                    gradient.addColorStop(0, "#00FFB3");
-                    gradient.addColorStop(0.5, "#2EC6FF");
-                    gradient.addColorStop(1, "#B388FF");
-                    
-                    matrixCtx.fillStyle = gradient;
-                    
-                    // Draw character
-                    matrixCtx.fillText(char, i * fontSize, drops[i] * fontSize);
-                    
-                    // Reset drop when it reaches bottom with random probability
-                    if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) {
-                        drops[i] = 0;
-                    }
-                    
-                    // Move drop down
-                    drops[i]++;
-                }
-            }
-            
-            // Animation loop
-            function animateMatrix() {
-                drawMatrix();
-                animationId = requestAnimationFrame(animateMatrix);
-            }
-            
-            // Start animation
-            animateMatrix();
-            
-            // Handle window resize
-            window.addEventListener('resize', function() {
-                matrixCanvas.width = window.innerWidth;
-                matrixCanvas.height = window.innerHeight;
-            });
+        } else {
+            debugLog(`Password debug failed: ${passwordDebug.status}`, 'error');
         }
-        
-        // ===== FLOATING PARTICLES =====
-        function createParticles() {
-            const particlesContainer = document.getElementById('particles-container');
-            const particleCount = 25;
-            
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.classList.add('particle');
-                
-                // Random size between 1-4px
-                const size = Math.random() * 3 + 1;
-                particle.style.width = `${size}px`;
-                particle.style.height = `${size}px`;
-                
-                // Random position
-                particle.style.left = `${Math.random() * 100}%`;
-                
-                // Random animation delay and duration
-                const delay = Math.random() * 15;
-                const duration = Math.random() * 10 + 15;
-                particle.style.animationDelay = `${delay}s`;
-                particle.style.animationDuration = `${duration}s`;
-                
-                // Random color
-                const colors = ['#00FFB3', '#2EC6FF', '#B388FF'];
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                particle.style.background = color;
-                particle.style.boxShadow = `0 0 10px ${color}`;
-                
-                particlesContainer.appendChild(particle);
-            }
+
+        // Test 3: Detailed debug endpoint
+        debugLog('Running detailed debug analysis...', 'info');
+        const debugResponse = await fetch(`${API_BASE_URL}/api/debug-login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (!debugResponse.ok) {
+            debugLog(`Debug endpoint failed: ${debugResponse.status}`, 'error');
+            return false;
         }
-        
-        function animateParticles() {
-            // Particles are animated with CSS, this is just a placeholder
-            // for any potential JS-controlled particle effects
-        }
-        
-        // ===== EVENT LISTENERS SETUP =====
-        function setupEventListeners() {
+
+        const debugData = await debugResponse.json();
+        debugLog(`Detailed debug: ${JSON.stringify(debugData, null, 2)}`, 'success');
+
+        return true;
+
+    } catch (debugError) {
+        debugLog(`Debug analysis failed: ${debugError.message}`, 'error');
+        return false;
+    }
+}
+
+        // Enhanced auth.js functionality
+        document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('login-form');
             const loginBtn = document.getElementById('login-btn');
-            const passwordToggle = document.getElementById('password-toggle');
-            const passwordInput = document.getElementById('password');
             const errorMessage = document.getElementById('error-message');
+            const successMessage = document.getElementById('success-message');
             const successOverlay = document.getElementById('success-overlay');
-            const loginCard = document.getElementById('login-card');
-            
-            // Form submission
-            loginForm.addEventListener('submit', function(e) {
+            const csrfTokenInput = document.getElementById('csrf_token');
+
+            // Use Render backend URL directly
+            const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
+
+            debugLog('Login page initialized', 'success');
+            debugLog(`API Base URL: ${API_BASE_URL}`, 'info');
+
+            // Test server connection on load
+            testServerConnection();
+
+            // Check if user is already logged in
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                debugLog('Found existing token, validating...', 'info');
+                // Validate token with correct endpoint
+                fetch(`${API_BASE_URL}/api/validate-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        debugLog('Token is valid, redirecting to home', 'success');
+                        window.location.href = 'home.html';
+                    } else {
+                        debugLog('Token is invalid, clearing storage', 'warning');
+                        // Token is invalid, clear it
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('username');
+                        localStorage.removeItem('user_role');
+                    }
+                })
+                .catch((error) => {
+                    debugLog(`Token validation failed: ${error.message}`, 'error');
+                    // Token is invalid, clear it
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('user_role');
+                });
+            }
+
+            // Get CSRF token
+            fetch(`${API_BASE_URL}/api/csrf-token`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.csrf_token) {
+                        csrfTokenInput.value = data.csrf_token;
+                        debugLog('CSRF token obtained successfully', 'success');
+                    } else {
+                        debugLog('No CSRF token in response', 'error');
+                    }
+                })
+                .catch(error => {
+                    debugLog(`Error fetching CSRF token: ${error.message}`, 'error');
+                    showError('Security token initialization failed. Please refresh the page.');
+                });
+
+            loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                const username = document.getElementById('username').value;
+                const username = document.getElementById('username').value.trim();
                 const password = document.getElementById('password').value;
-                
-                // Show loading state
+
+                if (!username || !password) {
+                    showError('Please enter both username and password');
+                    return;
+                }
+
+                const formData = {
+                    username: username,
+                    password: password,
+                    csrf_token: csrfTokenInput.value
+                };
+
+                debugLog(`Login attempt for user: ${username}`, 'info');
+
+                loginBtn.disabled = true;
+                loginBtn.innerHTML = '<span class="btn-text">Authenticating...</span>';
                 loginBtn.classList.add('loading');
-                loginBtn.innerHTML = `
-                    <div class="loading-dots">
-                        <div class="loading-dot"></div>
-                        <div class="loading-dot"></div>
-                        <div class="loading-dot"></div>
-                    </div>
-                `;
+
+                try {
+                    debugLog('Sending login request to server...', 'info');
+                    
+                    const response = await fetch(`${API_BASE_URL}/api/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfTokenInput.value
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    debugLog(`Server response status: ${response.status}`, 'info');
+
+                    const data = await response.json();
+                    debugLog(`Server response data: ${JSON.stringify(data)}`, 'info');
+
+                    if (response.ok) {
+                        debugLog('Login successful!', 'success');
+                        // Store token and user info
+                        localStorage.setItem('auth_token', data.token);
+                        localStorage.setItem('username', data.username);
+                        localStorage.setItem('user_role', data.role);
+                        localStorage.setItem('full_name', data.full_name);
+                        localStorage.setItem('csrf_token', data.csrf_token);
+
+                        showSuccess('Access granted! Redirecting...');
+                        
+                        // Show success animation
+                        successOverlay.classList.add('show');
+                        loginBtn.classList.add('success');
+                        
+                        setTimeout(() => {
+                            window.location.href = 'home.html';
+                        }, 1500);
+                    } else {
+                        debugLog(`Login failed: ${data.error}`, 'error');
+                        showError(data.error || 'Authentication failed');
+                        loginBtn.classList.add('glitch');
+                        setTimeout(() => loginBtn.classList.remove('glitch'), 1000);
+                        
+                        // Run debug analysis if login fails
+                        if (data.error.includes('server error')) {
+                            debugLog('Running detailed debug analysis...', 'warning');
+                            await debugLogin(formData);
+                        }
+                    }
+                } catch (error) {
+                    debugLog(`Network error: ${error.message}`, 'error');
+                    showError('Network error. Please check your connection.');
+                    
+                    // Test server connection
+                    const serverOnline = await testServerConnection();
+                    if (!serverOnline) {
+                        showError('Server is unreachable. Please try again later.');
+                    }
+                } finally {
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '<span class="btn-text">Initialize Access</span>';
+                    loginBtn.classList.remove('loading');
+                }
+            });
+
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.add('show');
+                successMessage.classList.remove('show');
                 
-                // Hide any previous error
+                const card = document.getElementById('login-card');
+                card.classList.add('shake');
+                setTimeout(() => card.classList.remove('shake'), 500);
+                
+                debugLog(`UI Error: ${message}`, 'error');
+            }
+
+            function showSuccess(message) {
+                successMessage.textContent = message;
+                successMessage.classList.add('show');
                 errorMessage.classList.remove('show');
-                
-                // Simulate API call delay
-                setTimeout(() => {
-                    // Fake validation - In production, this would be a real API call
-                    if (username === "admin" && password === "secure2025") {
-                        // Success
-                        showSuccessAnimation();
-                    } else {
-                        // Error
-                        showErrorAnimation();
-                    }
-                }, 1500);
-            });
-            
-            // Password visibility toggle
-            passwordToggle.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                
-                // Toggle icon
-                const icon = this.querySelector('i');
-                if (type === 'text') {
-                    icon.classList.remove('fa-eye');
-                    icon.classList.add('fa-eye-slash');
-                } else {
-                    icon.classList.remove('fa-eye-slash');
-                    icon.classList.add('fa-eye');
+                debugLog(`UI Success: ${message}`, 'success');
+            }
+
+            // Enter key support for form submission
+            document.getElementById('username').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('login-form').dispatchEvent(new Event('submit'));
                 }
             });
-            
-            // Input focus effects
-            const inputs = document.querySelectorAll('.form-input');
-            inputs.forEach(input => {
-                input.addEventListener('focus', function() {
-                    this.parentElement.classList.add('focused');
-                });
-                
-                input.addEventListener('blur', function() {
-                    this.parentElement.classList.remove('focused');
-                });
-                
-                // Add typing wave animation
-                input.addEventListener('input', function() {
-                    if (this.value.length > 0) {
-                        this.parentElement.querySelector('.wave-effect').style.opacity = '0.7';
-                    } else {
-                        this.parentElement.querySelector('.wave-effect').style.opacity = '0';
-                    }
-                });
-            });
-            
-            // Button click ripple effect
-            loginBtn.addEventListener('click', function(e) {
-                // Only create ripple if not loading
-                if (!this.classList.contains('loading')) {
-                    const rect = this.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    
-                    const ripple = document.createElement('span');
-                    ripple.classList.add('btn-ripple');
-                    ripple.style.left = `${x}px`;
-                    ripple.style.top = `${y}px`;
-                    
-                    this.appendChild(ripple);
-                    
-                    // Remove ripple after animation
-                    setTimeout(() => {
-                        ripple.remove();
-                    }, 600);
+
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('login-form').dispatchEvent(new Event('submit'));
                 }
             });
-            
-            // Debug/test credentials shortcut (Ctrl+Shift+D)
+
+            // Auto-focus on username field
+            document.getElementById('username').focus();
+
+            // Quick test credentials for debugging (remove in production)
             document.addEventListener('keydown', function(e) {
+                // Press Ctrl+Shift+D to fill test credentials
                 if (e.ctrlKey && e.shiftKey && e.key === 'D') {
                     e.preventDefault();
-                    document.getElementById('username').value = 'admin';
-                    document.getElementById('password').value = 'secure2025';
-                    console.log('Test credentials loaded');
+                    document.getElementById('username').value = 'ArchitectJohan';
+                    document.getElementById('password').value = 'Arch1t3ch_Joh@N!X#2025';
+                    debugLog('Test credentials filled', 'warning');
                 }
             });
-        }
-        
-        // ===== ERROR ANIMATION =====
-        function showErrorAnimation() {
-            const loginBtn = document.getElementById('login-btn');
-            const errorMessage = document.getElementById('error-message');
-            const loginCard = document.getElementById('login-card');
-            
-            // Reset button
-            loginBtn.classList.remove('loading');
-            loginBtn.innerHTML = '<span class="btn-text">Initialize Access Sequence</span>';
-            
-            // Add error class to card for shake animation
-            loginCard.classList.add('error');
-            
-            // Show error message
-            errorMessage.classList.add('show');
-            
-            // Remove error class after animation completes
-            setTimeout(() => {
-                loginCard.classList.remove('error');
-            }, 800);
-            
-            // Shake the card with physics-based animation
-            animateCardShake();
-        }
-        
-        function animateCardShake() {
-            const card = document.getElementById('login-card');
-            const keyframes = [
-                { transform: 'translateX(0)' },
-                { transform: 'translateX(-8px)' },
-                { transform: 'translateX(6px)' },
-                { transform: 'translateX(-4px)' },
-                { transform: 'translateX(2px)' },
-                { transform: 'translateX(0)' }
-            ];
-            
-            const timing = {
-                duration: 500,
-                easing: 'cubic-bezier(0.36, 0.07, 0.19, 0.97)'
-            };
-            
-            card.animate(keyframes, timing);
-        }
-        
-        // ===== SUCCESS ANIMATION =====
-        function showSuccessAnimation() {
-            const loginBtn = document.getElementById('login-btn');
-            const successOverlay = document.getElementById('success-overlay');
-            
-            // Reset button
-            loginBtn.classList.remove('loading');
-            loginBtn.innerHTML = '<span class="btn-text">Access Granted</span>';
-            loginBtn.style.background = 'linear-gradient(135deg, #1a3a2c, #1a2f3a)';
-            
-            // Show success overlay
-            successOverlay.classList.add('active');
-            
-            // Animate card zoom out and blur
-            const loginCard = document.getElementById('login-card');
-            loginCard.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
-            loginCard.style.transform = 'scale(0.8)';
-            loginCard.style.opacity = '0.5';
-            loginCard.style.filter = 'blur(10px)';
-            
-            // Simulate redirect after delay
-            setTimeout(() => {
-                // In a real application, this would redirect to the dashboard
-                console.log('Redirecting to secure terminal...');
-                
-                // For demo purposes, reset after 3 seconds
-                setTimeout(() => {
-                    // Reset everything
-                    successOverlay.classList.remove('active');
-                    loginCard.style.transform = '';
-                    loginCard.style.opacity = '';
-                    loginCard.style.filter = '';
-                    loginBtn.innerHTML = '<span class="btn-text">Initialize Access Sequence</span>';
-                    loginBtn.style.background = 'linear-gradient(135deg, var(--neon-green), var(--neon-blue))';
-                    document.getElementById('login-form').reset();
-                }, 3000);
-            }, 2000);
-        }
-        
-        // ===== PERFORMANCE OPTIMIZATION =====
-        // Stop matrix animation when page is not visible
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                cancelAnimationFrame(animationId);
-            } else {
-                initMatrix(); // Restart animation
-            }
         });
-        
-        // Clean up on page unload
-        window.addEventListener('beforeunload', function() {
-            cancelAnimationFrame(animationId);
-        });
+
+        // Export debug functions for browser console access
+        window.debugLogin = debugLogin;
+        window.testServerConnection = testServerConnection;
+        window.debugLog = debugLog;
     </script>
 </body>
 </html>
-
