@@ -62,6 +62,7 @@
             align-items: center;
             position: relative;
             z-index: 1000;
+            flex-shrink: 0;
         }
 
         .logo {
@@ -119,6 +120,7 @@
             height: calc(100% - 60px);
             background: #000;
             display: flex;
+            overflow: hidden;
         }
 
         /* Modules Sidebar */
@@ -129,6 +131,7 @@
             padding: 20px;
             overflow-y: auto;
             backdrop-filter: blur(10px);
+            flex-shrink: 0;
         }
 
         .sidebar-header {
@@ -279,18 +282,22 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        /* Main Video Area */
+        /* Main Video Area - FIXED */
         #main-video-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             padding: 20px;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
         }
 
         .video-header {
             margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
         }
 
         #current-module-title {
@@ -311,17 +318,54 @@
             gap: 5px;
         }
 
+        /* VIDEO PLAYER CONTAINER - FIXED */
         #video-player-container {
             flex: 1;
+            min-height: 0;
+            position: relative;
             background: #000;
             border-radius: 10px;
             overflow: hidden;
             border: 2px solid rgba(0, 255, 0, 0.1);
-            position: relative;
-            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
+        /* Video player responsive wrapper */
+        .video-player-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Aspect ratio container */
+        .aspect-ratio-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+        }
+
+        /* Video iframe/embed styling */
+        .video-player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #000;
+        }
+
+        /* Placeholder styling */
         .video-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             display: flex;
@@ -330,7 +374,8 @@
             align-items: center;
             color: #888;
             text-align: center;
-            padding: 40px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
         }
 
         .placeholder-icon {
@@ -345,12 +390,14 @@
             font-size: 14px;
         }
 
+        /* Controls area - fixed at bottom */
         .video-controls {
             margin-top: 20px;
             display: flex;
             gap: 10px;
             justify-content: center;
             flex-wrap: wrap;
+            flex-shrink: 0;
         }
 
         .control-btn {
@@ -381,17 +428,25 @@
         }
 
         .module-description {
-            margin-top: 30px;
+            margin-top: 20px;
             padding: 20px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            overflow-y: auto;
+            max-height: 200px;
         }
 
         .module-description h4 {
             color: #00ff00;
             margin-bottom: 10px;
             font-size: 16px;
+            position: sticky;
+            top: 0;
+            background: rgba(20, 20, 30, 0.95);
+            padding: 5px 0;
+            z-index: 1;
         }
 
         #description-text {
@@ -407,7 +462,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.95);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -415,13 +470,31 @@
             color: #ff4444;
             text-align: center;
             padding: 20px;
-            z-index: 10;
+            z-index: 100;
             backdrop-filter: blur(5px);
         }
 
         .lock-icon {
             font-size: 48px;
             margin-bottom: 15px;
+        }
+
+        /* Security overlay on video */
+        .video-security-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+
+        .security-notice {
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            backdrop-filter: blur(5px);
         }
 
         /* Loading Screen */
@@ -493,22 +566,6 @@
             }
         }
 
-        .video-security-overlay {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 10;
-        }
-
-        .security-notice {
-            background: rgba(0, 0, 0, 0.8);
-            color: #00ff00;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 12px;
-            border: 1px solid rgba(0, 255, 0, 0.3);
-        }
-
         /* Warning Message */
         .warning-message {
             position: fixed;
@@ -555,6 +612,14 @@
             #modules-sidebar {
                 width: 280px;
             }
+            
+            #main-video-area {
+                padding: 15px;
+            }
+            
+            #current-module-title {
+                font-size: 20px;
+            }
         }
 
         @media (max-width: 768px) {
@@ -569,6 +634,7 @@
                 width: 100%;
                 text-align: center;
                 margin-bottom: 10px;
+                font-size: 16px;
             }
             
             #course-modules-section {
@@ -582,71 +648,149 @@
                 height: 200px;
                 border-right: none;
                 border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+                padding: 10px;
             }
             
             #main-video-area {
                 padding: 10px;
+                height: calc(100% - 10px);
+            }
+            
+            #current-module-title {
+                font-size: 18px;
+                text-align: center;
             }
             
             .video-controls {
                 flex-direction: column;
                 align-items: center;
+                margin-top: 15px;
             }
             
             .control-btn {
                 width: 100%;
                 max-width: 300px;
+                padding: 15px 20px;
+                min-height: 44px;
+            }
+            
+            .module-description {
+                max-height: 150px;
+                padding: 15px;
+                margin-top: 15px;
+            }
+            
+            .module-item {
+                padding: 12px;
+                min-height: 60px;
+            }
+            
+            .header-btn {
+                padding: 12px 20px;
+                min-height: 44px;
             }
         }
 
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .control-btn {
+                padding: 15px 20px;
+                min-height: 44px;
+            }
+            
+            .module-item {
+                padding: 20px 15px;
+                min-height: 60px;
+            }
+            
+            .header-btn {
+                padding: 12px 20px;
+                min-height: 44px;
+            }
+        }
 
-        #video-player-container {
-    aspect-ratio: 16 / 9;
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+        /* Prevent zoom on mobile */
+        @media (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px;
+            }
+            
+            .video-player-wrapper {
+                touch-action: pan-x pan-y;
+            }
+        }
 
-/* Ensure iframe / video fills container correctly */
-#video-player-container iframe,
-#video-player-container video {
-    width: 100% !important;
-    height: 100% !important;
-    aspect-ratio: 16 / 9;
-    object-fit: contain; /* prevents cropping */
-}
+        @media (max-height: 800px) {
+            .module-description {
+                max-height: 150px;
+                padding: 15px;
+            }
+            
+            .video-controls {
+                margin-top: 15px;
+            }
+            
+            #video-player-container {
+                min-height: 400px;
+            }
+        }
 
-/* Fix embedded iframe wrapper divs (Dailymotion / YouTube) */
-#video-player-container > div {
-    width: 100%;
-    height: 100%;
-}
+        /* Fullscreen adjustments */
+        :-webkit-full-screen #main-video-area {
+            padding: 0;
+            height: 100vh;
+        }
 
-/* Mobile safety */
-@media (max-width: 768px) {
-    #video-player-container {
-        aspect-ratio: 16 / 9;
-    }
-}
+        :-webkit-full-screen #video-player-container {
+            border-radius: 0;
+            border: none;
+        }
+
+        :-moz-full-screen #main-video-area {
+            padding: 0;
+            height: 100vh;
+        }
+
+        :-moz-full-screen #video-player-container {
+            border-radius: 0;
+            border: none;
+        }
+
+        :-ms-fullscreen #main-video-area {
+            padding: 0;
+            height: 100vh;
+        }
+
+        :-ms-fullscreen #video-player-container {
+            border-radius: 0;
+            border: none;
+        }
+
+        :fullscreen #main-video-area {
+            padding: 0;
+            height: 100vh;
+        }
+
+        :fullscreen #video-player-container {
+            border-radius: 0;
+            border: none;
+        }
     </style>
 </head>
 <body>
     <!-- Security Overlay -->
-  <div id="security-overlay" class="security-overlay">
-    <div class="security-content">
-        <div style="font-size:64px;margin-bottom:20px;color:#ff4444;">⚠️</div>
-        <div class="security-message" id="security-alert-text">EXTREME SECURITY MODE</div>
-        <p style="font-size:16px;margin-top:20px;color:#ff9999;">
-            All keyboard shortcuts, right-click, and screen capture are disabled
-        </p>
-        <p style="margin-top:30px;font-size:12px;color:#666;">
-            Security will auto-resume in <span id="countdown">3</span> seconds...
-        </p>
+    <div id="security-overlay" class="security-overlay">
+        <div class="security-content">
+            <div style="font-size:64px;margin-bottom:20px;color:#ff4444;">⚠️</div>
+            <div class="security-message" id="security-alert-text">EXTREME SECURITY MODE</div>
+            <p style="font-size:16px;margin-top:20px;color:#ff9999;">
+                All keyboard shortcuts, right-click, and screen capture are disabled
+            </p>
+            <p style="margin-top:30px;font-size:12px;color:#666;">
+                Security will auto-resume in <span id="countdown">3</span> seconds...
+            </p>
+        </div>
     </div>
-</div>
 
     <!-- Warning Message -->
     <div id="warning-message" class="warning-message">
@@ -663,7 +807,7 @@
         <p style="font-size: 14px; margin-top: 15px; color: #ffcccb;">
             This content is protected by Architect Johan Security System
         </p>
-        <button onclick="hideWarning()" class="control-btn" style="margin-top: 20px;">
+        <button onclick="hideWarning()" class="control-btn" style="margin-top: 20px; background: rgba(255, 255, 255, 0.2); color: white;">
             I Understand & Continue
         </button>
     </div>
@@ -680,15 +824,15 @@
     </div>
 
     <!-- Header -->
-  <header class="header">
-    <a href="home.html" class="logo">🔐 Architect Johan</a>
-    <div class="course-title">CEH v13 - Certified Ethical Hacker</div>
-    <div class="header-controls">
-        <button class="header-btn" onclick="showSecurityInfo()">🛡️ Security Info</button>
-        <button class="header-btn" onclick="toggleFullscreen()">📺 Fullscreen</button>
-        <button class="header-btn exit" onclick="exitCourse()">❌ Exit</button>
-    </div>
-</header>
+    <header class="header">
+        <a href="home.html" class="logo">🔐 Architect Johan</a>
+        <div class="course-title">CEH v13 - Certified Ethical Hacker</div>
+        <div class="header-controls">
+            <button class="header-btn" onclick="showSecurityInfo()">🛡️ Security Info</button>
+            <button class="header-btn" onclick="toggleFullscreen()">📺 Fullscreen</button>
+            <button class="header-btn exit" onclick="exitCourse()">❌ Exit</button>
+        </div>
+    </header>
 
     <!-- Main Course Content -->
     <div id="course-modules-section" style="display: none;">
@@ -1154,6 +1298,70 @@
         });
     }
     
+    // ==================== VIDEO PLAYER FUNCTIONS ====================
+    
+    function loadVideo(module) {
+        const videoContainer = document.getElementById('video-player-container');
+        
+        if (module.unlocked && module.embedCode) {
+            // Clean the embed code to ensure it's properly contained
+            const cleanEmbedCode = module.embedCode
+                .replace(/width="[^"]*"/g, 'width="100%"')
+                .replace(/height="[^"]*"/g, 'height="100%"')
+                .replace(/style="[^"]*"/g, 'style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"');
+            
+            videoContainer.innerHTML = `
+                <div class="video-player-wrapper">
+                    <div class="video-security-overlay">
+                        <div class="security-notice">🎬 Secure Video Player Active</div>
+                    </div>
+                    <div class="aspect-ratio-container">
+                        <div class="video-player">
+                            ${cleanEmbedCode}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add video protection
+            protectVideoDownload();
+            
+            // Focus the video container for keyboard navigation
+            setTimeout(() => {
+                const videoIframe = videoContainer.querySelector('iframe');
+                if (videoIframe) {
+                    videoIframe.setAttribute('tabindex', '-1');
+                }
+            }, 100);
+        } else {
+            videoContainer.innerHTML = `
+                <div class="video-placeholder">
+                    <div class="lock-overlay">
+                        <div class="lock-icon">🔒</div>
+                        <h3>Module Locked</h3>
+                        <p>${module.lockedReason || 'Complete previous modules to unlock'}</p>
+                        <button onclick="prevModule()" class="control-btn" style="margin-top:20px;background:rgba(0,255,0,0.1);">
+                            ← Return to Previous Module
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Ensure proper aspect ratio
+        updateVideoAspectRatio();
+    }
+    
+    function updateVideoAspectRatio() {
+        const videoContainer = document.getElementById('video-player-container');
+        const aspectRatioContainer = videoContainer.querySelector('.aspect-ratio-container');
+        
+        if (aspectRatioContainer) {
+            // Force 16:9 aspect ratio
+            aspectRatioContainer.style.paddingBottom = '56.25%';
+        }
+    }
+    
     // ==================== MODULE MANAGEMENT ====================
     
     function initializeModules() {
@@ -1220,35 +1428,6 @@
         
         // Log activity
         logModuleAccess(module.id);
-    }
-    
-    function loadVideo(module) {
-        const videoContainer = document.getElementById('video-player-container');
-        
-        if (module.unlocked && module.embedCode) {
-            videoContainer.innerHTML = `
-                <div class="video-security-overlay">
-                    <div class="security-notice">🎬 Playing in Secure Mode</div>
-                </div>
-                ${module.embedCode}
-            `;
-            
-            // Add video protection
-            protectVideoDownload();
-        } else {
-            videoContainer.innerHTML = `
-                <div class="video-placeholder">
-                    <div class="lock-overlay">
-                        <div class="lock-icon">🔒</div>
-                        <h3>Module Locked</h3>
-                        <p>${module.lockedReason || 'Complete previous modules to unlock'}</p>
-                        <p style="font-size:12px; color:#888; margin-top:10px;">
-                            Contact support for access issues
-                        </p>
-                    </div>
-                </div>
-            `;
-        }
     }
     
     function prevModule() {
@@ -1628,6 +1807,9 @@
             devToolsCheckInterval = protectDeveloperTools();
             protectVideoDownload();
             
+            // Setup window resize listener for aspect ratio
+            window.addEventListener('resize', updateVideoAspectRatio);
+            
             // Log security initialization
             logSecurityEvent('course_player_initialized');
             
@@ -1656,6 +1838,7 @@
         }
         extremeSecurityActive = false;
         disableKeyboardLockdown();
+        window.removeEventListener('resize', updateVideoAspectRatio);
     });
     
     // Add CSS animations
