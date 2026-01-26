@@ -14,6 +14,8 @@ import logging
 import re
 import json
 import base64
+import hashlib
+import hmac
 
 # Try to import MongoDB modules
 try:
@@ -42,6 +44,9 @@ JWT_SECRET = os.getenv('JWT_SECRET', 'your-jwt-secret-here')
 SESSION_TIMEOUT = int(os.getenv('SESSION_TIMEOUT', 3600))
 MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/architect_johan')
 
+# Razorpay Configuration - NEW
+RAZORPAY_WEBHOOK_SECRET = os.getenv('RAZORPAY_WEBHOOK_SECRET', 'your-razorpay-webhook-secret')
+
 # Email configuration (keeping for password reset only)
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
@@ -54,7 +59,7 @@ VIDEO_PASSWORD = os.getenv('VIDEO_PASSWORD', 'CEH_V13_2024_SECURE')
 # Default admin user
 default_admin_password = 'Arch1t3ch_Joh@N!X#2025'
 
-# Practice set passwords (pre-computed static hashes)
+# Practice set passwords (pre-computed static hashes) - DEPRECATED: retained for backward compatibility
 PRACTICE_PASSWORDS = {
     'practice_set_1': 'Arch1t3ch_Joh@N!X#P1_Pro@2025',
     'practice_set_2': 'Arch1t3ch_Joh@N!X#Pr2_2025',
@@ -69,7 +74,7 @@ PRACTICE_PASSWORDS = {
     'ceh_study_notes': 'CEH^Vault_52@k!Rn'
 }
 
-# Course Access Passwords - NEW
+# Course Access Passwords - DEPRECATED: retained for backward compatibility
 COURSE_PASSWORDS = {
     'ceh_v13': 'CEH_V13_2024_SECURE',
     'ccna': 'CCNA_Cisco_2024',
@@ -192,11 +197,12 @@ def get_users_collection():
     db = get_db()
     if db is not None:
         collection = db.users
-        # Create indexes if they don't exist
+        # Create indexes if they don't exist - NEW: added paid_courses index
         try:
             collection.create_index("username", unique=True)
             collection.create_index("email", unique=True)
             collection.create_index("mobile_no", unique=True)
+            collection.create_index("paid_courses")  # NEW: Index for paid courses lookup
         except Exception as e:
             logger.error(f"Error creating indexes: {e}")
         return collection
@@ -258,10 +264,93 @@ def get_video_progress_collection():
         try:
             collection.create_index([("username", 1), ("course_id", 1), ("module_id", 1)], unique=True)
             collection.create_index([("username", 1), ("video_id", 1)], unique=True)
+            collection.create_index("username")  # NEW: Added for faster user progress queries
+            collection.create_index("course_id")  # NEW: Added for course-specific queries
         except Exception as e:
             logger.error(f"Error creating index: {e}")
         return collection
     return None
+
+def get_payment_logs_collection():
+    """Get payment_logs collection with indexes - NEW"""
+    if not MONGODB_AVAILABLE:
+        return None
+    
+    db = get_db()
+    if db is not None:
+        collection = db.payment_logs
+        try:
+            collection.create_index("razorpay_payment_id", unique=True)  # Prevent duplicate processing
+            collection.create_index("username")  # For user payment history
+            collection.create_index("course_id")  # For course sales analytics
+            collection.create_index("created_at")  # For time-based queries
+        except Exception as e:
+            logger.error(f"Error creating payment logs index: {e}")
+        return collection
+    return None
+
+# NEW: Helper function to check if user has paid access to a course
+def has_course_access(username, course_id):
+    """Check if user has paid access to a course - O(1) lookup"""
+    try:
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return False
+        
+        user = users_coll.find_one(
+            {"username": username},
+            {"paid_courses": 1}  # Project only paid_courses field
+        )
+        
+        if user and 'paid_courses' in user:
+            # Check if course_id exists in paid_courses array
+            return course_id in user.get('paid_courses', [])
+        
+        return False
+    except Exception as e:
+        logger.error(f"Error checking course access: {e}")
+        return False
+
+# NEW: Helper function to add course access to user
+def add_course_access(username, course_id, payment_id=None):
+    """Add course access to user's paid_courses array - idempotent"""
+    try:
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return False
+        
+        # Use addToSet to prevent duplicates (idempotent operation)
+        result = users_coll.update_one(
+            {"username": username},
+            {
+                "$addToSet": {"paid_courses": course_id},  # Add if not already present
+                "$set": {"last_updated": datetime.datetime.utcnow()}
+            }
+        )
+        
+        # Log the access grant
+        if result.modified_count > 0 or result.matched_count > 0:
+            logger.info(f"Course access granted: {username} -> {course_id} (Payment: {payment_id})")
+            
+            # Log payment event if payment_id provided
+            if payment_id:
+                payment_coll = get_payment_logs_collection()
+                if payment_coll:
+                    payment_coll.insert_one({
+                        "razorpay_payment_id": payment_id,
+                        "username": username,
+                        "course_id": course_id,
+                        "action": "course_access_granted",
+                        "created_at": datetime.datetime.utcnow(),
+                        "source": "razorpay_webhook"
+                    })
+            
+            return True
+        
+        return False
+    except Exception as e:
+        logger.error(f"Error adding course access: {e}")
+        return False
 
 # Initialize MongoDB database
 def init_db():
@@ -299,10 +388,19 @@ def init_db():
                 "is_active": True,
                 "created_at": datetime.datetime.utcnow(),
                 "failed_attempts": 0,
-                "locked_until": None
+                "locked_until": None,
+                "paid_courses": ["ceh_v13", "ccna", "python"]  # NEW: Admin has all courses
             }
             users_coll.insert_one(admin_user_data)
             logger.info("✅ Default admin user created")
+        else:
+            # NEW: Ensure admin has all courses
+            if 'paid_courses' not in admin_user:
+                users_coll.update_one(
+                    {"username": "ArchitectJohan"},
+                    {"$set": {"paid_courses": ["ceh_v13", "ccna", "python"]}}
+                )
+                logger.info("✅ Admin user updated with paid courses")
         
         # Initialize other collections
         get_user_activity_collection()
@@ -310,6 +408,7 @@ def init_db():
         get_video_access_collection()
         get_user_practice_progress_collection()
         get_video_progress_collection()
+        get_payment_logs_collection()  # NEW: Initialize payment logs
         
         logger.info("✅ MongoDB database initialized successfully")
         return True
@@ -425,6 +524,7 @@ def create_user(user_data):
         user_data['reset_token'] = None
         user_data['reset_token_expiry'] = None
         user_data['profile_image'] = None
+        user_data['paid_courses'] = []  # NEW: Initialize empty paid courses array
         
         result = users_coll.insert_one(user_data)
         return result.inserted_id is not None
@@ -752,6 +852,9 @@ def get_user_profile(current_user):
         except Exception as img_error:
             logger.error(f"Error processing profile image: {img_error}")
         
+        # NEW: Get paid courses count
+        paid_courses = user.get('paid_courses', [])
+        
         return jsonify({
             'username': user['username'],
             'full_name': user['full_name'],
@@ -762,6 +865,7 @@ def get_user_profile(current_user):
             'join_date': user['created_at'].isoformat() if user.get('created_at') else None,
             'last_login': user['last_login'].isoformat() if user.get('last_login') else None,
             'profile_image': profile_image_url,
+            'paid_courses': paid_courses,  # NEW: Include paid courses in profile
             'progress': {
                 'daily_progress': calculate_daily_progress(current_user),
                 'weekly_progress': calculate_weekly_progress(current_user),
@@ -1271,18 +1375,71 @@ def login():
         logger.error(f"Login error: {e}")
         return jsonify({'error': 'Login failed due to server error'}), 500
 
-# PRACTICE SET & COURSE PASSWORD VERIFICATION - UPDATED
+# NEW: Check course access endpoint
+@app.route('/api/check-course-access', methods=['POST'])
+@token_required
+def check_course_access(current_user):
+    """Check if user has paid access to a course - O(1) operation"""
+    try:
+        data = request.get_json()
+        course_id = data.get('course_id')
+        
+        if not course_id:
+            return jsonify({'error': 'Course ID is required'}), 400
+        
+        # Check if user has paid access
+        has_access = has_course_access(current_user, course_id)
+        
+        return jsonify({
+            'success': True,
+            'has_access': has_access,
+            'course_id': course_id,
+            'username': current_user
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Check course access error: {e}")
+        return jsonify({'error': 'Failed to check course access'}), 500
+
+# PRACTICE SET & COURSE PASSWORD VERIFICATION - UPDATED with paid user bypass
 @app.route('/api/verify-practice-password', methods=['POST'])
 @token_required
 def verify_practice_password(current_user):
-    """Verify password for practice set or course access"""
+    """Verify password for practice set or course access - with paid user bypass"""
     try:
         data = request.get_json()
         password = data.get('password')
         practice_set = data.get('practice_set')
         
-        if not password or not practice_set:
-            return jsonify({'error': 'Password and practice set are required'}), 400
+        if not practice_set:
+            return jsonify({'error': 'Practice set/course is required'}), 400
+        
+        # NEW: First check if user has paid access to this course
+        # Check if it's a course (not practice set)
+        if practice_set in COURSE_PASSWORDS:
+            # Check paid access first - O(1) operation
+            if has_course_access(current_user, practice_set):
+                # User has paid access - bypass password entirely
+                log_practice_access(current_user, practice_set, request.remote_addr, 'paid_access')
+                
+                # Determine redirect URL
+                if practice_set == 'ceh_v13':
+                    redirect_url = 'course-player.html'
+                else:
+                    redirect_url = f'course-player.html?course={practice_set}'
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Paid access verified',
+                    'redirect_url': redirect_url,
+                    'access_type': 'paid'
+                }), 200
+        
+        # DEPRECATED: Password-based access - retained for backward compatibility
+        # This path is only for non-paid users
+        
+        if not password:
+            return jsonify({'error': 'Password is required'}), 400
         
         # Check if it's a practice set
         if practice_set in PRACTICE_PASSWORDS:
@@ -1311,7 +1468,8 @@ def verify_practice_password(current_user):
             return jsonify({
                 'success': True,
                 'message': 'Password verified successfully',
-                'redirect_url': redirect_url
+                'redirect_url': redirect_url,
+                'access_type': 'password'
             }), 200
         else:
             # Log failed attempt
@@ -1357,6 +1515,132 @@ def verify_exam_level_password(current_user):
     except Exception as e:
         logger.error(f"Exam level password verification error: {e}")
         return jsonify({'error': 'Password verification failed'}), 500
+
+# NEW: Razorpay Webhook Endpoint
+@app.route('/api/razorpay/webhook', methods=['POST'])
+def razorpay_webhook():
+    """Handle Razorpay payment webhooks - idempotent and secure"""
+    try:
+        # Get webhook signature
+        razorpay_signature = request.headers.get('X-Razorpay-Signature')
+        webhook_secret = RAZORPAY_WEBHOOK_SECRET
+        
+        if not razorpay_signature or not webhook_secret:
+            logger.error("Razorpay webhook signature or secret missing")
+            return jsonify({'error': 'Webhook configuration missing'}), 400
+        
+        # Get request body
+        request_body = request.get_data(as_text=True)
+        
+        # Verify webhook signature
+        expected_signature = hmac.new(
+            webhook_secret.encode('utf-8'),
+            request_body.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+        
+        if not hmac.compare_digest(razorpay_signature, expected_signature):
+            logger.error("Invalid Razorpay webhook signature")
+            return jsonify({'error': 'Invalid signature'}), 401
+        
+        # Parse webhook payload
+        payload = request.get_json()
+        event = payload.get('event')
+        
+        logger.info(f"Razorpay webhook received: {event}")
+        
+        # Handle payment.captured event
+        if event == 'payment.captured':
+            payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
+            payment_id = payment_entity.get('id')
+            amount = payment_entity.get('amount') / 100  # Convert paise to rupees
+            currency = payment_entity.get('currency')
+            status = payment_entity.get('status')
+            
+            # Extract metadata from notes
+            notes = payment_entity.get('notes', {})
+            username = notes.get('username')
+            course_id = notes.get('course_id')
+            
+            # Validate required fields
+            if not all([payment_id, username, course_id]):
+                logger.error(f"Missing required fields in Razorpay webhook: payment_id={payment_id}, username={username}, course_id={course_id}")
+                return jsonify({'error': 'Missing required fields'}), 400
+            
+            # Check if payment already processed (idempotency)
+            payment_coll = get_payment_logs_collection()
+            if payment_coll:
+                existing_payment = payment_coll.find_one({"razorpay_payment_id": payment_id})
+                if existing_payment:
+                    logger.info(f"Payment already processed: {payment_id}")
+                    return jsonify({'message': 'Payment already processed'}), 200
+            
+            # Log payment received
+            logger.info(f"Payment captured: {payment_id} - User: {username} - Course: {course_id} - Amount: {amount} {currency}")
+            
+            # Grant course access to user
+            access_granted = add_course_access(username, course_id, payment_id)
+            
+            if access_granted:
+                # Log successful payment processing
+                if payment_coll:
+                    payment_coll.insert_one({
+                        "razorpay_payment_id": payment_id,
+                        "username": username,
+                        "course_id": course_id,
+                        "amount": amount,
+                        "currency": currency,
+                        "status": status,
+                        "event": event,
+                        "notes": notes,
+                        "processed": True,
+                        "created_at": datetime.datetime.utcnow(),
+                        "access_granted": True
+                    })
+                
+                # Log user activity
+                log_user_activity(username, f'course_purchased_{course_id}', request.remote_addr)
+                
+                logger.info(f"Course access granted: {username} -> {course_id} via payment {payment_id}")
+                return jsonify({'message': 'Payment processed and course access granted'}), 200
+            else:
+                logger.error(f"Failed to grant course access: {username} -> {course_id}")
+                return jsonify({'error': 'Failed to grant course access'}), 500
+        
+        # Handle other events
+        elif event == 'payment.failed':
+            payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
+            payment_id = payment_entity.get('id')
+            error_code = payment_entity.get('error_code')
+            error_description = payment_entity.get('error_description')
+            
+            logger.warning(f"Payment failed: {payment_id} - {error_code}: {error_description}")
+            
+            # Log failed payment
+            payment_coll = get_payment_logs_collection()
+            if payment_coll:
+                payment_coll.insert_one({
+                    "razorpay_payment_id": payment_id,
+                    "event": event,
+                    "error_code": error_code,
+                    "error_description": error_description,
+                    "processed": False,
+                    "created_at": datetime.datetime.utcnow(),
+                    "access_granted": False
+                })
+            
+            return jsonify({'message': 'Payment failure logged'}), 200
+        
+        # Return success for unhandled events (but log them)
+        else:
+            logger.info(f"Unhandled Razorpay webhook event: {event}")
+            return jsonify({'message': 'Webhook received (unhandled event)'}), 200
+            
+    except Exception as e:
+        logger.error(f"Razorpay webhook error: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': 'Webhook processing failed'}), 500
 
 # FORGOT PASSWORD ROUTES
 @app.route('/api/forgot-password', methods=['POST'])
@@ -1927,6 +2211,10 @@ def get_user_progress(current_user):
 def get_video_library(current_user):
     """Get categorized video library with user-specific lock status"""
     try:
+        # NEW: Get user's paid courses
+        user = get_user_by_username(current_user)
+        paid_courses = user.get('paid_courses', []) if user else []
+        
         # Get user progress
         db = get_db()
         completed_modules = []
@@ -1943,8 +2231,8 @@ def get_video_library(current_user):
                 for doc in cursor:
                     completed_modules.append(doc.get('module_id'))
         
-        # Check if user has completed any CEH modules
-        has_ceh_access = len(completed_modules) > 0 or True  # Temporary: always allow access
+        # Check if user has completed any CEH modules or has paid access
+        has_ceh_access = len(completed_modules) > 0 or 'ceh_v13' in paid_courses or True  # Temporary: always allow access
         
         # Categories with thumbnails and descriptions
         categories = {
@@ -1957,8 +2245,9 @@ def get_video_library(current_user):
                 'duration': '28 hours 45 minutes',
                 'level': 'Advanced',
                 'locked': not has_ceh_access,
-                'requires_password': not has_ceh_access,
+                'requires_password': not has_ceh_access and 'ceh_v13' not in paid_courses,  # NEW: No password if paid
                 'password_hint': 'CEH v13 Course Password: CEH_V13_2024_SECURE',
+                'is_paid': 'ceh_v13' in paid_courses,  # NEW: Paid status
                 'topics': [
                     'Introduction to Ethical Hacking',
                     'Footprinting and Reconnaissance',
@@ -1977,9 +2266,10 @@ def get_video_library(current_user):
                 'videos_count': 12,
                 'duration': '35 hours',
                 'level': 'Intermediate',
-                'locked': True,
-                'requires_password': True,
+                'locked': 'ccna' not in paid_courses,  # NEW: Locked if not paid
+                'requires_password': 'ccna' not in paid_courses,  # NEW: No password if paid
                 'password_hint': 'CCNA Course Password: CCNA_Cisco_2024',
+                'is_paid': 'ccna' in paid_courses,  # NEW: Paid status
                 'topics': [
                     'Networking Fundamentals',
                     'IP Addressing',
@@ -1996,9 +2286,10 @@ def get_video_library(current_user):
                 'videos_count': 20,
                 'duration': '50 hours',
                 'level': 'Beginner to Advanced',
-                'locked': True,
-                'requires_password': True,
+                'locked': 'python' not in paid_courses,  # NEW: Locked if not paid
+                'requires_password': 'python' not in paid_courses,  # NEW: No password if paid
                 'password_hint': 'Python Course Password: Python_2024_Architect',
+                'is_paid': 'python' in paid_courses,  # NEW: Paid status
                 'topics': [
                     'Python Basics',
                     'Data Structures',
@@ -2013,7 +2304,8 @@ def get_video_library(current_user):
             'success': True,
             'categories': categories,
             'user_has_ceh_access': has_ceh_access,
-            'completed_modules_count': len(completed_modules)
+            'completed_modules_count': len(completed_modules),
+            'paid_courses': paid_courses  # NEW: Return paid courses list
         }), 200
         
     except Exception as e:
@@ -2161,7 +2453,8 @@ def health_check():
         'status': 'healthy',
         'timestamp': datetime.datetime.utcnow().isoformat(),
         'database': 'connected' if get_mongo_client() is not None else 'disconnected',
-        'video_endpoints': 'available'
+        'video_endpoints': 'available',
+        'razorpay_webhook': 'configured' if RAZORPAY_WEBHOOK_SECRET else 'not_configured'  # NEW
     }), 200
 
 # Practice Set File Serving Routes
@@ -2439,6 +2732,8 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
     print(f"🔐 Authentication System: ENABLED")
+    print(f"💰 Paid Course System: ENABLED")  # NEW
+    print(f"🧾 Razorpay Webhook: {'ENABLED' if RAZORPAY_WEBHOOK_SECRET else 'DISABLED'}")  # NEW
     print(f"🗄️ Database: MongoDB (pymongo)")
     print(f"🌐 Server running on port: {port}")
     print(f"📊 MongoDB Available: {MONGODB_AVAILABLE}")
@@ -2461,12 +2756,14 @@ if __name__ == '__main__':
     print(f"🔑 JWT_SECRET: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
     print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
     print(f"🎥 VIDEO_PASSWORD: {'✅ Set' if os.getenv('VIDEO_PASSWORD') else '❌ Using Default'}")
+    print(f"💰 RAZORPAY_WEBHOOK_SECRET: {'✅ Set' if RAZORPAY_WEBHOOK_SECRET else '❌ Missing'}")  # NEW
     
-    # Print course passwords for reference
-    print("\n📚 COURSE PASSWORDS:")
-    print("=" * 40)
+    # Print course passwords for reference (DEPRECATED - kept for backward compatibility)
+    print("\n📚 COURSE PASSWORDS (DEPRECATED - for non-paid users only):")
+    print("=" * 50)
     for course, password in COURSE_PASSWORDS.items():
         print(f"{course:20} : {password}")
-    print("=" * 40)
+    print("=" * 50)
+    print("💡 Note: Paid users bypass password system automatically")
     
     app.run(debug=False, host='0.0.0.0', port=port)
