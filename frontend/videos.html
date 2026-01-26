@@ -145,6 +145,31 @@
             border: 1px solid rgba(255, 0, 0, 0.3);
         }
 
+        /* NEW: Premium badge for paid courses */
+        .category-card.premium {
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .category-card.premium::before {
+            content: '⭐ PREMIUM';
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            z-index: 2;
+        }
+
+        .category-card.premium:hover {
+            border-color: #FFD700;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.2);
+        }
+
         .category-thumbnail {
             width: 100%;
             height: 200px;
@@ -261,6 +286,18 @@
         .action-btn.secondary:hover {
             background: rgba(255, 255, 255, 0.2);
             border-color: #00ff00;
+        }
+
+        /* NEW: Premium button style */
+        .action-btn.premium {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .action-btn.premium:hover {
+            background: linear-gradient(45deg, #FFA500, #FF8C00);
+            transform: scale(1.05);
         }
 
         .action-btn:disabled {
@@ -381,6 +418,117 @@
             color: #fff;
         }
 
+        /* NEW: Buy Course Modal */
+        .buy-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+        }
+
+        .buy-modal.active {
+            display: flex;
+        }
+
+        .buy-box {
+            background: rgba(30, 30, 30, 0.95);
+            border-radius: 15px;
+            padding: 40px;
+            width: 500px;
+            max-width: 90%;
+            border: 2px solid #FFD700;
+            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.2);
+        }
+
+        .buy-title {
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .buy-description {
+            color: #aaa;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .price-tag {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .price-amount {
+            font-size: 36px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 5px;
+        }
+
+        .price-note {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .buy-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .buy-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .buy-btn.purchase {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000;
+        }
+
+        .buy-btn.purchase:hover {
+            background: linear-gradient(45deg, #FFA500, #FF8C00);
+        }
+
+        .buy-btn.cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .buy-btn.cancel:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .benefits-list {
+            margin: 20px 0;
+            padding-left: 20px;
+        }
+
+        .benefits-list li {
+            color: #aaa;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .header-content {
@@ -407,6 +555,10 @@
             }
             
             .category-actions {
+                flex-direction: column;
+            }
+
+            .buy-buttons {
                 flex-direction: column;
             }
         }
@@ -497,12 +649,42 @@
         </div>
     </div>
 
+    <!-- NEW: Buy Course Modal -->
+    <div id="buy-modal" class="buy-modal">
+        <div class="buy-box">
+            <h3 class="buy-title" id="buy-modal-title">Purchase Course</h3>
+            <p class="buy-description" id="buy-modal-description"></p>
+            
+            <div class="price-tag">
+                <div class="price-amount">₹999</div>
+                <div class="price-note">One-time payment • Lifetime access</div>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <h4 style="color: #FFD700; margin-bottom: 10px;">Benefits:</h4>
+                <ul class="benefits-list">
+                    <li>Full lifetime access to course content</li>
+                    <li>No password required - instant access</li>
+                    <li>Certificate of completion</li>
+                    <li>Priority support</li>
+                    <li>Future updates included</li>
+                </ul>
+            </div>
+            
+            <div class="buy-buttons">
+                <button onclick="initiatePurchase()" class="buy-btn purchase">Purchase with Razorpay</button>
+                <button onclick="closeBuyModal()" class="buy-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // State Management
         const state = {
             currentCategory: null,
             categories: {},
-            passwordAttempts: {}
+            passwordAttempts: {},
+            paidCourses: [] // NEW: Track user's paid courses
         };
 
         // API Configuration
@@ -517,6 +699,9 @@
         const passwordErrorEl = document.getElementById('password-error');
         const modalTitleEl = document.getElementById('modal-title');
         const modalHintEl = document.getElementById('modal-hint');
+        const buyModalEl = document.getElementById('buy-modal'); // NEW
+        const buyModalTitleEl = document.getElementById('buy-modal-title'); // NEW
+        const buyModalDescEl = document.getElementById('buy-modal-description'); // NEW
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -572,6 +757,7 @@
                     const data = await response.json();
                     if (data.success && data.categories) {
                         state.categories = data.categories;
+                        state.paidCourses = data.paid_courses || []; // NEW: Store paid courses
                         renderCategories();
                     } else {
                         showNoContent();
@@ -605,9 +791,22 @@
 
         // Create Category Card
         function createCategoryCard(category) {
+            const isPaid = state.paidCourses.includes(category.id);
             const card = document.createElement('div');
-            card.className = `category-card ${category.locked ? 'locked' : ''}`;
+            card.className = `category-card ${category.locked ? 'locked' : ''} ${category.is_paid ? 'premium' : ''}`;
             card.dataset.id = category.id;
+
+            // Determine button text based on paid status
+            let buttonText = '';
+            let buttonClass = 'primary';
+            
+            if (isPaid) {
+                buttonText = '🎬 Start Learning';
+            } else if (category.requires_password) {
+                buttonText = '🔑 Enter Password';
+            } else {
+                buttonText = '🎬 Start Learning';
+            }
 
             card.innerHTML = `
                 <img src="${category.thumbnail}" 
@@ -616,7 +815,7 @@
                      onerror="this.src='https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'">
                 <div class="category-content">
                     <div class="category-title">
-                        <span>${category.title}</span>
+                        <span>${category.title} ${isPaid ? '⭐' : ''}</span>
                         <span class="category-level">${category.level}</span>
                     </div>
                     
@@ -625,6 +824,7 @@
                     <div class="category-meta">
                         <span class="meta-item">📹 ${category.videos_count} videos</span>
                         <span class="meta-item">⏱️ ${category.duration}</span>
+                        ${isPaid ? '<span class="meta-item">⭐ Paid Access</span>' : ''}
                     </div>
                     
                     ${category.topics ? `
@@ -642,17 +842,26 @@
                     ` : ''}
                     
                     <div class="category-actions">
-                        ${category.requires_password ? 
+                        ${isPaid ? 
+                            `<button class="action-btn primary" onclick="accessCourse('${category.id}')">
+                                🎬 Start Learning
+                            </button>` : 
+                            category.requires_password ? 
                             `<button class="action-btn primary" onclick="accessCourse('${category.id}')">
                                 🔑 Enter Password
-                            </button>` : 
+                            </button>` :
                             `<button class="action-btn primary" onclick="accessCourse('${category.id}')">
                                 🎬 Start Learning
                             </button>`
                         }
-                        <button class="action-btn secondary" onclick="viewDetails('${category.id}')">
-                            ℹ️ Details
-                        </button>
+                        ${!isPaid && category.id !== 'ceh_v13' ? 
+                            `<button class="action-btn premium" onclick="showBuyModal('${category.id}')">
+                                💰 Buy Now
+                            </button>` : 
+                            `<button class="action-btn secondary" onclick="viewDetails('${category.id}')">
+                                ℹ️ Details
+                            </button>`
+                        }
                     </div>
                 </div>
             `;
@@ -660,11 +869,41 @@
             return card;
         }
 
-        // Access Course
-        function accessCourse(categoryId) {
+        // Access Course - UPDATED with paid user bypass
+        async function accessCourse(categoryId) {
             const category = state.categories[categoryId];
             if (!category) return;
 
+            // NEW: Check if user has paid access first
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                try {
+                    const response = await fetch(`${API_BASE}/api/check-course-access`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            course_id: categoryId
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.has_access) {
+                            // User has paid access - bypass password
+                            window.open(`course-player.html?course=${categoryId}`, '_blank');
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking course access:', error);
+                    // Fall back to password system
+                }
+            }
+
+            // DEPRECATED: Password-based access (for non-paid users)
             if (category.requires_password) {
                 openPasswordModal(category);
             } else {
@@ -678,16 +917,92 @@
             const category = state.categories[categoryId];
             if (!category) return;
 
+            const isPaid = state.paidCourses.includes(categoryId);
             const details = `
                 Course: ${category.title}
                 Level: ${category.level}
                 Duration: ${category.duration}
                 Videos: ${category.videos_count}
-                ${category.requires_password ? `\nPassword Protected: Yes\nHint: ${category.password_hint || 'Contact support'}` : ''}
+                Access: ${isPaid ? 'Paid (Full Access)' : 'Password Required'}
+                ${!isPaid && category.requires_password ? `\nPassword Protected: Yes\nHint: ${category.password_hint || 'Contact support'}` : ''}
                 ${category.topics ? `\nTopics:\n- ${category.topics.join('\n- ')}` : ''}
             `;
 
             alert(details);
+        }
+
+        // NEW: Show Buy Modal
+        function showBuyModal(categoryId) {
+            const category = state.categories[categoryId];
+            if (!category) return;
+
+            state.currentCategory = categoryId;
+            buyModalTitleEl.textContent = `Purchase: ${category.title}`;
+            buyModalDescEl.textContent = `Get lifetime access to "${category.title}" with ${category.videos_count} videos (${category.duration})`;
+            buyModalEl.classList.add('active');
+        }
+
+        // NEW: Close Buy Modal
+        function closeBuyModal() {
+            buyModalEl.classList.remove('active');
+            state.currentCategory = null;
+        }
+
+        // NEW: Initiate Purchase
+        function initiatePurchase() {
+            const categoryId = state.currentCategory;
+            const category = state.categories[categoryId];
+            if (!category) return;
+
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                alert('Please login to purchase');
+                return;
+            }
+
+            // Decode token to get username
+            try {
+                const tokenData = JSON.parse(atob(token.split('.')[1]));
+                const username = tokenData.username;
+
+                // Create Razorpay order
+                const options = {
+                    key: 'rzp_test_YOUR_RAZORPAY_KEY', // Replace with your Razorpay key
+                    amount: 99900, // ₹999 in paise
+                    currency: 'INR',
+                    name: 'Architect Johan',
+                    description: `Purchase: ${category.title}`,
+                    image: 'https://architect-johan-secure.onrender.com/assets/logo.png',
+                    handler: function(response) {
+                        // Handle successful payment
+                        alert('Payment successful! Course access will be granted shortly.');
+                        closeBuyModal();
+                        
+                        // Refresh video library to show updated access
+                        setTimeout(() => {
+                            loadVideoLibrary();
+                        }, 2000);
+                    },
+                    prefill: {
+                        name: username,
+                        email: `${username}@gmail.com` // Assuming Gmail
+                    },
+                    notes: {
+                        username: username,
+                        course_id: categoryId
+                    },
+                    theme: {
+                        color: '#00ff00'
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+                
+            } catch (error) {
+                console.error('Error initiating purchase:', error);
+                alert('Error initiating purchase. Please try again.');
+            }
         }
 
         // Password Modal Functions
@@ -739,7 +1054,7 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Password verified, redirect to course player
+                    // Password verified or paid access granted
                     closePasswordModal();
                     
                     if (data.redirect_url) {
@@ -823,6 +1138,7 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closePasswordModal();
+                closeBuyModal();
             }
             
             if (passwordModalEl.classList.contains('active') && e.key === 'Enter') {
@@ -838,5 +1154,8 @@
             }
         });
     </script>
+    
+    <!-- NEW: Razorpay SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </body>
 </html>
