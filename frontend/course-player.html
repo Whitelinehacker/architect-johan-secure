@@ -111,6 +111,20 @@
             color: #ff4444;
         }
 
+        /* NEW: Paid Access Badge */
+        .paid-badge {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         /* Main Course Container */
         #course-modules-section {
             position: fixed;
@@ -607,6 +621,74 @@
             backdrop-filter: blur(5px);
         }
 
+        /* NEW: Payment Required Overlay */
+        .payment-required-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .payment-icon {
+            font-size: 64px;
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+
+        .payment-message {
+            font-size: 24px;
+            color: #FFD700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .payment-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .payment-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .payment-btn.purchase {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #000;
+        }
+
+        .payment-btn.purchase:hover {
+            background: linear-gradient(45deg, #FFA500, #FF8C00);
+            transform: translateY(-2px);
+        }
+
+        .payment-btn.back {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .payment-btn.back:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             #modules-sidebar {
@@ -689,6 +771,16 @@
                 padding: 12px 20px;
                 min-height: 44px;
             }
+
+            .payment-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .payment-btn {
+                width: 100%;
+                max-width: 300px;
+            }
         }
 
         /* Touch device optimizations */
@@ -705,6 +797,11 @@
             
             .header-btn {
                 padding: 12px 20px;
+                min-height: 44px;
+            }
+
+            .payment-btn {
+                padding: 15px 20px;
                 min-height: 44px;
             }
         }
@@ -792,6 +889,37 @@
         </div>
     </div>
 
+    <!-- NEW: Payment Required Overlay -->
+    <div id="payment-required-overlay" class="payment-required-overlay" style="display: none;">
+        <div class="payment-icon">💰</div>
+        <div class="payment-message" id="payment-message-text">Premium Course Access Required</div>
+        <p style="color: #aaa; margin-bottom: 20px; max-width: 600px; line-height: 1.6;">
+            This is a premium course that requires purchase for full access.<br>
+            Unlock lifetime access to all modules and features.
+        </p>
+        
+        <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 10px; padding: 20px; margin: 20px 0; max-width: 400px;">
+            <div style="font-size: 36px; color: #FFD700; font-weight: bold; margin-bottom: 10px;">₹999</div>
+            <div style="color: #aaa; font-size: 14px;">One-time payment • Lifetime access</div>
+        </div>
+
+        <div style="text-align: left; max-width: 500px; margin: 20px 0;">
+            <h4 style="color: #FFD700; margin-bottom: 10px;">Benefits:</h4>
+            <ul style="color: #aaa; line-height: 1.6; padding-left: 20px;">
+                <li>Full lifetime access to all course modules</li>
+                <li>No password required - instant access</li>
+                <li>Certificate of completion</li>
+                <li>Priority support</li>
+                <li>Future updates included at no extra cost</li>
+            </ul>
+        </div>
+
+        <div class="payment-buttons">
+            <button onclick="purchaseCourse()" class="payment-btn purchase">Purchase with Razorpay</button>
+            <button onclick="goBackToVideos()" class="payment-btn back">Back to Video Library</button>
+        </div>
+    </div>
+
     <!-- Warning Message -->
     <div id="warning-message" class="warning-message">
         <div class="warning-icon">⚠️</div>
@@ -826,7 +954,7 @@
     <!-- Header -->
     <header class="header">
         <a href="home.html" class="logo">🔐 Architect Johan</a>
-        <div class="course-title">CEH v13 - Certified Ethical Hacker</div>
+        <div class="course-title">CEH v13 - Certified Ethical Hacker <span id="paid-badge" class="paid-badge" style="display: none;">⭐ PAID</span></div>
         <div class="header-controls">
             <button class="header-btn" onclick="showSecurityInfo()">🛡️ Security Info</button>
             <button class="header-btn" onclick="toggleFullscreen()">📺 Fullscreen</button>
@@ -1091,7 +1219,9 @@
     let extremeSecurityActive = true;
     let isInitialized = false;
     let devToolsCheckInterval;
-    
+    let currentCourseId = 'ceh_v13'; // Default course
+    let userHasPaidAccess = false; // NEW: Track paid access status
+
     // ==================== KEYBOARD LOCKDOWN SYSTEM ====================
     
     function enableKeyboardLockdown() {
@@ -1516,7 +1646,7 @@
                     },
                     body: JSON.stringify({
                         module_id: currentModule.id,
-                        course_id: 'ceh_v13'
+                        course_id: currentCourseId
                     })
                 });
                 
@@ -1658,6 +1788,10 @@
     }
     
     function showSecurityInfo() {
+        const paidInfo = userHasPaidAccess ? 
+            '<p style="color:#00ff00;margin-top:10px;">⭐ <strong>PAID ACCESS ACTIVE</strong> - Full course unlocked</p>' : 
+            '<p style="color:#ff4444;margin-top:10px;">🔒 <strong>FREE ACCESS</strong> - Some modules may be locked</p>';
+        
         showSecurityAlert('Extreme Security Mode Active', `
             <div style="text-align:left;">
                 <p><strong>Security Features Enabled:</strong></p>
@@ -1672,6 +1806,7 @@
                     <li>Inspect element blocked</li>
                     <li>Page refresh disabled</li>
                 </ul>
+                ${paidInfo}
                 <p style="margin-top:20px;color:#00ff00;">
                     🔐 This content is protected by Architect Johan Security System
                 </p>
@@ -1729,7 +1864,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        course_id: 'ceh_v13',
+                        course_id: currentCourseId,
                         module_id: moduleId,
                         action: 'started_watching'
                     })
@@ -1753,7 +1888,9 @@
                     page: 'course-player',
                     timestamp: new Date().toISOString(),
                     userAgent: navigator.userAgent,
-                    video: courseModules[currentModuleIndex]?.title
+                    video: courseModules[currentModuleIndex]?.title,
+                    course_id: currentCourseId,
+                    paid_access: userHasPaidAccess
                 })
             });
         } catch (error) {
@@ -1775,13 +1912,141 @@
         }
     }
     
+    // ==================== NEW: PAID ACCESS FUNCTIONS ====================
+    
+    async function checkPaidAccess() {
+        try {
+            const token = localStorage.getItem('auth_token');
+            if (!token) return false;
+            
+            // Get course ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            currentCourseId = urlParams.get('course') || 'ceh_v13';
+            
+            // Check if user has paid access
+            const response = await fetch(`${API_BASE}/api/check-course-access`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    course_id: currentCourseId
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                userHasPaidAccess = data.success && data.has_access;
+                return userHasPaidAccess;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error checking paid access:', error);
+            return false;
+        }
+    }
+    
+    function showPaymentRequired() {
+        // Hide loading screen
+        document.getElementById('loading-screen').style.display = 'none';
+        
+        // Hide course modules
+        document.getElementById('course-modules-section').style.display = 'none';
+        
+        // Show payment required overlay
+        const paymentOverlay = document.getElementById('payment-required-overlay');
+        const paymentMessage = document.getElementById('payment-message-text');
+        
+        // Update course title in message
+        const courseTitle = document.querySelector('.course-title').textContent;
+        paymentMessage.textContent = `Purchase Required: ${courseTitle}`;
+        
+        paymentOverlay.style.display = 'flex';
+        
+        // Update paid badge visibility
+        document.getElementById('paid-badge').style.display = 'none';
+    }
+    
+    function purchaseCourse() {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            alert('Please login to purchase');
+            return;
+        }
+
+        // Decode token to get username
+        try {
+            const tokenData = JSON.parse(atob(token.split('.')[1]));
+            const username = tokenData.username;
+            const courseTitle = document.querySelector('.course-title').textContent;
+
+            // Create Razorpay order
+            const options = {
+                key: 'rzp_test_YOUR_RAZORPAY_KEY', // Replace with your Razorpay key
+                amount: 99900, // ₹999 in paise
+                currency: 'INR',
+                name: 'Architect Johan',
+                description: `Purchase: ${courseTitle}`,
+                image: 'https://architect-johan-secure.onrender.com/assets/logo.png',
+                handler: function(response) {
+                    // Handle successful payment
+                    showSecurityToast('Payment successful! Course access will be granted shortly.');
+                    
+                    // Refresh page after delay to check for new access
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                },
+                prefill: {
+                    name: username,
+                    email: `${username}@gmail.com` // Assuming Gmail
+                },
+                notes: {
+                    username: username,
+                    course_id: currentCourseId
+                },
+                theme: {
+                    color: '#00ff00'
+                }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.open();
+            
+        } catch (error) {
+            console.error('Error initiating purchase:', error);
+            alert('Error initiating purchase. Please try again.');
+        }
+    }
+    
+    function goBackToVideos() {
+        window.location.href = 'videos.html';
+    }
+    
     // ==================== INITIALIZATION ====================
     
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
         // Check authentication
         const token = localStorage.getItem('auth_token');
         if (!token) {
             window.location.href = 'index.html';
+            return;
+        }
+        
+        // NEW: Check if user has paid access
+        const hasPaidAccess = await checkPaidAccess();
+        
+        // NEW: If it's a premium course (not CEH v13) and user doesn't have paid access, show payment required
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('course') || 'ceh_v13';
+        
+        // List of courses that require payment (all except ceh_v13 which has free access via password)
+        const premiumCourses = ['ccna', 'python', 'cybersecurity', 'linux', 'web_security', 
+                                'c_programming', 'ethical_hacking', 'network_security', 'cloud_security'];
+        
+        if (premiumCourses.includes(courseId) && !hasPaidAccess) {
+            showPaymentRequired();
             return;
         }
         
@@ -1811,12 +2076,21 @@
             window.addEventListener('resize', updateVideoAspectRatio);
             
             // Log security initialization
-            logSecurityEvent('course_player_initialized');
+            logSecurityEvent(`course_player_initialized_course_${courseId}_paid_${hasPaidAccess}`);
             
             // Select first module by default
             setTimeout(() => {
                 selectModule(0);
                 isInitialized = true;
+                
+                // NEW: Show paid access badge if applicable
+                if (hasPaidAccess) {
+                    document.getElementById('paid-badge').style.display = 'inline-flex';
+                    const securityBadge = document.querySelector('.security-badge');
+                    if (securityBadge) {
+                        securityBadge.innerHTML += ' | ⭐ PAID ACCESS';
+                    }
+                }
             }, 100);
             
         }, 2000);
@@ -1861,5 +2135,8 @@
     `;
     document.head.appendChild(style);
 </script>
+
+<!-- NEW: Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </body>
 </html>
