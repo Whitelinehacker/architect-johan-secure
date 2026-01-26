@@ -689,6 +689,30 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
+        /* NEW: Free Trial Info */
+        .free-trial-info {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .free-trial-title {
+            color: #00ff00;
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .free-trial-desc {
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             #modules-sidebar {
@@ -914,9 +938,21 @@
             </ul>
         </div>
 
+        <!-- NEW: Free Trial Info for CEH v13 -->
+        <div id="free-trial-info" class="free-trial-info" style="display: none;">
+            <div class="free-trial-title">🎁 FREE TRIAL AVAILABLE</div>
+            <div class="free-trial-desc">
+                Try the first 2 modules for free! Complete Module 0 and 1 to experience the course quality before purchasing.
+            </div>
+        </div>
+
         <div class="payment-buttons">
             <button onclick="purchaseCourse()" class="payment-btn purchase">Purchase with Razorpay</button>
             <button onclick="goBackToVideos()" class="payment-btn back">Back to Video Library</button>
+            <!-- NEW: Try Free Modules Button (only for CEH v13) -->
+            <button id="try-free-btn" onclick="tryFreeModules()" class="payment-btn" style="background: rgba(0, 255, 0, 0.1); color: #00ff00; border: 1px solid rgba(0, 255, 0, 0.3); display: none;">
+                🎁 Try Free Modules
+            </button>
         </div>
     </div>
 
@@ -954,7 +990,7 @@
     <!-- Header -->
     <header class="header">
         <a href="home.html" class="logo">🔐 Architect Johan</a>
-        <div class="course-title">CEH v13 - Certified Ethical Hacker <span id="paid-badge" class="paid-badge" style="display: none;">⭐ PAID</span></div>
+        <div class="course-title" id="course-title-text">CEH v13 - Certified Ethical Hacker <span id="paid-badge" class="paid-badge" style="display: none;">⭐ PAID</span></div>
         <div class="header-controls">
             <button class="header-btn" onclick="showSecurityInfo()">🛡️ Security Info</button>
             <button class="header-btn" onclick="toggleFullscreen()">📺 Fullscreen</button>
@@ -1029,8 +1065,9 @@
             title: 'Course Introduction & Setup',
             description: 'Welcome to CEH v13 course. Introduction to ethical hacking concepts, course structure, and setup requirements. Learn about the certification path, exam details, and course resources.',
             duration: '45:30',
-            unlocked: true,
-            embedCode: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe width="100%" height="100%" src="https://www.dailymotion.com/embed/video/k6V2CaHv7bDeQlExqG2?queue-enable=false&sharing-enable=false&ui-logo=false&ui-start-screen-info=false&mute=false" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute; top:0; left:0; width:100%; height:100%;"></iframe></div>'
+            unlocked: false, // CHANGED: Now locked by default
+            embedCode: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe width="100%" height="100%" src="https://www.dailymotion.com/embed/video/k6V2CaHv7bDeQlExqG2?queue-enable=false&sharing-enable=false&ui-logo=false&ui-start-screen-info=false&mute=false" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute; top:0; left:0; width:100%; height:100%;"></iframe></div>',
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_01',
@@ -1038,8 +1075,8 @@
             title: 'Introduction to Ethical Hacking',
             description: 'Understanding ethical hacking, legal aspects, hacking methodologies, and key security concepts. Learn about different types of hackers, hacking phases, and legal frameworks.',
             duration: '58:20',
-            unlocked: true,
-            embedCode: '<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;"><iframe width="100%" height="100%" src="https://www.dailymotion.com/embed/video/koTNweSut799lhEy9U4?queue-enable=false&sharing-enable=false&ui-logo=false&ui-start-screen-info=false&mute=false" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute; top:0; left:0; width:100%; height:100%;"></iframe></div>'
+            unlocked: false, // CHANGED: Now locked by default
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_02',
@@ -1048,7 +1085,7 @@
             description: 'Information gathering techniques, footprinting methodologies, and reconnaissance tools. Learn passive and active reconnaissance methods, DNS enumeration, and network mapping.',
             duration: '1:05:45',
             unlocked: false,
-            lockedReason: 'Complete Module 1 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_03',
@@ -1057,7 +1094,7 @@
             description: 'Network scanning techniques, port scanning methods, and vulnerability scanning. Learn about Nmap, ping sweeps, port states, and service detection.',
             duration: '1:12:30',
             unlocked: false,
-            lockedReason: 'Complete Module 2 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_04',
@@ -1066,7 +1103,7 @@
             description: 'System enumeration, extracting information from targets, and enumeration tools. Learn about NetBIOS, SNMP, LDAP, and NTP enumeration techniques.',
             duration: '1:08:15',
             unlocked: false,
-            lockedReason: 'Complete Module 3 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_05',
@@ -1075,7 +1112,7 @@
             description: 'Identifying and analyzing system vulnerabilities, vulnerability assessment tools. Learn about vulnerability scanners, risk assessment, and CVSS scoring.',
             duration: '1:15:40',
             unlocked: false,
-            lockedReason: 'Complete Module 4 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_06',
@@ -1084,7 +1121,7 @@
             description: 'System hacking techniques, password cracking, privilege escalation. Learn about password attacks, hash cracking, and privilege escalation methods.',
             duration: '1:20:25',
             unlocked: false,
-            lockedReason: 'Complete Module 5 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_07',
@@ -1093,7 +1130,7 @@
             description: 'Understanding malware, viruses, trojans, ransomware, and malware analysis. Learn about malware types, infection vectors, and analysis tools.',
             duration: '1:10:50',
             unlocked: false,
-            lockedReason: 'Complete Module 6 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_08',
@@ -1102,7 +1139,7 @@
             description: 'Network sniffing techniques, packet analysis, and sniffing tools. Learn about ARP poisoning, MAC flooding, and packet sniffing tools.',
             duration: '1:18:35',
             unlocked: false,
-            lockedReason: 'Complete Module 7 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_09',
@@ -1111,7 +1148,7 @@
             description: 'Social engineering attacks, human psychology, and prevention techniques. Learn about phishing, pretexting, baiting, and tailgating.',
             duration: '1:05:20',
             unlocked: false,
-            lockedReason: 'Complete Module 8 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_10',
@@ -1120,7 +1157,7 @@
             description: 'DoS and DDoS attacks, attack vectors, and mitigation strategies. Learn about SYN floods, UDP floods, and amplification attacks.',
             duration: '1:15:10',
             unlocked: false,
-            lockedReason: 'Complete Module 9 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_11',
@@ -1129,7 +1166,7 @@
             description: 'Session hijacking techniques, session fixation, and protection methods. Learn about cookie stealing, session prediction, and MITM attacks.',
             duration: '1:12:45',
             unlocked: false,
-            lockedReason: 'Complete Module 10 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_12',
@@ -1138,7 +1175,7 @@
             description: 'Bypassing security systems, intrusion detection, and evasion techniques. Learn about IDS/IPS evasion, firewall rules, and honeypot detection.',
             duration: '1:25:30',
             unlocked: false,
-            lockedReason: 'Complete Module 11 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_13',
@@ -1147,7 +1184,7 @@
             description: 'Web server attacks, server vulnerabilities, and web server security. Learn about Apache, IIS, Nginx vulnerabilities and attacks.',
             duration: '1:30:15',
             unlocked: false,
-            lockedReason: 'Complete Module 12 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_14',
@@ -1156,7 +1193,7 @@
             description: 'Web application vulnerabilities, OWASP Top 10, and exploitation techniques. Learn about XSS, CSRF, and injection attacks.',
             duration: '1:35:40',
             unlocked: false,
-            lockedReason: 'Complete Module 13 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_15',
@@ -1165,7 +1202,7 @@
             description: 'SQL injection attacks, blind SQLi, and prevention techniques. Learn about union-based, error-based, and time-based SQL injection.',
             duration: '1:28:25',
             unlocked: false,
-            lockedReason: 'Complete Module 14 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_16',
@@ -1174,7 +1211,7 @@
             description: 'Wireless security, WEP/WPA cracking, and wireless attack techniques. Learn about wardriving, evil twin attacks, and KRACK attacks.',
             duration: '1:22:10',
             unlocked: false,
-            lockedReason: 'Complete Module 15 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_17',
@@ -1183,7 +1220,7 @@
             description: 'Mobile security threats, Android/iOS vulnerabilities, and mobile hacking. Learn about mobile app reversing, jailbreaking, and rooting.',
             duration: '1:18:45',
             unlocked: false,
-            lockedReason: 'Complete Module 16 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_18',
@@ -1192,7 +1229,7 @@
             description: 'Internet of Things security, OT systems, and IoT vulnerabilities. Learn about IoT protocols, firmware analysis, and OT attacks.',
             duration: '1:20:30',
             unlocked: false,
-            lockedReason: 'Complete Module 17 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_19',
@@ -1201,7 +1238,7 @@
             description: 'Cloud security, cloud vulnerabilities, and cloud attack vectors. Learn about AWS, Azure, GCP security and attacks.',
             duration: '1:15:55',
             unlocked: false,
-            lockedReason: 'Complete Module 18 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         },
         {
             id: 'module_20',
@@ -1210,17 +1247,18 @@
             description: 'Cryptographic concepts, encryption algorithms, and cryptographic attacks. Learn about symmetric/asymmetric encryption, hashing, and digital signatures.',
             duration: '1:32:20',
             unlocked: false,
-            lockedReason: 'Complete Module 19 to unlock'
+            lockedReason: 'Purchase course to unlock all modules'
         }
     ];
     
     let currentModuleIndex = 0;
-    let completedModules = new Set(['module_00']);
+    let completedModules = new Set([]); // CHANGED: Empty by default
     let extremeSecurityActive = true;
     let isInitialized = false;
     let devToolsCheckInterval;
     let currentCourseId = 'ceh_v13'; // Default course
-    let userHasPaidAccess = false; // NEW: Track paid access status
+    let userHasPaidAccess = false; // Track paid access status
+    let isCEHCourse = true; // Track if this is CEH v13 course
 
     // ==================== KEYBOARD LOCKDOWN SYSTEM ====================
     
@@ -1469,9 +1507,9 @@
                     <div class="lock-overlay">
                         <div class="lock-icon">🔒</div>
                         <h3>Module Locked</h3>
-                        <p>${module.lockedReason || 'Complete previous modules to unlock'}</p>
-                        <button onclick="prevModule()" class="control-btn" style="margin-top:20px;background:rgba(0,255,0,0.1);">
-                            ← Return to Previous Module
+                        <p>${module.lockedReason || 'Purchase course to unlock this module'}</p>
+                        <button onclick="showPaymentRequired()" class="control-btn" style="margin-top:20px;background:linear-gradient(45deg, #FFD700, #FFA500);color:#000;font-weight:bold;">
+                            💰 Unlock All Modules
                         </button>
                     </div>
                 </div>
@@ -1514,7 +1552,11 @@
             
             if (!module.unlocked) {
                 moduleEl.addEventListener('click', () => {
-                    showLockedMessage(module.lockedReason || 'This module is locked. Please complete previous modules.');
+                    if (userHasPaidAccess) {
+                        selectModule(index);
+                    } else {
+                        showLockedMessage(module.lockedReason || 'Purchase course to unlock this module');
+                    }
                 });
             } else {
                 moduleEl.addEventListener('click', () => {
@@ -1661,7 +1703,7 @@
         // Unlock next module if available
         if (currentModuleIndex < courseModules.length - 1) {
             const nextModule = courseModules[currentModuleIndex + 1];
-            if (!nextModule.unlocked) {
+            if (!nextModule.unlocked && userHasPaidAccess) {
                 nextModule.unlocked = true;
                 showSecurityToast(`🔓 Module ${nextModule.number} unlocked!`);
                 
@@ -1790,7 +1832,7 @@
     function showSecurityInfo() {
         const paidInfo = userHasPaidAccess ? 
             '<p style="color:#00ff00;margin-top:10px;">⭐ <strong>PAID ACCESS ACTIVE</strong> - Full course unlocked</p>' : 
-            '<p style="color:#ff4444;margin-top:10px;">🔒 <strong>FREE ACCESS</strong> - Some modules may be locked</p>';
+            '<p style="color:#ff4444;margin-top:10px;">🔒 <strong>FREE TRIAL</strong> - First 2 modules available</p>';
         
         showSecurityAlert('Extreme Security Mode Active', `
             <div style="text-align:left;">
@@ -1922,6 +1964,7 @@
             // Get course ID from URL
             const urlParams = new URLSearchParams(window.location.search);
             currentCourseId = urlParams.get('course') || 'ceh_v13';
+            isCEHCourse = currentCourseId === 'ceh_v13';
             
             // Check if user has paid access
             const response = await fetch(`${API_BASE}/api/check-course-access`, {
@@ -1957,10 +2000,21 @@
         // Show payment required overlay
         const paymentOverlay = document.getElementById('payment-required-overlay');
         const paymentMessage = document.getElementById('payment-message-text');
+        const freeTrialInfo = document.getElementById('free-trial-info');
+        const tryFreeBtn = document.getElementById('try-free-btn');
         
         // Update course title in message
         const courseTitle = document.querySelector('.course-title').textContent;
         paymentMessage.textContent = `Purchase Required: ${courseTitle}`;
+        
+        // Show free trial info and button only for CEH v13
+        if (isCEHCourse) {
+            freeTrialInfo.style.display = 'block';
+            tryFreeBtn.style.display = 'inline-block';
+        } else {
+            freeTrialInfo.style.display = 'none';
+            tryFreeBtn.style.display = 'none';
+        }
         
         paymentOverlay.style.display = 'flex';
         
@@ -2020,6 +2074,46 @@
         }
     }
     
+    function tryFreeModules() {
+        // Unlock first 2 modules for free trial
+        if (isCEHCourse) {
+            courseModules[0].unlocked = true; // Module 00
+            courseModules[1].unlocked = true; // Module 01
+            
+            // Hide payment overlay
+            document.getElementById('payment-required-overlay').style.display = 'none';
+            
+            // Show course modules
+            document.getElementById('course-modules-section').style.display = 'flex';
+            
+            // Initialize modules
+            initializeModules();
+            
+            // Enable security features
+            enableKeyboardLockdown();
+            blockRightClick();
+            devToolsCheckInterval = protectDeveloperTools();
+            protectVideoDownload();
+            
+            // Log free trial start
+            logSecurityEvent(`free_trial_started_course_${currentCourseId}`);
+            
+            // Select first module
+            setTimeout(() => {
+                selectModule(0);
+                isInitialized = true;
+                
+                // Show trial info in security badge
+                const securityBadge = document.querySelector('.security-badge');
+                if (securityBadge) {
+                    securityBadge.innerHTML += ' | 🎁 FREE TRIAL';
+                }
+                
+                showSecurityToast('🎁 Free trial activated! First 2 modules unlocked.');
+            }, 100);
+        }
+    }
+    
     function goBackToVideos() {
         window.location.href = 'videos.html';
     }
@@ -2034,21 +2128,41 @@
             return;
         }
         
-        // NEW: Check if user has paid access
+        // Check if user has paid access
         const hasPaidAccess = await checkPaidAccess();
         
-        // NEW: If it's a premium course (not CEH v13) and user doesn't have paid access, show payment required
+        // Update course title based on course ID
         const urlParams = new URLSearchParams(window.location.search);
         const courseId = urlParams.get('course') || 'ceh_v13';
         
-        // List of courses that require payment (all except ceh_v13 which has free access via password)
-        const premiumCourses = ['ccna', 'python', 'cybersecurity', 'linux', 'web_security', 
-                                'c_programming', 'ethical_hacking', 'network_security', 'cloud_security'];
+        // Define course titles
+        const courseTitles = {
+            'ceh_v13': 'CEH v13 - Certified Ethical Hacker',
+            'ccna': 'CCNA - Cisco Certified Network Associate',
+            'python': 'Python Programming',
+            'cybersecurity': 'Cybersecurity Fundamentals',
+            'linux': 'Linux Administration',
+            'web_security': 'Web Security',
+            'c_programming': 'C Programming',
+            'ethical_hacking': 'Ethical Hacking',
+            'network_security': 'Network Security',
+            'cloud_security': 'Cloud Security'
+        };
         
-        if (premiumCourses.includes(courseId) && !hasPaidAccess) {
+        const courseTitle = courseTitles[courseId] || 'CEH v13 - Certified Ethical Hacker';
+        document.getElementById('course-title-text').textContent = courseTitle;
+        
+        // If user doesn't have paid access, show payment required
+        if (!hasPaidAccess) {
             showPaymentRequired();
             return;
         }
+        
+        // User has paid access - unlock all modules
+        userHasPaidAccess = true;
+        courseModules.forEach(module => {
+            module.unlocked = true;
+        });
         
         // Show warning first
         showWarning();
@@ -2083,13 +2197,11 @@
                 selectModule(0);
                 isInitialized = true;
                 
-                // NEW: Show paid access badge if applicable
-                if (hasPaidAccess) {
-                    document.getElementById('paid-badge').style.display = 'inline-flex';
-                    const securityBadge = document.querySelector('.security-badge');
-                    if (securityBadge) {
-                        securityBadge.innerHTML += ' | ⭐ PAID ACCESS';
-                    }
+                // Show paid access badge
+                document.getElementById('paid-badge').style.display = 'inline-flex';
+                const securityBadge = document.querySelector('.security-badge');
+                if (securityBadge) {
+                    securityBadge.innerHTML += ' | ⭐ PAID ACCESS';
                 }
             }, 100);
             
