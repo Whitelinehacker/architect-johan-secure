@@ -16,6 +16,7 @@ import json
 import base64
 import hashlib
 import hmac
+import razorpay  # NEW: Added razorpay import
 
 # Try to import MongoDB modules
 try:
@@ -44,8 +45,22 @@ JWT_SECRET = os.getenv('JWT_SECRET', 'your-jwt-secret-here')
 SESSION_TIMEOUT = int(os.getenv('SESSION_TIMEOUT', 3600))
 MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/architect_johan')
 
-# Razorpay Configuration - NEW
-RAZORPAY_WEBHOOK_SECRET = os.getenv('RAZORPAY_WEBHOOK_SECRET', 'your-razorpay-webhook-secret')
+# Razorpay Configuration - UPDATED
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', '')
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', '')
+RAZORPAY_WEBHOOK_SECRET = os.getenv('RAZORPAY_WEBHOOK_SECRET', '')
+RAZORPAY_WEBHOOK_URL = os.getenv('WEBHOOK_URL', '')
+
+# Initialize Razorpay client - NEW
+razorpay_client = None
+if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
+    try:
+        razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+        print("✅ Razorpay client initialized")
+    except Exception as e:
+        print(f"❌ Razorpay client initialization failed: {e}")
+else:
+    print("⚠️ Razorpay keys not configured")
 
 # Email configuration (keeping for password reset only)
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
@@ -1516,16 +1531,147 @@ def verify_exam_level_password(current_user):
         logger.error(f"Exam level password verification error: {e}")
         return jsonify({'error': 'Password verification failed'}), 500
 
-# NEW: Razorpay Webhook Endpoint
+# NEW: Razorpay Order Creation Endpoint
+@app.route('/api/create-order', methods=['POST'])
+@token_required
+def create_order(current_user):
+    """Create Razorpay order for course purchase"""
+    try:
+        data = request.get_json()
+        course_id = data.get('course_id')
+        amount = data.get('amount', 100)  # ₹1 for testing, change to 99900 for ₹999
+        currency = data.get('currency', 'INR')
+        
+        if not course_id:
+            return jsonify({'error': 'Course ID required'}), 400
+        
+        # Get course title
+        course_titles = {
+            'ceh_v13': 'CEH v13 - Certified Ethical Hacker',
+            'ccna': 'CCNA - Cisco Certified Network Associate',
+            'python': 'Python Programming',
+            'cybersecurity': 'Cybersecurity Fundamentals',
+            'linux': 'Linux Administration',
+            'web_security': 'Web Security',
+            'c_programming': 'C Programming',
+            'ethical_hacking': 'Ethical Hacking',
+            'network_security': 'Network Security',
+            'cloud_security': 'Cloud Security'
+        }
+        course_title = course_titles.get(course_id, course_id.replace('_', ' ').title())
+        
+        # Get user info
+        user = get_user_by_username(current_user)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Check Razorpay client
+        if razorpay_client is None:
+            return jsonify({'error': 'Payment system not configured'}), 500
+        
+        # Create Razorpay order
+        order_data = {
+            'amount': amount,
+            'currency': currency,
+            'receipt': f'order_{int(datetime.datetime.utcnow().timestamp())}',
+            'notes': {
+                'username': current_user,
+                'email': user.get('email', ''),
+                'course_id': course_id,
+                'course_name': course_title
+            },
+            'payment_capture': 1  # Auto-capture payment
+        }
+        
+        order = razorpay_client.order.create(data=order_data)
+        
+        logger.info(f"Order created: {order['id']} for {current_user}, course: {course_id}")
+        
+        return jsonify({
+            'success': True,
+            'order_id': order['id'],
+            'amount': order['amount'],
+            'currency': order['currency'],
+            'key_id': RAZORPAY_KEY_ID
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Order creation error: {e}")
+        return jsonify({'error': 'Failed to create order'}), 500
+
+# NEW: Payment Verification Endpoint
+@app.route('/api/verify-payment', methods=['POST'])
+@token_required
+def verify_payment(current_user):
+    """Verify Razorpay payment signature"""
+    try:
+        data = request.get_json()
+        
+        razorpay_payment_id = data.get('razorpay_payment_id')
+        razorpay_order_id = data.get('razorpay_order_id')
+        razorpay_signature = data.get('razorpay_signature')
+        course_id = data.get('course_id')
+        
+        if not all([razorpay_payment_id, razorpay_order_id, razorpay_signature, course_id]):
+            return jsonify({'error': 'Missing payment details'}), 400
+        
+        # Verify payment signature
+        body = razorpay_order_id + "|" + razorpay_payment_id
+        expected_signature = hmac.new(
+            RAZORPAY_KEY_SECRET.encode('utf-8'),
+            body.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+        
+        if not hmac.compare_digest(razorpay_signature, expected_signature):
+            logger.error(f"Invalid signature for payment: {razorpay_payment_id}")
+            return jsonify({'error': 'Invalid payment signature'}), 400
+        
+        # Grant course access
+        access_granted = add_course_access(current_user, course_id, razorpay_payment_id)
+        
+        if access_granted:
+            # Log successful payment
+            payment_coll = get_payment_logs_collection()
+            if payment_coll:
+                payment_coll.insert_one({
+                    "razorpay_payment_id": razorpay_payment_id,
+                    "razorpay_order_id": razorpay_order_id,
+                    "username": current_user,
+                    "course_id": course_id,
+                    "amount": data.get('amount', 100) / 100,  # Convert paise to rupees
+                    "currency": data.get('currency', 'INR'),
+                    "status": "captured",
+                    "verified": True,
+                    "verified_at": datetime.datetime.utcnow(),
+                    "created_at": datetime.datetime.utcnow(),
+                    "source": "frontend_verification"
+                })
+            
+            logger.info(f"Payment verified: {current_user} -> {course_id}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Payment verified and course access granted',
+                'payment_id': razorpay_payment_id,
+                'course_id': course_id
+            }), 200
+        else:
+            return jsonify({'error': 'Failed to grant course access'}), 500
+            
+    except Exception as e:
+        logger.error(f"Payment verification error: {e}")
+        return jsonify({'error': 'Payment verification failed'}), 500
+
+# Razorpay Webhook Endpoint (existing - updated)
 @app.route('/api/razorpay/webhook', methods=['POST'])
 def razorpay_webhook():
     """Handle Razorpay payment webhooks - idempotent and secure"""
     try:
         # Get webhook signature
         razorpay_signature = request.headers.get('X-Razorpay-Signature')
-        webhook_secret = RAZORPAY_WEBHOOK_SECRET
         
-        if not razorpay_signature or not webhook_secret:
+        if not razorpay_signature or not RAZORPAY_WEBHOOK_SECRET:
             logger.error("Razorpay webhook signature or secret missing")
             return jsonify({'error': 'Webhook configuration missing'}), 400
         
@@ -1534,7 +1680,7 @@ def razorpay_webhook():
         
         # Verify webhook signature
         expected_signature = hmac.new(
-            webhook_secret.encode('utf-8'),
+            RAZORPAY_WEBHOOK_SECRET.encode('utf-8'),
             request_body.encode('utf-8'),
             hashlib.sha256
         ).hexdigest()
@@ -1595,7 +1741,8 @@ def razorpay_webhook():
                         "notes": notes,
                         "processed": True,
                         "created_at": datetime.datetime.utcnow(),
-                        "access_granted": True
+                        "access_granted": True,
+                        "source": "webhook"
                     })
                 
                 # Log user activity
@@ -1626,7 +1773,8 @@ def razorpay_webhook():
                     "error_description": error_description,
                     "processed": False,
                     "created_at": datetime.datetime.utcnow(),
-                    "access_granted": False
+                    "access_granted": False,
+                    "source": "webhook"
                 })
             
             return jsonify({'message': 'Payment failure logged'}), 200
@@ -2454,7 +2602,8 @@ def health_check():
         'timestamp': datetime.datetime.utcnow().isoformat(),
         'database': 'connected' if get_mongo_client() is not None else 'disconnected',
         'video_endpoints': 'available',
-        'razorpay_webhook': 'configured' if RAZORPAY_WEBHOOK_SECRET else 'not_configured'  # NEW
+        'razorpay_configured': 'yes' if razorpay_client is not None else 'no',
+        'razorpay_webhook': 'configured' if RAZORPAY_WEBHOOK_SECRET else 'not_configured'
     }), 200
 
 # Practice Set File Serving Routes
@@ -2732,8 +2881,8 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Architect Johan Secure Server...")
     print(f"🔐 Authentication System: ENABLED")
-    print(f"💰 Paid Course System: ENABLED")  # NEW
-    print(f"🧾 Razorpay Webhook: {'ENABLED' if RAZORPAY_WEBHOOK_SECRET else 'DISABLED'}")  # NEW
+    print(f"💰 Razorpay Payment System: {'ENABLED' if razorpay_client is not None else 'DISABLED'}")
+    print(f"🧾 Razorpay Webhook: {'ENABLED' if RAZORPAY_WEBHOOK_SECRET else 'DISABLED'}")
     print(f"🗄️ Database: MongoDB (pymongo)")
     print(f"🌐 Server running on port: {port}")
     print(f"📊 MongoDB Available: {MONGODB_AVAILABLE}")
@@ -2756,7 +2905,9 @@ if __name__ == '__main__':
     print(f"🔑 JWT_SECRET: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
     print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
     print(f"🎥 VIDEO_PASSWORD: {'✅ Set' if os.getenv('VIDEO_PASSWORD') else '❌ Using Default'}")
-    print(f"💰 RAZORPAY_WEBHOOK_SECRET: {'✅ Set' if RAZORPAY_WEBHOOK_SECRET else '❌ Missing'}")  # NEW
+    print(f"💰 RAZORPAY_KEY_ID: {'✅ Set' if RAZORPAY_KEY_ID else '❌ Missing'}")
+    print(f"💰 RAZORPAY_KEY_SECRET: {'✅ Set' if RAZORPAY_KEY_SECRET else '❌ Missing'}")
+    print(f"💰 RAZORPAY_WEBHOOK_SECRET: {'✅ Set' if RAZORPAY_WEBHOOK_SECRET else '❌ Missing'}")
     
     # Print course passwords for reference (DEPRECATED - kept for backward compatibility)
     print("\n📚 COURSE PASSWORDS (DEPRECATED - for non-paid users only):")
