@@ -656,8 +656,8 @@
             <p class="buy-description" id="buy-modal-description"></p>
             
             <div class="price-tag">
-                <div class="price-amount">₹999</div>
-                <div class="price-note">One-time payment • Lifetime access</div>
+                <div class="price-amount">₹1</div>
+                <div class="price-note">One-time payment • Lifetime access • Test Payment</div>
             </div>
 
             <div style="margin: 20px 0;">
@@ -856,7 +856,7 @@
                         }
                         ${!isPaid && category.id !== 'ceh_v13' ? 
                             `<button class="action-btn premium" onclick="showBuyModal('${category.id}')">
-                                💰 Buy Now
+                                💰 Buy Now (₹1 Test)
                             </button>` : 
                             `<button class="action-btn secondary" onclick="viewDetails('${category.id}')">
                                 ℹ️ Details
@@ -939,6 +939,11 @@
             state.currentCategory = categoryId;
             buyModalTitleEl.textContent = `Purchase: ${category.title}`;
             buyModalDescEl.textContent = `Get lifetime access to "${category.title}" with ${category.videos_count} videos (${category.duration})`;
+            
+            // Update price for test
+            document.querySelector('.price-amount').textContent = '₹1';
+            document.querySelector('.price-note').textContent = 'One-time payment • Lifetime access • Test Payment';
+            
             buyModalEl.classList.add('active');
         }
 
@@ -948,8 +953,8 @@
             state.currentCategory = null;
         }
 
-        // NEW: Initiate Purchase
-        function initiatePurchase() {
+        // NEW: Initiate Purchase - UPDATED
+        async function initiatePurchase() {
             const categoryId = state.currentCategory;
             const category = state.categories[categoryId];
             if (!category) return;
@@ -960,48 +965,138 @@
                 return;
             }
 
-            // Decode token to get username
+            // Check if Razorpay is loaded
+            if (typeof Razorpay === 'undefined') {
+                alert('Payment system not loaded. Please refresh the page.');
+                return;
+            }
+
             try {
+                // Create order on server first
+                const orderResponse = await fetch(`${API_BASE}/api/create-order`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        course_id: categoryId,
+                        amount: 100, // ₹1 for testing
+                        currency: 'INR'
+                    })
+                });
+
+                if (!orderResponse.ok) {
+                    const errorData = await orderResponse.json();
+                    throw new Error(errorData.error || 'Failed to create order');
+                }
+
+                const orderData = await orderResponse.json();
+                
+                // Get user info from token
                 const tokenData = JSON.parse(atob(token.split('.')[1]));
                 const username = tokenData.username;
+                
+                // Get user email (use default if not available)
+                let userEmail = `${username}@gmail.com`;
+                try {
+                    const profileResponse = await fetch(`${API_BASE}/api/user-profile`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (profileResponse.ok) {
+                        const profileData = await profileResponse.json();
+                        if (profileData.email) {
+                            userEmail = profileData.email;
+                        }
+                    }
+                } catch (e) {
+                    console.log('Using default email');
+                }
 
-                // Create Razorpay order
+                // Configure Razorpay options
                 const options = {
-                    key: 'rzp_test_YOUR_RAZORPAY_KEY', // Replace with your Razorpay key
-                    amount: 99900, // ₹999 in paise
-                    currency: 'INR',
+                    key: orderData.key_id, // Key from server response
+                    amount: orderData.amount,
+                    currency: orderData.currency,
+                    order_id: orderData.order_id,
                     name: 'Architect Johan',
                     description: `Purchase: ${category.title}`,
-                    image: 'https://architect-johan-secure.onrender.com/assets/logo.png',
-                    handler: function(response) {
-                        // Handle successful payment
-                        alert('Payment successful! Course access will be granted shortly.');
-                        closeBuyModal();
+                    image: '/assets/logo.png',
+                    handler: async function(response) {
+                        console.log('Payment successful:', response);
                         
-                        // Refresh video library to show updated access
-                        setTimeout(() => {
-                            loadVideoLibrary();
-                        }, 2000);
+                        // Verify payment with server
+                        try {
+                            const verifyResponse = await fetch(`${API_BASE}/api/verify-payment`, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    course_id: categoryId,
+                                    amount: 100, // ₹1 for testing
+                                    currency: 'INR'
+                                })
+                            });
+                            
+                            const verifyData = await verifyResponse.json();
+                            
+                            if (verifyResponse.ok && verifyData.success) {
+                                alert('🎉 Payment successful! Course access granted.');
+                                closeBuyModal();
+                                
+                                // Refresh video library to show updated access
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 2000);
+                            } else {
+                                alert('Payment verification failed: ' + (verifyData.error || 'Please contact support'));
+                            }
+                        } catch (error) {
+                            console.error('Payment verification error:', error);
+                            alert('Payment received but verification failed. Please contact support.');
+                        }
                     },
                     prefill: {
                         name: username,
-                        email: `${username}@gmail.com` // Assuming Gmail
+                        email: userEmail,
+                        contact: '9999999999'
                     },
                     notes: {
                         username: username,
-                        course_id: categoryId
+                        course_id: categoryId,
+                        course_name: category.title
                     },
                     theme: {
                         color: '#00ff00'
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            console.log('Payment modal closed by user');
+                        },
+                        escape: true,
+                        backdropclose: false
                     }
                 };
 
+                // Open payment modal
                 const rzp = new Razorpay(options);
+                
+                // Handle payment failure
+                rzp.on('payment.failed', function(response) {
+                    console.error('Payment failed:', response.error);
+                    alert(`Payment failed: ${response.error.description || 'Please try again'}`);
+                });
+
                 rzp.open();
                 
             } catch (error) {
-                console.error('Error initiating purchase:', error);
-                alert('Error initiating purchase. Please try again.');
+                console.error('Purchase error:', error);
+                alert('Error: ' + error.message);
             }
         }
 
