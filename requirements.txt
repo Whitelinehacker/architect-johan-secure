@@ -7,4 +7,4 @@ pymongo==4.5.0
 Werkzeug==2.3.7
 requests==2.31.0
 certifi==2023.11.17
-razorpay==1.4.3  # <-- ADD THIS LINE
+razorpay==1.4.2  # <-- CHANGE FROM 1.4.3 to 1.4.2
