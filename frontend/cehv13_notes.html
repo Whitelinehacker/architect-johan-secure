@@ -223,17 +223,21 @@
             box-shadow: 0 0 15px rgba(46, 198, 255, 0.5);
         }
 
+        /* FIXED: Module number styling for two-digit numbers */
         .module-number {
-            display: inline-block;
-            width: 25px;
-            height: 25px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;  /* Increased from 25px to accommodate two digits */
+            height: 28px;
             background: rgba(0, 255, 179, 0.2);
             border-radius: 50%;
             text-align: center;
-            line-height: 25px;
-            margin-right: 10px;
+            line-height: 1;
+            margin-right: 12px;
             font-size: 12px;
             font-weight: bold;
+            padding: 0 2px;
         }
 
         /* Content area */
@@ -318,10 +322,10 @@
             transform: none;
         }
 
-        /* PDF viewer - UPDATED */
+        /* PDF viewer */
         .pdf-viewer {
             width: 100%;
-            height: 800px; /* Increased height */
+            height: 800px;
             border: 1px solid rgba(0, 255, 179, 0.3);
             border-radius: 10px;
             overflow: hidden;
@@ -692,10 +696,10 @@
         }
 
         // ==================== CEH MODULES FUNCTIONALITY ====================
+        // FIXED: Reordered modules to put ID 21 at the end
         const cehModules = [
             { id: 1, title: "Introduction to Ethical Hacking", pdf: "../downloads/ceh/With Watermark Architect Johan notes/CEHv13 Module 01 Introduction to Ethical Hacking Architect Johan.pdf" },
             { id: 2, title: "Footprinting and Reconnaissance", pdf: "../downloads/ceh/With Watermark Architect Johan notes/CEHv13 Module 02 Footprinting and Reconnaissance Architect Johan.pdf" },
-            {id: 21, title: "Google hacking dork", pdf: "../downloads/ceh/With Watermark Architect Johan notes/Google hacking dork.pdf" },
             { id: 3, title: "Scanning Networks", pdf: "../downloads/ceh/With Watermark Architect Johan notes/CEHv13 Module 03 Scanning Networks Architect Johan.pdf" },
             { id: 4, title: "Enumeration", pdf: "../downloads/ceh/With Watermark Architect Johan notes/CEHv13 Module 04 Enumeration Architect Johan.pdf" },
             { id: 5, title: "Vulnerability Analysis", pdf: "../downloads/ceh/With Watermark Architect Johan notes/CEHv13 Module 05 Vulnerability Analysis Architect Johan.pdf" },
@@ -713,8 +717,14 @@
             { id: 17, title: "Hacking Mobile Platforms", pdf: "../downloads/ceh/With Watermark Architect Johan notes/CEHv13 Module 17 Hacking Mobile Platforms Architect Johan.pdf" },
             { id: 18, title: "IoT and OT Hacking", pdf: "../downloads/ceh/With Watermark Architect Johan notes/CEHv13 Module 18 IoT & OT Hacking Architect Johan.pdf" },
             { id: 19, title: "Cloud Computing", pdf: "../downloads/ceh/With Watermark Architect Johan notes/CEHv13 Module 19 Cloud Computing Architect Johan.pdf" },
-            { id: 20, title: "Cryptography", pdf: "../downloads/ceh/With Watermark Architect Johan notes/CEHv13 Module 20 Cryptography Architect Johan.pdf" }
+            { id: 20, title: "Cryptography", pdf: "../downloads/ceh/With Watermark Architect Johan notes/CEHv13 Module 20 Cryptography Architect Johan.pdf" },
+            { id: 21, title: "Google Hacking Dork - OSINT Techniques", pdf: "../downloads/ceh/With Watermark Architect Johan notes/Google hacking dork.pdf" }
         ];
+
+        // Debug: Check if module 21 exists
+        console.log('Total modules:', cehModules.length);
+        console.log('Module 21 exists:', cehModules.some(m => m.id === 21));
+        console.log('All module IDs:', cehModules.map(m => m.id).join(', '));
 
         // Populate modules list
         const modulesList = document.querySelector('.modules-list');
