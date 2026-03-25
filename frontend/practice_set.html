@@ -1177,7 +1177,7 @@
         let currentAction = 'start';
 
         function openPasswordModalForSet(setId, action = 'start') {
-            currentSetId = setId;
+            currentSetId = parseInt(setId, 10);
             currentAction = action;
             
             const modal = document.getElementById('passwordModal');
@@ -1288,7 +1288,12 @@
                             redirectUrl = 'practice_set_9.html';
                             break;
                         default:
-                            redirectUrl = 'practice_set_1.html';
+                            console.error('Unknown practice set ID:', currentSetId);
+                            errorMessage.textContent = 'Unknown practice set. Please try again.';
+                            errorMessage.classList.add('show');
+                            submitBtn.textContent = 'Access Practice Set';
+                            submitBtn.disabled = false;
+                            return;
                     }
                     
                     console.log('Redirecting to:', redirectUrl);
