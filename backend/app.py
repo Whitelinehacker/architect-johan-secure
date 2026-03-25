@@ -1474,7 +1474,7 @@ def verify_practice_password(current_user):
                 # It's a course, redirect to course player
                 redirect_url = f'course-player.html?course={practice_set}'
             elif practice_set == 'practice_set_1':
-                redirect_url = 'practic_set.html'
+                redirect_url = 'practice_set_1.html'
             elif practice_set == 'ceh_study_notes':
                 redirect_url = 'cehv13_notes.html'
             else:
