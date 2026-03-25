@@ -1255,11 +1255,12 @@
                         await resetPracticeProgress(currentSetId);
                     }
                     
+                    const setIdToRedirect = currentSetId; // save before closePasswordModal resets it
                     closePasswordModal();
                     
                     // Redirect to practice set with action parameter
                     let redirectUrl;
-                    switch(currentSetId) {
+                    switch(setIdToRedirect) {
                         case 1:
                             redirectUrl = 'practice_set_1.html';
                             break;
@@ -1303,7 +1304,7 @@
                     url.searchParams.set('action', currentAction);
                     
                     if (currentAction === 'resume') {
-                        const progress = getPracticeProgress(currentSetId);
+                        const progress = getPracticeProgress(setIdToRedirect);
                         url.searchParams.set('question', progress.currentQuestion);
                     }
                     
