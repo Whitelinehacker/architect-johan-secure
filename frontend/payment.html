@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Payment — Architect Johan</title>
+    <!-- Razorpay Checkout SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Courier New', Consolas, monospace;
+            background: linear-gradient(135deg, #02040A 0%, #0A0F2D 50%, #02040A 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            overflow-x: hidden;
+        }
+
+        /* ── Matrix Canvas ── */
+        #matrix-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        /* ── Card ── */
+        .payment-card {
+            position: relative;
+            z-index: 10;
+            background: rgba(2, 4, 10, 0.97);
+            border: 2px solid #00FFB3;
+            border-radius: 24px;
+            padding: 40px 36px;
+            max-width: 520px;
+            width: 100%;
+            box-shadow: 0 0 60px rgba(0,255,179,0.35),
+                        inset 0 0 40px rgba(0,255,179,0.04);
+            animation: fadeSlideIn 0.6s ease;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Header ── */
+        .pay-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .lock-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            display: block;
+            filter: drop-shadow(0 0 12px rgba(0,255,179,0.7));
+        }
+
+        .pay-header h1 {
+            font-size: 26px;
+            color: #00FFB3;
+            text-shadow: 0 0 12px rgba(0,255,179,0.5);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .pay-header p {
+            color: #2EC6FF;
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+
+        /* ── Product Summary ── */
+        .product-box {
+            background: rgba(0,255,179,0.06);
+            border: 1px solid rgba(0,255,179,0.3);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 28px;
+        }
+
+        .product-label {
+            font-size: 11px;
+            color: #2EC6FF;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+
+        .product-title {
+            font-size: 18px;
+            color: #00FFB3;
+            font-weight: bold;
+            margin-bottom: 14px;
+            letter-spacing: 1px;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(0,255,179,0.15);
+            padding-top: 14px;
+        }
+
+        .price-row .label { color: #2EC6FF; font-size: 13px; }
+
+        .price-row .amount {
+            font-size: 28px;
+            color: #FFD700;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+
+        .original-price {
+            font-size: 13px;
+            color: rgba(255,255,255,0.3);
+            text-decoration: line-through;
+            margin-left: 8px;
+        }
+
+        .discount-tag {
+            background: rgba(255,69,0,0.2);
+            border: 1px solid rgba(255,69,0,0.5);
+            color: #FF6B35;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-left: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Form ── */
+        .form-section { margin-bottom: 24px; }
+
+        .form-section h3 {
+            color: #00FFB3;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group { margin-bottom: 16px; }
+
+        label {
+            display: block;
+            color: #2EC6FF;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0,255,179,0.05);
+            border: 1.5px solid rgba(0,255,179,0.3);
+            border-radius: 10px;
+            color: #00FFB3;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #00FFB3;
+            box-shadow: 0 0 15px rgba(0,255,179,0.25);
+            background: rgba(0,255,179,0.08);
+        }
+
+        input::placeholder { color: rgba(0,255,179,0.3); }
+
+        input.error {
+            border-color: #FF004C;
+            box-shadow: 0 0 10px rgba(255,0,76,0.3);
+        }
+
+        .error-msg {
+            color: #FF004C;
+            font-size: 11px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        /* ── Security Badges ── */
+        .security-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .sec-badge {
+            flex: 1;
+            min-width: 130px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 12px;
+            background: rgba(0,255,179,0.06);
+            border: 1px solid rgba(0,255,179,0.2);
+            border-radius: 10px;
+            font-size: 11px;
+            color: #2EC6FF;
+            letter-spacing: 0.5px;
+        }
+
+        .sec-badge .icon { font-size: 16px; }
+
+        /* ── Pay Button ── */
+        .pay-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #02040A;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 25px rgba(255,165,0,0.45);
+        }
+
+        .pay-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            background: rgba(255,255,255,0.35);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .pay-btn:hover::before { width: 500px; height: 500px; }
+
+        .pay-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 40px rgba(255,165,0,0.7);
+        }
+
+        .pay-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── Footer note ── */
+        .footer-note {
+            text-align: center;
+            margin-top: 20px;
+            color: rgba(0,255,179,0.4);
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            line-height: 1.8;
+        }
+
+        .footer-note a {
+            color: #2EC6FF;
+            text-decoration: none;
+        }
+
+        .footer-note a:hover { text-shadow: 0 0 8px rgba(46,198,255,0.8); }
+
+        /* ── Back Link ── */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #2EC6FF;
+            text-decoration: none;
+            font-size: 13px;
+            letter-spacing: 1px;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        .back-link:hover {
+            color: #00FFB3;
+            text-shadow: 0 0 8px rgba(0,255,179,0.5);
+        }
+
+        /* ── Success Overlay ── */
+        .success-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2,4,10,0.97);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .success-overlay.show { display: flex; animation: fadeSlideIn 0.5s ease; }
+
+        .success-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(0,255,179,0.8));
+        }
+
+        .success-overlay h2 {
+            font-size: 30px;
+            color: #00FFB3;
+            text-shadow: 0 0 15px rgba(0,255,179,0.6);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+        }
+
+        .success-overlay p {
+            color: #2EC6FF;
+            font-size: 15px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .success-download-btn {
+            display: inline-block;
+            padding: 14px 36px;
+            background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
+            color: #02040A;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 15px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-radius: 12px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 25px rgba(0,255,179,0.4);
+        }
+
+        .success-download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0,255,179,0.7);
+        }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            top: 24px; right: 24px;
+            padding: 14px 22px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+        }
+
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        .toast.success {
+            background: rgba(0,255,179,0.15);
+            border: 1px solid #00FFB3;
+            color: #00FFB3;
+        }
+
+        .toast.error {
+            background: rgba(255,0,76,0.15);
+            border: 1px solid #FF004C;
+            color: #FF004C;
+        }
+
+        @media (max-width: 480px) {
+            .payment-card { padding: 28px 20px; }
+            .pay-header h1 { font-size: 20px; }
+            .security-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- Main Payment Card -->
+<a href="software_downloads.html" class="back-link">← Back to Software Tools</a>
+
+<div class="payment-card">
+
+    <div class="pay-header">
+        <span class="lock-icon">🔐</span>
+        <h1>Secure Checkout</h1>
+        <p>256-bit SSL Encrypted &nbsp;|&nbsp; Powered by Razorpay</p>
+    </div>
+
+    <!-- Product Summary -->
+    <div class="product-box">
+        <div class="product-label">You are purchasing</div>
+        <div class="product-title" id="module-title">Loading...</div>
+        <div class="price-row">
+            <span class="label">Total Amount</span>
+            <div style="display:flex; align-items:baseline; gap:4px;">
+                <span class="amount">₹150</span>
+                <span class="original-price">₹499</span>
+                <span class="discount-tag">70% OFF</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buyer Details -->
+    <div class="form-section">
+        <h3>📋 Your Details</h3>
+
+        <div class="form-group">
+            <label for="buyer-name">Full Name *</label>
+            <input type="text" id="buyer-name" placeholder="Enter your full name" maxlength="80" autocomplete="name">
+            <div class="error-msg" id="name-err">Please enter your full name.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="buyer-email">Email Address *</label>
+            <input type="email" id="buyer-email" placeholder="your@gmail.com" maxlength="120" autocomplete="email">
+            <div class="error-msg" id="email-err">Please enter a valid email address.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="buyer-mobile">Mobile Number *</label>
+            <input type="tel" id="buyer-mobile" placeholder="10-digit mobile number" maxlength="10" autocomplete="tel">
+            <div class="error-msg" id="mobile-err">Please enter a valid 10-digit mobile number.</div>
+        </div>
+    </div>
+
+    <!-- Security Badges -->
+    <div class="security-row">
+        <div class="sec-badge"><span class="icon">🔒</span> SSL Secured</div>
+        <div class="sec-badge"><span class="icon">🛡️</span> PCI DSS Safe</div>
+        <div class="sec-badge"><span class="icon">✅</span> Instant Access</div>
+        <div class="sec-badge"><span class="icon">💳</span> UPI / Cards</div>
+    </div>
+
+    <!-- Pay Button -->
+    <button class="pay-btn" id="pay-btn" onclick="initiatePayment()">
+        🔐 Pay ₹150 Securely
+    </button>
+
+    <div class="footer-note">
+        By completing payment you agree to our
+        <a href="#">Terms of Service</a> &amp; <a href="#">Refund Policy</a>.<br>
+        Your data is encrypted and never stored on our servers.<br>
+        <strong style="color:rgba(0,255,179,0.5);">Architect Johan © 2025</strong>
+    </div>
+
+</div>
+
+<!-- Success Overlay -->
+<div class="success-overlay" id="success-overlay">
+    <span class="success-icon">🎉</span>
+    <h2>Payment Successful!</h2>
+    <p id="success-msg">Your purchase is confirmed.<br>Click below to download your module.</p>
+    <a href="#" id="download-link" class="success-download-btn" target="_blank">
+        📥 Download Now
+    </a>
+    <p style="margin-top:20px; color:rgba(0,255,179,0.4); font-size:12px;">
+        A confirmation will be sent to your email.
+    </p>
+</div>
+
+<!-- Matrix Script -->
+<script>
+    (function initMatrix() {
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+        resize();
+        window.addEventListener('resize', resize);
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+        const fontSize = 14;
+        let drops = [];
+        function reset() {
+            drops = Array.from({ length: Math.floor(canvas.width / fontSize) }, () => Math.random() * -100);
+        }
+        reset();
+        window.addEventListener('resize', reset);
+        setInterval(() => {
+            ctx.fillStyle = 'rgba(2,4,10,0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00FFB3';
+            ctx.font = fontSize + 'px monospace';
+            drops.forEach((d, i) => {
+                const c = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(c, i * fontSize, d * fontSize);
+                if (d * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            });
+        }, 50);
+    })();
+</script>
+
+<script>
+    // ── Config ──────────────────────────────────────────────
+    // NO keys stored here — all secrets live in .env on the server
+    const API_BASE_URL  = 'https://architect-johan-secure.onrender.com';
+    const PRICE_PAISE   = 15000;   // ₹150 — enforced server-side, shown for UX only
+    const CURRENCY      = 'INR';
+    const COMPANY_NAME  = 'Architect Johan';
+
+    // ── Purchase data (set by software_downloads.html) ──────
+    let purchaseData = null;
+
+    function loadPurchaseData() {
+        try {
+            const raw = sessionStorage.getItem('pending_purchase');
+            if (!raw) throw new Error('No purchase data');
+            purchaseData = JSON.parse(raw);
+
+            // Reject sessions older than 30 minutes
+            if (Date.now() - purchaseData.timestamp > 30 * 60 * 1000)
+                throw new Error('Session expired');
+
+            document.getElementById('module-title').textContent =
+                'Module #' + purchaseData.moduleId + ' — ' + purchaseData.moduleTitle;
+
+            // Pre-fill saved user info
+            const savedName  = localStorage.getItem('full_name');
+            const savedEmail = localStorage.getItem('email');
+            if (savedName)  document.getElementById('buyer-name').value  = savedName;
+            if (savedEmail) document.getElementById('buyer-email').value = savedEmail;
+
+        } catch (e) {
+            showToast('❌ Invalid session. Redirecting…', 'error');
+            setTimeout(() => window.location.href = 'software_downloads.html', 2500);
+        }
+    }
+
+    // ── Form Validation ──────────────────────────────────────
+    function validateForm() {
+        let valid = true;
+        const name   = document.getElementById('buyer-name').value.trim();
+        const email  = document.getElementById('buyer-email').value.trim();
+        const mobile = document.getElementById('buyer-mobile').value.trim();
+
+        const nameErr   = document.getElementById('name-err');
+        const emailErr  = document.getElementById('email-err');
+        const mobileErr = document.getElementById('mobile-err');
+
+        if (name.length < 2) {
+            document.getElementById('buyer-name').classList.add('error');
+            nameErr.style.display = 'block'; valid = false;
+        } else {
+            document.getElementById('buyer-name').classList.remove('error');
+            nameErr.style.display = 'none';
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            document.getElementById('buyer-email').classList.add('error');
+            emailErr.style.display = 'block'; valid = false;
+        } else {
+            document.getElementById('buyer-email').classList.remove('error');
+            emailErr.style.display = 'none';
+        }
+
+        const mobileRegex = /^[6-9]\d{9}$/;
+        if (!mobileRegex.test(mobile)) {
+            document.getElementById('buyer-mobile').classList.add('error');
+            mobileErr.style.display = 'block'; valid = false;
+        } else {
+            document.getElementById('buyer-mobile').classList.remove('error');
+            mobileErr.style.display = 'none';
+        }
+
+        return valid ? { name, email, mobile } : null;
+    }
+
+    // ── Step 1: Create order — backend returns key_id + order_id ──
+    async function createOrder(buyerInfo) {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${API_BASE_URL}/api/create-order`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+                module_id:    purchaseData.moduleId,
+                module_title: purchaseData.moduleTitle,
+                buyer_name:   buyerInfo.name,
+                buyer_email:  buyerInfo.email,
+                buyer_mobile: buyerInfo.mobile
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Order creation failed');
+        }
+
+        // Backend returns: { order_id, amount, currency, key_id }
+        // key_id comes from RAZORPAY_KEY_ID env var — never stored in this file
+        return res.json();
+    }
+
+    // ── Step 3: Verify payment signature on backend ──────────
+    async function verifyPayment(paymentDetails) {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${API_BASE_URL}/api/verify-payment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+                razorpay_order_id:   paymentDetails.razorpay_order_id,
+                razorpay_payment_id: paymentDetails.razorpay_payment_id,
+                razorpay_signature:  paymentDetails.razorpay_signature,
+                module_id:           purchaseData.moduleId,
+                module_title:        purchaseData.moduleTitle,
+                download_url:        purchaseData.downloadUrl
+            })
+        });
+
+        if (!res.ok) throw new Error('Payment verification failed');
+        return res.json();
+    }
+
+    // ── Main Payment Flow ────────────────────────────────────
+    async function initiatePayment() {
+        const buyerInfo = validateForm();
+        if (!buyerInfo) {
+            showToast('⚠️ Please fill in all fields correctly.', 'error');
+            return;
+        }
+        if (!purchaseData) {
+            showToast('❌ Session error. Please go back and try again.', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('pay-btn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Creating Secure Session…';
+
+        try {
+            // Step 1: Hit backend — get order_id AND key_id from env
+            const order = await createOrder(buyerInfo);
+            const orderId = order.order_id;
+            const keyId   = order.key_id;   // ← comes from server env, never hardcoded
+            const amount  = order.amount;
+
+            if (!keyId) throw new Error('Payment configuration error. Contact support.');
+
+            btn.textContent = '🔐 Opening Secure Payment…';
+
+            // Step 2: Open Razorpay with key from server
+            const options = {
+                key:         keyId,
+                amount:      amount,
+                currency:    CURRENCY,
+                name:        COMPANY_NAME,
+                description: 'Module #' + purchaseData.moduleId + ' — ' + purchaseData.moduleTitle,
+                image:       'assets/images/CEHv13_iso_file_logo.jpg',
+                order_id:    orderId,
+                prefill: {
+                    name:    buyerInfo.name,
+                    email:   buyerInfo.email,
+                    contact: '+91' + buyerInfo.mobile
+                },
+                notes: {
+                    module_id:    purchaseData.moduleId,
+                    module_title: purchaseData.moduleTitle
+                },
+                theme: { color: '#00FFB3' },
+                modal: {
+                    backdropclose: false,
+                    escape:        false,
+                    animation:     true,
+                    ondismiss: function() {
+                        showToast('⚠️ Payment cancelled.', 'error');
+                        btn.disabled = false;
+                        btn.textContent = '🔐 Pay ₹150 Securely';
+                    }
+                },
+                handler: async function(response) {
+                    btn.textContent = '✅ Verifying Payment…';
+                    btn.disabled = true;
+                    try {
+                        // Step 3: Backend verifies HMAC signature
+                        await verifyPayment(response);
+                        showSuccess(response.razorpay_payment_id);
+                    } catch (verifyErr) {
+                        showToast('❌ Verification failed. Please contact support.', 'error');
+                        btn.disabled = false;
+                        btn.textContent = '🔐 Pay ₹150 Securely';
+                    }
+                }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function(response) {
+                showToast('❌ Payment failed: ' + response.error.description, 'error');
+                btn.disabled = false;
+                btn.textContent = '🔐 Pay ₹150 Securely';
+            });
+            rzp.open();
+
+        } catch (err) {
+            showToast('❌ ' + err.message, 'error');
+            btn.disabled = false;
+            btn.textContent = '🔐 Pay ₹150 Securely';
+        }
+    }
+
+    // ── Show Success ─────────────────────────────────────────
+    function showSuccess(paymentId) {
+        sessionStorage.removeItem('pending_purchase');
+        document.getElementById('success-msg').innerHTML =
+            'Payment ID: <strong style="color:#00FFB3">' + paymentId + '</strong><br>' +
+            'Your purchase of <strong>' + purchaseData.moduleTitle + '</strong> is confirmed!<br>' +
+            'Click below to start your download.';
+        document.getElementById('download-link').href = purchaseData.downloadUrl;
+        document.getElementById('success-overlay').classList.add('show');
+        showToast('✅ Payment successful! Enjoy your module.', 'success');
+    }
+
+    // ── Toast ────────────────────────────────────────────────
+    function showToast(message, type) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(() => { toast.className = 'toast'; }, 4000);
+    }
+
+    // ── Auth Check ───────────────────────────────────────────
+    async function checkAuth() {
+        const token = localStorage.getItem('auth_token');
+        if (!token) { window.location.href = 'index.html'; return; }
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/validate-token`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+            });
+            if (!res.ok) {
+                localStorage.removeItem('auth_token');
+                window.location.href = 'index.html';
+            }
+        } catch (e) { /* allow offline */ }
+    }
+
+    // ── Init ─────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+        checkAuth();
+        loadPurchaseData();
+    });
+
+    window.addEventListener('popstate', function() {
+        if (document.getElementById('success-overlay').classList.contains('show'))
+            history.pushState(null, '', window.location.href);
+    });
+</script>
+
+</body>
+</html>
