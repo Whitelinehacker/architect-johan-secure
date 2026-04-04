@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Payment — Architect Johan</title>
+    <title>Secure Payment [TEST ₹10] — Architect Johan</title>
     <!-- Razorpay Checkout SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
@@ -427,9 +427,9 @@
         <div class="price-row">
             <span class="label">Total Amount</span>
             <div style="display:flex; align-items:baseline; gap:4px;">
-                <span class="amount">₹150</span>
-                <span class="original-price">₹499</span>
-                <span class="discount-tag">70% OFF</span>
+                <span class="amount">₹10</span>
+                <span class="original-price">₹150</span>
+                <span class="discount-tag">🧪 TEST</span>
             </div>
         </div>
     </div>
@@ -467,7 +467,7 @@
 
     <!-- Pay Button -->
     <button class="pay-btn" id="pay-btn" onclick="initiatePayment()">
-        🔐 Pay ₹150 Securely
+        🧪 Pay ₹10 (Test Mode)
     </button>
 
     <div class="footer-note">
@@ -527,7 +527,7 @@
     // ── Config ──────────────────────────────────────────────
     // NO keys stored here — all secrets live in .env on the server
     const API_BASE_URL  = 'https://architect-johan-secure.onrender.com';
-    const PRICE_PAISE   = 15000;   // ₹150 — enforced server-side, shown for UX only
+    const PRICE_PAISE   = 1000;   // ₹150 — enforced server-side, shown for UX only
     const CURRENCY      = 'INR';
     const COMPANY_NAME  = 'Architect Johan';
 
@@ -703,7 +703,7 @@
                     ondismiss: function() {
                         showToast('⚠️ Payment cancelled.', 'error');
                         btn.disabled = false;
-                        btn.textContent = '🔐 Pay ₹150 Securely';
+                        btn.textContent = '🧪 Pay ₹10 (Test Mode)';
                     }
                 },
                 handler: async function(response) {
@@ -716,7 +716,7 @@
                     } catch (verifyErr) {
                         showToast('❌ Verification failed. Please contact support.', 'error');
                         btn.disabled = false;
-                        btn.textContent = '🔐 Pay ₹150 Securely';
+                        btn.textContent = '🧪 Pay ₹10 (Test Mode)';
                     }
                 }
             };
@@ -725,14 +725,14 @@
             rzp.on('payment.failed', function(response) {
                 showToast('❌ Payment failed: ' + response.error.description, 'error');
                 btn.disabled = false;
-                btn.textContent = '🔐 Pay ₹150 Securely';
+                btn.textContent = '🧪 Pay ₹10 (Test Mode)';
             });
             rzp.open();
 
         } catch (err) {
             showToast('❌ ' + err.message, 'error');
             btn.disabled = false;
-            btn.textContent = '🔐 Pay ₹150 Securely';
+            btn.textContent = '🧪 Pay ₹10 (Test Mode)';
         }
     }
 
