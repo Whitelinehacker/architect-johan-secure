@@ -2792,6 +2792,120 @@ def reset_practice_progress(current_user):
         logger.error(f"Reset progress error: {e}")
         return jsonify({'error': 'Failed to reset progress'}), 500
 
+@app.route('/api/create-order', methods=['POST'])
+def create_order():
+    """Create a Razorpay order for a software module purchase (₹150)"""
+    try:
+        if not razorpay_client:
+            return jsonify({'error': 'Payment gateway not configured'}), 503
+
+        data = request.get_json()
+        module_id    = data.get('module_id', '').strip()
+        module_title = data.get('module_title', '').strip()
+        buyer_email  = data.get('buyer_email', '').strip().lower()
+        buyer_name   = data.get('buyer_name', '').strip()
+        buyer_mobile = data.get('buyer_mobile', '').strip()
+
+        # Input validation
+        if not module_id or not module_title:
+            return jsonify({'error': 'Module details required'}), 400
+        if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', buyer_email):
+            return jsonify({'error': 'Invalid email address'}), 400
+        if not re.match(r'^[6-9]\d{9}$', buyer_mobile):
+            return jsonify({'error': 'Invalid mobile number'}), 400
+
+        amount_paise = 15000  # ₹150 in paise — fixed price, never from client
+
+        order_data = {
+            'amount':   amount_paise,
+            'currency': 'INR',
+            'receipt':  f'module_{module_id}_{int(datetime.datetime.utcnow().timestamp())}',
+            'notes': {
+                'module_id':    module_id,
+                'module_title': module_title,
+                'buyer_email':  buyer_email,
+                'buyer_name':   buyer_name,
+                'buyer_mobile': buyer_mobile
+            }
+        }
+
+        order = razorpay_client.order.create(data=order_data)
+        logger.info(f"Razorpay order created: {order['id']} for module {module_id}")
+
+        return jsonify({
+            'order_id': order['id'],
+            'amount':   order['amount'],
+            'currency': order['currency'],
+            'key_id':   RAZORPAY_KEY_ID
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Create order error: {e}")
+        return jsonify({'error': 'Failed to create payment order'}), 500
+
+
+@app.route('/api/verify-payment', methods=['POST'])
+def verify_payment():
+    """Verify Razorpay payment signature and record the purchase"""
+    try:
+        if not razorpay_client:
+            return jsonify({'error': 'Payment gateway not configured'}), 503
+
+        data = request.get_json()
+        razorpay_order_id   = data.get('razorpay_order_id', '')
+        razorpay_payment_id = data.get('razorpay_payment_id', '')
+        razorpay_signature  = data.get('razorpay_signature', '')
+        module_id           = data.get('module_id', '')
+        module_title        = data.get('module_title', '')
+        download_url        = data.get('download_url', '')
+
+        if not all([razorpay_order_id, razorpay_payment_id, razorpay_signature]):
+            return jsonify({'error': 'Missing payment details'}), 400
+
+        # ── Signature verification (HMAC-SHA256) ──
+        generated_sig = hmac.new(
+            RAZORPAY_KEY_SECRET.encode('utf-8'),
+            f'{razorpay_order_id}|{razorpay_payment_id}'.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+
+        if not hmac.compare_digest(generated_sig, razorpay_signature):
+            logger.warning(f"Payment signature mismatch for order {razorpay_order_id}")
+            return jsonify({'error': 'Payment verification failed — invalid signature'}), 400
+
+        # ── Record purchase in MongoDB ──
+        db = get_db()
+        if db is not None:
+            try:
+                db.purchases.insert_one({
+                    'razorpay_order_id':   razorpay_order_id,
+                    'razorpay_payment_id': razorpay_payment_id,
+                    'module_id':           module_id,
+                    'module_title':        module_title,
+                    'amount':              150,
+                    'currency':            'INR',
+                    'status':              'paid',
+                    'download_url':        download_url,
+                    'paid_at':             datetime.datetime.utcnow()
+                })
+            except Exception as db_err:
+                logger.error(f"DB purchase record error: {db_err}")
+                # Don't block the user even if DB write fails
+
+        logger.info(f"Payment verified: {razorpay_payment_id} for module {module_id}")
+
+        return jsonify({
+            'success':      True,
+            'payment_id':   razorpay_payment_id,
+            'module_id':    module_id,
+            'download_url': download_url
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Verify payment error: {e}")
+        return jsonify({'error': 'Payment verification failed'}), 500
+
+
 @app.route('/api/check-username', methods=['POST'])
 def check_username():
     """Check if username is available"""
