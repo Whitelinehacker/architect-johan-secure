@@ -16,7 +16,14 @@ import json
 import base64
 import hashlib
 import hmac
-import razorpay  # NEW: Added razorpay import
+try:
+    import razorpay
+    RAZORPAY_AVAILABLE = True
+    print("✅ Razorpay support enabled")
+except ImportError as e:
+    print(f"❌ Razorpay not available: {e}")
+    RAZORPAY_AVAILABLE = False
+    razorpay = None
 
 # Try to import MongoDB modules
 try:
@@ -36,7 +43,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__, static_folder='../frontend')
+app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend') if os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend')) else None)
 CORS(app)
 
 # Configuration
@@ -53,7 +60,7 @@ RAZORPAY_WEBHOOK_URL = os.getenv('WEBHOOK_URL', '')
 
 # Initialize Razorpay client - NEW
 razorpay_client = None
-if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
+if RAZORPAY_AVAILABLE and RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
     try:
         razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
         print("✅ Razorpay client initialized")
@@ -2993,42 +3000,26 @@ def check_mobile():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print("🚀 Starting Architect Johan Secure Server...")
-    print(f"🔐 Authentication System: ENABLED")
-    print(f"💰 Razorpay Payment System: {'ENABLED' if razorpay_client is not None else 'DISABLED'}")
-    print(f"🧾 Razorpay Webhook: {'ENABLED' if RAZORPAY_WEBHOOK_SECRET else 'DISABLED'}")
-    print(f"🗄️ Database: MongoDB (pymongo)")
-    print(f"🌐 Server running on port: {port}")
-    print(f"📊 MongoDB Available: {MONGODB_AVAILABLE}")
-    print(f"🎥 Video Routes: ENABLED")
-    print(f"🔒 Video Password: {VIDEO_PASSWORD}")
-    
-    # Test MongoDB connection
-    client = get_mongo_client()
-    if client is not None:
-        print("✅ MongoDB Connection: SUCCESS")
-        print(f"📊 Database Name: {client.get_database().name}")
-    else:
-        print("❌ MongoDB Connection: FAILED")
-        print("⚠️ Application will run without database connection")
-        print("⚠️ Some features may not work properly")
-    
-    # Print environment status
-    print(f"📧 Email Configuration: {'✅ Available' if EMAIL_USER and EMAIL_PASSWORD else '❌ Missing'}")
-    print(f"🔑 SECRET_KEY: {'✅ Set' if os.getenv('SECRET_KEY') else '❌ Missing'}")
-    print(f"🔑 JWT_SECRET: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
-    print(f"🗄️ MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
-    print(f"🎥 VIDEO_PASSWORD: {'✅ Set' if os.getenv('VIDEO_PASSWORD') else '❌ Using Default'}")
-    print(f"💰 RAZORPAY_KEY_ID: {'✅ Set' if RAZORPAY_KEY_ID else '❌ Missing'}")
-    print(f"💰 RAZORPAY_KEY_SECRET: {'✅ Set' if RAZORPAY_KEY_SECRET else '❌ Missing'}")
-    print(f"💰 RAZORPAY_WEBHOOK_SECRET: {'✅ Set' if RAZORPAY_WEBHOOK_SECRET else '❌ Missing'}")
-    
-    # Print course passwords for reference (DEPRECATED - kept for backward compatibility)
-    print("\n📚 COURSE PASSWORDS (DEPRECATED - for non-paid users only):")
-    print("=" * 50)
-    for course, password in COURSE_PASSWORDS.items():
-        print(f"{course:20} : {password}")
-    print("=" * 50)
-    print("💡 Note: Paid users bypass password system automatically")
-    
+
+    # Bind port immediately — Render kills app if port not detected quickly
+    import threading
+
+    def print_startup_info():
+        import time
+        time.sleep(2)
+        print("🚀 Architect Johan Server — RUNNING")
+        print(f"🔐 Auth System: ENABLED")
+        print(f"💰 Razorpay: {'ENABLED' if razorpay_client else 'DISABLED'}")
+        print(f"🔑 SECRET_KEY: {'✅ Set' if os.getenv('SECRET_KEY') else '❌ Missing'}")
+        print(f"🔑 JWT_SECRET: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
+        print(f"🗄️  MONGODB_URI: {'✅ Set' if os.getenv('MONGODB_URI') else '❌ Missing'}")
+        print(f"💰 RAZORPAY_KEY_ID: {'✅ Set' if RAZORPAY_KEY_ID else '❌ Missing'}")
+        print(f"💰 RAZORPAY_KEY_SECRET: {'✅ Set' if RAZORPAY_KEY_SECRET else '❌ Missing'}")
+        print(f"💰 RAZORPAY_WEBHOOK_SECRET: {'✅ Set' if RAZORPAY_WEBHOOK_SECRET else '❌ Missing'}")
+        mongo_ok = get_mongo_client()
+        print(f"📊 MongoDB: {'✅ CONNECTED' if mongo_ok else '❌ DISCONNECTED'}")
+
+    threading.Thread(target=print_startup_info, daemon=True).start()
+
+    print(f"🌐 Binding to 0.0.0.0:{port} ...")
     app.run(debug=False, host='0.0.0.0', port=port)
