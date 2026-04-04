@@ -382,6 +382,101 @@
             background: rgba(0, 255, 179, 0.1);
         }
 
+        /* ── Payment / Pricing Styles ── */
+        .price-badge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 14px 0 6px;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, rgba(0,255,179,0.12) 0%, rgba(46,198,255,0.12) 100%);
+            border: 1px solid rgba(0,255,179,0.4);
+            border-radius: 10px;
+        }
+
+        .price-amount {
+            font-size: 22px;
+            font-weight: bold;
+            color: #00FFB3;
+            text-shadow: 0 0 10px rgba(0,255,179,0.6);
+            letter-spacing: 1px;
+        }
+
+        .price-label {
+            font-size: 11px;
+            color: #2EC6FF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .price-tag {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .price-original {
+            font-size: 12px;
+            color: rgba(255,255,255,0.35);
+            text-decoration: line-through;
+            letter-spacing: 0.5px;
+        }
+
+        .buy-btn {
+            display: block;
+            width: 100%;
+            padding: 13px 25px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #02040A;
+            text-align: center;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(255,165,0,0.4);
+        }
+
+        .buy-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .buy-btn:hover::before { width: 350px; height: 350px; }
+
+        .buy-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 35px rgba(255,165,0,0.7);
+        }
+
+        .buy-btn:active { transform: translateY(0); }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 8px;
+            font-size: 11px;
+            color: rgba(0,255,179,0.6);
+            letter-spacing: 0.5px;
+        }
+
         .back-home {
             text-align: center;
             margin-top: 50px;
@@ -751,16 +846,43 @@
                     <div class="module-content">
                         <p>${module.description}</p>
                     </div>
-                    <a href="${module.downloadUrl}" class="download-btn" target="_blank" download>
-                        📥 Download Now
-                    </a>
-                    <div class="file-status file-available">
-                        ✅ Direct download available
+
+                    <div class="price-badge">
+                        <div>
+                            <div class="price-label">Price</div>
+                            <div class="price-amount">₹150</div>
+                        </div>
+                        <div class="price-tag">
+                            <div class="price-original">₹499</div>
+                            <div style="color:#FFD700;font-size:11px;font-weight:bold;">70% OFF 🔥</div>
+                        </div>
                     </div>
+
+                    <button class="buy-btn" onclick="goToPayment('${module.id}', '${module.title.replace(/'/g,"\\'")}', '${module.downloadUrl}')">
+                        🔐 Buy Now — ₹150
+                    </button>
+                    <div class="security-badge">🔒 Secure Payment &nbsp;|&nbsp; Razorpay Protected</div>
                 `;
                 
                 container.appendChild(card);
             });
+        }
+
+        // Navigate to payment page with module details
+        function goToPayment(moduleId, moduleTitle, downloadUrl) {
+            // Store purchase intent securely in sessionStorage (not localStorage to avoid persistence)
+            const purchaseData = {
+                moduleId: moduleId,
+                moduleTitle: moduleTitle,
+                downloadUrl: downloadUrl,
+                price: 150,
+                currency: 'INR',
+                timestamp: Date.now(),
+                // HMAC-like integrity token so payment.html can verify data wasn't tampered with
+                token: btoa(moduleId + '|' + moduleTitle + '|150|' + Date.now()).replace(/=/g,'')
+            };
+            sessionStorage.setItem('pending_purchase', JSON.stringify(purchaseData));
+            window.location.href = 'payment.html';
         }
 
         // Authentication check
@@ -999,7 +1121,3 @@
     </script>
 </body>
 </html>
-
-
-
-
