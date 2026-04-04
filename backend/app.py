@@ -1569,7 +1569,7 @@ def create_order(current_user):
             if not module_title:
                 return jsonify({'error': 'Module title required'}), 400
 
-            amount_paise = 1000   # ₹10 — TEST MODE (change to 15000 for ₹150 in production)
+            amount_paise = 100   # ₹10 — TEST MODE (change to 15000 for ₹150 in production)
             receipt = f'module_{module_id}_{int(datetime.datetime.utcnow().timestamp())}'
             notes = {
                 'type':         'software_module',
@@ -1638,62 +1638,91 @@ def create_order(current_user):
 @app.route('/api/verify-payment', methods=['POST'])
 @token_required
 def verify_payment(current_user):
-    """Verify Razorpay payment signature"""
+    """Verify Razorpay payment signature — supports both software modules and courses"""
     try:
         data = request.get_json()
-        
-        razorpay_payment_id = data.get('razorpay_payment_id')
-        razorpay_order_id = data.get('razorpay_order_id')
-        razorpay_signature = data.get('razorpay_signature')
-        course_id = data.get('course_id')
-        
-        if not all([razorpay_payment_id, razorpay_order_id, razorpay_signature, course_id]):
+
+        razorpay_payment_id = data.get('razorpay_payment_id', '').strip()
+        razorpay_order_id   = data.get('razorpay_order_id', '').strip()
+        razorpay_signature  = data.get('razorpay_signature', '').strip()
+
+        # Support both purchase types
+        module_id    = data.get('module_id', '').strip()
+        module_title = data.get('module_title', '').strip()
+        download_url = data.get('download_url', '').strip()
+        course_id    = data.get('course_id', '').strip()
+
+        # Must have the 3 Razorpay fields + at least one purchase identifier
+        if not all([razorpay_payment_id, razorpay_order_id, razorpay_signature]):
+            logger.error(f"Missing Razorpay fields: payment={bool(razorpay_payment_id)} order={bool(razorpay_order_id)} sig={bool(razorpay_signature)}")
             return jsonify({'error': 'Missing payment details'}), 400
-        
-        # Verify payment signature
+
+        if not module_id and not course_id:
+            logger.error("Neither module_id nor course_id provided")
+            return jsonify({'error': 'Missing purchase identifier'}), 400
+
+        # ── HMAC-SHA256 Signature Verification ──────────────────
         body = razorpay_order_id + "|" + razorpay_payment_id
         expected_signature = hmac.new(
             RAZORPAY_KEY_SECRET.encode('utf-8'),
             body.encode('utf-8'),
             hashlib.sha256
         ).hexdigest()
-        
+
         if not hmac.compare_digest(razorpay_signature, expected_signature):
-            logger.error(f"Invalid signature for payment: {razorpay_payment_id}")
+            logger.error(f"Signature mismatch for payment: {razorpay_payment_id}")
             return jsonify({'error': 'Invalid payment signature'}), 400
-        
-        # Grant course access
-        access_granted = add_course_access(current_user, course_id, razorpay_payment_id)
-        
-        if access_granted:
-            # Log successful payment
-            payment_coll = get_payment_logs_collection()
-            if payment_coll:
+
+        # ── Log payment to MongoDB ───────────────────────────────
+        payment_coll = get_payment_logs_collection()
+        if payment_coll:
+            try:
                 payment_coll.insert_one({
                     "razorpay_payment_id": razorpay_payment_id,
-                    "razorpay_order_id": razorpay_order_id,
-                    "username": current_user,
-                    "course_id": course_id,
-                    "amount": data.get('amount', 100) / 100,  # Convert paise to rupees
-                    "currency": data.get('currency', 'INR'),
-                    "status": "captured",
-                    "verified": True,
-                    "verified_at": datetime.datetime.utcnow(),
-                    "created_at": datetime.datetime.utcnow(),
-                    "source": "frontend_verification"
+                    "razorpay_order_id":   razorpay_order_id,
+                    "username":            current_user,
+                    "purchase_type":       "software_module" if module_id else "course",
+                    "module_id":           module_id or None,
+                    "module_title":        module_title or None,
+                    "course_id":           course_id or None,
+                    "download_url":        download_url or None,
+                    "amount":              1000 / 100,   # paise to rupees
+                    "currency":            "INR",
+                    "status":              "captured",
+                    "verified":            True,
+                    "verified_at":         datetime.datetime.utcnow(),
+                    "created_at":          datetime.datetime.utcnow(),
+                    "source":              "frontend_verification"
                 })
-            
-            logger.info(f"Payment verified: {current_user} -> {course_id}")
-            
+            except Exception as db_err:
+                logger.error(f"DB log error (non-fatal): {db_err}")
+
+        # ── Grant access based on purchase type ──────────────────
+        if module_id:
+            # Software module — signature verified, just return success + download URL
+            logger.info(f"Software module payment verified: {current_user} -> module {module_id} | payment {razorpay_payment_id}")
             return jsonify({
-                'success': True,
-                'message': 'Payment verified and course access granted',
-                'payment_id': razorpay_payment_id,
-                'course_id': course_id
+                'success':      True,
+                'message':      'Payment verified successfully',
+                'payment_id':   razorpay_payment_id,
+                'module_id':    module_id,
+                'download_url': download_url
             }), 200
-        else:
-            return jsonify({'error': 'Failed to grant course access'}), 500
-            
+
+        elif course_id:
+            # Course — grant DB access
+            access_granted = add_course_access(current_user, course_id, razorpay_payment_id)
+            if access_granted:
+                logger.info(f"Course payment verified: {current_user} -> {course_id} | payment {razorpay_payment_id}")
+                return jsonify({
+                    'success':    True,
+                    'message':    'Payment verified and course access granted',
+                    'payment_id': razorpay_payment_id,
+                    'course_id':  course_id
+                }), 200
+            else:
+                return jsonify({'error': 'Failed to grant course access'}), 500
+
     except Exception as e:
         logger.error(f"Payment verification error: {e}")
         return jsonify({'error': 'Payment verification failed'}), 500
