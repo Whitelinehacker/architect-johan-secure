@@ -1542,7 +1542,7 @@ def verify_exam_level_password(current_user):
 @app.route('/api/create-order', methods=['POST'])
 @token_required
 def create_order(current_user):
-    """Create Razorpay order — supports both course purchases and software module purchases (₹150)"""
+    """Create Razorpay order — supports both course purchases and software module purchases"""
     try:
         if razorpay_client is None:
             return jsonify({'error': 'Payment system not configured'}), 500
@@ -1569,7 +1569,7 @@ def create_order(current_user):
             if not module_title:
                 return jsonify({'error': 'Module title required'}), 400
 
-            amount_paise = 15000  # ₹150 — hardcoded server-side, never from client
+            amount_paise = 1000   # ₹10 — TEST MODE (change to 15000 for ₹150 in production)
             receipt = f'module_{module_id}_{int(datetime.datetime.utcnow().timestamp())}'
             notes = {
                 'type':         'software_module',
