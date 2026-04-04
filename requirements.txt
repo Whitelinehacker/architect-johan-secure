@@ -1,11 +1,11 @@
-Flask==2.3.3
-Flask-CORS==4.0.0
+Flask==3.0.3
+Flask-CORS==4.0.1
 PyJWT==2.8.0
-bcrypt==4.0.1
-python-dotenv==1.0.0
-pymongo==4.5.0
-Werkzeug==2.3.7
-requests==2.31.0
-certifi==2023.11.17
+bcrypt==4.2.0
+python-dotenv==1.0.1
+pymongo==4.7.3
+Werkzeug==3.0.3
+requests==2.32.3
+certifi==2024.2.2
 razorpay==1.4.2
-setuptools==70.0.0  # <-- ADD THIS LINE
+setuptools==70.0.0
