@@ -1639,7 +1639,7 @@ def create_order(current_user):
             if not module_title:
                 return jsonify({'error': 'Module title required'}), 400
 
-            amount_paise = 1000   # ₹10 — TEST MODE (change to 15000 for ₹150 in production)
+            amount_paise = 100   # ₹10 — TEST MODE (change to 15000 for ₹150 in production)
             receipt = f'module_{module_id}_{int(datetime.datetime.utcnow().timestamp())}'
             notes = {
                 'type':         'software_module',
