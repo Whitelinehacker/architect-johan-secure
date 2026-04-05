@@ -941,43 +941,33 @@
 
         // Load purchased modules from server then render
         async function loadPurchasedModulesAndRender() {
-            // Step 1: Instantly render with localStorage cache (no flicker)
-            try {
-                const cached = JSON.parse(localStorage.getItem('purchased_modules') || '[]');
-                if (cached.length > 0) {
-                    purchasedModuleIds = new Set(cached);
-                    generateModules();
-                }
-            } catch(e) {}
-
-            // Step 2: Fetch fresh from server and re-render if changed
+            // Always call generateModules — show cards even if API fails
             try {
                 const token = localStorage.getItem('auth_token');
-                if (!token) { if (purchasedModuleIds.size === 0) generateModules(); return; }
-
-                const res = await fetch(`${API_BASE_URL}/api/get-purchased-modules`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
+                if (token) {
+                    const res = await fetch(API_BASE_URL + '/api/get-purchased-modules', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const ids = data.purchased_modules || [];
+                        purchasedModuleIds = new Set(ids);
+                        localStorage.setItem('purchased_modules', JSON.stringify(ids));
                     }
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    const serverIds = data.purchased_modules || [];
-                    localStorage.setItem('purchased_modules', JSON.stringify(serverIds));
-                    const newSet = new Set(serverIds);
-                    const changed = serverIds.some(id => !purchasedModuleIds.has(id)) ||
-                                    [...purchasedModuleIds].some(id => !newSet.has(id));
-                    if (changed) { purchasedModuleIds = newSet; generateModules(); }
-                    console.log(`✅ Purchased modules synced: ${newSet.size}`);
                 }
             } catch (e) {
-                console.warn('Could not sync purchased modules:', e.message);
-                if (purchasedModuleIds.size === 0) generateModules();
+                // Try localStorage cache as fallback
+                try {
+                    const cached = JSON.parse(localStorage.getItem('purchased_modules') || '[]');
+                    purchasedModuleIds = new Set(cached);
+                } catch(e2) {}
             }
-        }
+            // Always render cards regardless
+            generateModules();
         }
 
 
