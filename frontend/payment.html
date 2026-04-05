@@ -753,13 +753,24 @@
     // ── Show Success ─────────────────────────────────────────
     function showSuccess(paymentId) {
         sessionStorage.removeItem('pending_purchase');
+
+        // Cache purchased module locally so software page updates instantly
+        try {
+            const owned = JSON.parse(localStorage.getItem('purchased_modules') || '[]');
+            if (!owned.includes(purchaseData.moduleId)) {
+                owned.push(purchaseData.moduleId);
+                localStorage.setItem('purchased_modules', JSON.stringify(owned));
+            }
+        } catch(e) {}
+
         document.getElementById('success-msg').innerHTML =
             'Payment ID: <strong style="color:#00FFB3">' + paymentId + '</strong><br>' +
             'Your purchase of <strong>' + purchaseData.moduleTitle + '</strong> is confirmed!<br>' +
+            '🎉 You now have <strong>lifetime access</strong>.<br>' +
             'Click below to start your download.';
         document.getElementById('download-link').href = purchaseData.downloadUrl;
         document.getElementById('success-overlay').classList.add('show');
-        showToast('✅ Payment successful! Enjoy your module.', 'success');
+        showToast('✅ Payment successful! Lifetime access granted.', 'success');
     }
 
     // ── Toast ────────────────────────────────────────────────
