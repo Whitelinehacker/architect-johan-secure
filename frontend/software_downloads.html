@@ -881,53 +881,59 @@
             const container = document.getElementById('software-container');
             container.innerHTML = '';
 
-            modules.forEach(module => {
+            modules.forEach(function(module) {
                 const card = document.createElement('div');
                 card.className = 'software-card';
 
-                const logoContent = module.logo ?
-                    `<img src="${module.logo}" alt="${module.title}" onerror="this.style.display='none'; this.parentElement.innerHTML='${module.id}';">` :
-                    module.id;
-
                 const isOwned = purchasedModuleIds.has(module.id);
 
-                const actionHtml = isOwned ? `
-                    <div class="owned-badge">✅ &nbsp;Purchased — Lifetime Access</div>
-                    <a href="${module.downloadUrl}" class="download-owned-btn" target="_blank" download>
-                        📥 Download Now
-                    </a>
-                    <div class="lifetime-tag">🔒 Your lifetime access is active</div>
-                ` : `
-                    <div class="price-badge">
-                        <div>
-                            <div class="price-label">Price</div>
-                            <div class="price-amount">₹10</div>
-                        </div>
-                        <div class="price-tag">
-                            <div class="price-original">₹150</div>
-                            <div style="color:#FFD700;font-size:11px;font-weight:bold;">🧪 TEST PRICE</div>
-                        </div>
-                    </div>
-                    <button class="buy-btn" onclick="goToPayment('${module.id}', '${module.title.replace(/'/g,"\'")}', '${module.downloadUrl}')">
-                        🧪 Buy Now — ₹10 (Test)
-                    </button>
-                    <div class="security-badge">🔒 Secure Payment &nbsp;|&nbsp; Razorpay Protected</div>
-                `;
+                // Build logo
+                let logoHtml = module.id;
+                if (module.logo) {
+                    logoHtml = '<img src="' + module.logo + '" alt="' + module.title +
+                        '" onerror="this.style.display=\'none\';this.parentElement.textContent=\'' + module.id + '\'">';
+                }
 
-                card.innerHTML = `
-                    <div class="module-header">
-                        <div class="module-icon">${logoContent}</div>
-                        <div>
-                            <div class="module-number">Module #${module.id}</div>
-                            <h2 class="module-title">${module.title}</h2>
-                        </div>
-                    </div>
-                    <div class="module-provider">Provider: ${module.provider}</div>
-                    <div class="module-content">
-                        <p>${module.description}</p>
-                    </div>
-                    ${actionHtml}
-                `;
+                // Build action section
+                let actionHtml = '';
+                if (isOwned) {
+                    actionHtml =
+                        '<div class="owned-badge">&#x2705; &nbsp;Purchased \u2014 Lifetime Access</div>' +
+                        '<a href="' + module.downloadUrl + '" class="download-owned-btn" target="_blank" download>' +
+                        '&#x1F4E5; Download Now</a>' +
+                        '<div class="lifetime-tag">&#x1F512; Your lifetime access is active</div>';
+                } else {
+                    actionHtml =
+                        '<div class="price-badge">' +
+                            '<div><div class="price-label">Price</div><div class="price-amount">&#x20B9;10</div></div>' +
+                            '<div class="price-tag"><div class="price-original">&#x20B9;150</div>' +
+                            '<div style="color:#FFD700;font-size:11px;font-weight:bold;">&#x1F9EA; TEST PRICE</div></div>' +
+                        '</div>' +
+                        '<button class="buy-btn" id="buy-' + module.id + '">&#x1F512; Buy Now \u2014 &#x20B9;10 (Test)</button>' +
+                        '<div class="security-badge">&#x1F512; Secure Payment &nbsp;|&nbsp; Razorpay Protected</div>';
+                }
+
+                card.innerHTML =
+                    '<div class="module-header">' +
+                        '<div class="module-icon">' + logoHtml + '</div>' +
+                        '<div>' +
+                            '<div class="module-number">Module #' + module.id + '</div>' +
+                            '<h2 class="module-title">' + module.title + '</h2>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="module-provider">Provider: ' + module.provider + '</div>' +
+                    '<div class="module-content"><p>' + module.description + '</p></div>' +
+                    actionHtml;
+
+                // Attach buy button click safely (avoids any escaping issues)
+                if (!isOwned) {
+                    const btn = card.querySelector('#buy-' + module.id);
+                    if (btn) {
+                        btn.addEventListener('click', function() {
+                            goToPayment(module.id, module.title, module.downloadUrl);
+                        });
+                    }
+                }
 
                 container.appendChild(card);
             });
@@ -1174,7 +1180,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthentication();
             loadUserProfileForNavbar();
-            generateModules();
+            loadPurchasedModulesAndRender();
 
             // Profile section click handler
             const profileSection = document.getElementById('profile-section');
