@@ -546,7 +546,8 @@ def create_user(user_data):
         user_data['reset_token'] = None
         user_data['reset_token_expiry'] = None
         user_data['profile_image'] = None
-        user_data['paid_courses'] = []  # NEW: Initialize empty paid courses array
+        user_data['paid_courses'] = []  # Initialize empty paid courses array
+        user_data['paid_modules'] = []  # Initialize empty paid software modules array
         
         result = users_coll.insert_one(user_data)
         return result.inserted_id is not None
@@ -556,6 +557,75 @@ def create_user(user_data):
     except Exception as e:
         logger.error(f"Error creating user: {e}")
         return False
+
+def add_module_access(username, module_id, module_title, payment_id=None, download_url=None):
+    """Add software module access to user's paid_modules array — idempotent, lifetime access"""
+    try:
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return False
+
+        module_record = {
+            "module_id":    module_id,
+            "module_title": module_title,
+            "download_url": download_url or '',
+            "payment_id":   payment_id or '',
+            "purchased_at": datetime.datetime.utcnow().isoformat()
+        }
+
+        # $addToSet won't work for subdocs — use a flag field instead
+        # Check if already purchased
+        user = users_coll.find_one(
+            {"username": username, "paid_modules.module_id": module_id},
+            {"_id": 1}
+        )
+
+        if user:
+            # Already purchased — idempotent, just return True
+            logger.info(f"Module already owned: {username} -> module {module_id}")
+            return True
+
+        # Add new module record
+        result = users_coll.update_one(
+            {"username": username},
+            {
+                "$push": {"paid_modules": module_record},
+                "$set":  {"last_updated": datetime.datetime.utcnow()}
+            }
+        )
+
+        if result.matched_count > 0:
+            logger.info(f"Module access granted: {username} -> module {module_id} (Payment: {payment_id})")
+            return True
+
+        return False
+
+    except Exception as e:
+        logger.error(f"add_module_access error: {e}")
+        return False
+
+
+def get_user_purchased_modules(username):
+    """Get list of module_ids the user has purchased"""
+    try:
+        users_coll = get_users_collection()
+        if users_coll is None:
+            return []
+
+        user = users_coll.find_one(
+            {"username": username},
+            {"paid_modules": 1}
+        )
+
+        if not user:
+            return []
+
+        return user.get('paid_modules', [])
+
+    except Exception as e:
+        logger.error(f"get_user_purchased_modules error: {e}")
+        return []
+
 
 # Rate limiting and utility functions
 def update_login_attempts(client_ip, current_time):
@@ -1713,11 +1783,18 @@ def verify_payment(current_user):
 
         # ── Grant access based on purchase type ──────────────────
         if module_id:
-            # Software module — signature verified, just return success + download URL
-            logger.info(f"Software module payment verified: {current_user} -> module {module_id} | payment {razorpay_payment_id}")
+            # Software module — signature verified → grant lifetime access
+            add_module_access(
+                username     = current_user,
+                module_id    = module_id,
+                module_title = module_title,
+                payment_id   = razorpay_payment_id,
+                download_url = download_url
+            )
+            logger.info(f"Software module payment verified + access granted: {current_user} -> module {module_id} | payment {razorpay_payment_id}")
             return jsonify({
                 'success':      True,
-                'message':      'Payment verified successfully',
+                'message':      'Payment verified — lifetime access granted',
                 'payment_id':   razorpay_payment_id,
                 'module_id':    module_id,
                 'download_url': download_url
@@ -2870,6 +2947,24 @@ def reset_practice_progress(current_user):
         logger.error(f"Reset progress error: {e}")
         return jsonify({'error': 'Failed to reset progress'}), 500
 
+
+
+@app.route('/api/get-purchased-modules', methods=['GET'])
+@token_required
+def get_purchased_modules(current_user):
+    """Return all software modules the current user has purchased (lifetime access)"""
+    try:
+        modules = get_user_purchased_modules(current_user)
+        # Return just the module_ids for quick lookup on frontend
+        module_ids = [m.get('module_id') for m in modules if m.get('module_id')]
+        return jsonify({
+            'success': True,
+            'purchased_modules': module_ids,
+            'module_details': modules
+        }), 200
+    except Exception as e:
+        logger.error(f"get_purchased_modules error: {e}")
+        return jsonify({'error': 'Failed to fetch purchased modules'}), 500
 
 
 @app.route('/api/check-username', methods=['POST'])
