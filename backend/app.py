@@ -1662,6 +1662,15 @@ def verify_payment(current_user):
             return jsonify({'error': 'Missing purchase identifier'}), 400
 
         # ── HMAC-SHA256 Signature Verification ──────────────────
+        # Debug log — remove in production
+        logger.info(f"VERIFY DEBUG: order={razorpay_order_id} payment={razorpay_payment_id}")
+        logger.info(f"VERIFY DEBUG: sig_received={razorpay_signature[:20]}...")
+        logger.info(f"VERIFY DEBUG: key_secret_set={bool(RAZORPAY_KEY_SECRET)} key_len={len(RAZORPAY_KEY_SECRET)}")
+
+        if not RAZORPAY_KEY_SECRET:
+            logger.error("RAZORPAY_KEY_SECRET is not set in environment!")
+            return jsonify({'error': 'Payment configuration error — secret not set'}), 500
+
         body = razorpay_order_id + "|" + razorpay_payment_id
         expected_signature = hmac.new(
             RAZORPAY_KEY_SECRET.encode('utf-8'),
@@ -1669,9 +1678,14 @@ def verify_payment(current_user):
             hashlib.sha256
         ).hexdigest()
 
+        logger.info(f"VERIFY DEBUG: sig_expected={expected_signature[:20]}...")
+        logger.info(f"VERIFY DEBUG: match={hmac.compare_digest(razorpay_signature, expected_signature)}")
+
         if not hmac.compare_digest(razorpay_signature, expected_signature):
-            logger.error(f"Signature mismatch for payment: {razorpay_payment_id}")
-            return jsonify({'error': 'Invalid payment signature'}), 400
+            logger.error(f"Signature MISMATCH for payment: {razorpay_payment_id}")
+            logger.error(f"Expected: {expected_signature}")
+            logger.error(f"Received: {razorpay_signature}")
+            return jsonify({'error': f'Signature mismatch — check RAZORPAY_KEY_SECRET env var'}), 400
 
         # ── Log payment to MongoDB ───────────────────────────────
         payment_coll = get_payment_logs_collection()
