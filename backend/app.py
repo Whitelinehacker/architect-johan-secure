@@ -1639,7 +1639,7 @@ def create_order(current_user):
             if not module_title:
                 return jsonify({'error': 'Module title required'}), 400
 
-            amount_paise = 100   # ₹10 — TEST MODE (change to 15000 for ₹150 in production)
+            amount_paise = 1000   # ₹10 — TEST MODE (change to 15000 for ₹150 in production)
             receipt = f'module_{module_id}_{int(datetime.datetime.utcnow().timestamp())}'
             notes = {
                 'type':         'software_module',
@@ -1708,7 +1708,7 @@ def create_order(current_user):
 @app.route('/api/verify-payment', methods=['POST'])
 @token_required
 def verify_payment(current_user):
-    """Verify Razorpay payment signature — supports both software modules and courses"""
+    """Verify Razorpay payment — supports both software modules and courses"""
     try:
         data = request.get_json()
 
@@ -1731,31 +1731,55 @@ def verify_payment(current_user):
             logger.error("Neither module_id nor course_id provided")
             return jsonify({'error': 'Missing purchase identifier'}), 400
 
-        # ── HMAC-SHA256 Signature Verification ──────────────────
-        # Debug log — remove in production
-        logger.info(f"VERIFY DEBUG: order={razorpay_order_id} payment={razorpay_payment_id}")
-        logger.info(f"VERIFY DEBUG: sig_received={razorpay_signature[:20]}...")
-        logger.info(f"VERIFY DEBUG: key_secret_set={bool(RAZORPAY_KEY_SECRET)} key_len={len(RAZORPAY_KEY_SECRET)}")
+        # ── Signature Verification (3 methods, any one passing = valid) ─────
+        signature_valid = False
 
-        if not RAZORPAY_KEY_SECRET:
-            logger.error("RAZORPAY_KEY_SECRET is not set in environment!")
-            return jsonify({'error': 'Payment configuration error — secret not set'}), 500
+        # Method 1: Razorpay SDK utility (most reliable)
+        if razorpay_client and not signature_valid:
+            try:
+                razorpay_client.utility.verify_payment_signature({
+                    'razorpay_order_id':   razorpay_order_id,
+                    'razorpay_payment_id': razorpay_payment_id,
+                    'razorpay_signature':  razorpay_signature
+                })
+                signature_valid = True
+                logger.info(f"Signature valid via Razorpay SDK: {razorpay_payment_id}")
+            except Exception as sdk_err:
+                logger.warning(f"Razorpay SDK verify failed: {sdk_err}")
 
-        body = razorpay_order_id + "|" + razorpay_payment_id
-        expected_signature = hmac.new(
-            RAZORPAY_KEY_SECRET.encode('utf-8'),
-            body.encode('utf-8'),
-            hashlib.sha256
-        ).hexdigest()
+        # Method 2: Manual HMAC-SHA256
+        if RAZORPAY_KEY_SECRET and not signature_valid:
+            try:
+                body = razorpay_order_id + "|" + razorpay_payment_id
+                expected = hmac.new(
+                    RAZORPAY_KEY_SECRET.encode('utf-8'),
+                    body.encode('utf-8'),
+                    hashlib.sha256
+                ).hexdigest()
+                logger.info(f"HMAC expected={expected[:20]}... received={razorpay_signature[:20]}...")
+                if hmac.compare_digest(expected, razorpay_signature):
+                    signature_valid = True
+                    logger.info(f"Signature valid via HMAC: {razorpay_payment_id}")
+                else:
+                    logger.warning(f"HMAC mismatch — expected={expected} received={razorpay_signature}")
+            except Exception as hmac_err:
+                logger.warning(f"HMAC verify failed: {hmac_err}")
 
-        logger.info(f"VERIFY DEBUG: sig_expected={expected_signature[:20]}...")
-        logger.info(f"VERIFY DEBUG: match={hmac.compare_digest(razorpay_signature, expected_signature)}")
+        # Method 3: Fetch payment directly from Razorpay API and check status
+        if razorpay_client and not signature_valid:
+            try:
+                payment = razorpay_client.payment.fetch(razorpay_payment_id)
+                if payment.get('status') in ('captured', 'authorized') and                    payment.get('order_id') == razorpay_order_id:
+                    signature_valid = True
+                    logger.info(f"Payment valid via Razorpay API fetch: {razorpay_payment_id} status={payment.get('status')}")
+                else:
+                    logger.warning(f"Razorpay API: status={payment.get('status')} order={payment.get('order_id')}")
+            except Exception as fetch_err:
+                logger.warning(f"Razorpay API fetch failed: {fetch_err}")
 
-        if not hmac.compare_digest(razorpay_signature, expected_signature):
-            logger.error(f"Signature MISMATCH for payment: {razorpay_payment_id}")
-            logger.error(f"Expected: {expected_signature}")
-            logger.error(f"Received: {razorpay_signature}")
-            return jsonify({'error': f'Signature mismatch — check RAZORPAY_KEY_SECRET env var'}), 400
+        if not signature_valid:
+            logger.error(f"All verification methods failed for payment: {razorpay_payment_id}")
+            return jsonify({'error': 'Payment verification failed — contact support with payment ID: ' + razorpay_payment_id}), 400
 
         # ── Log payment to MongoDB ───────────────────────────────
         payment_coll = get_payment_logs_collection()
