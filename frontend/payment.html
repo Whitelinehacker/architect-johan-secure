@@ -630,29 +630,50 @@
     // ── Step 3: Verify payment signature on backend ──────────
     async function verifyPayment(paymentDetails) {
         const token = localStorage.getItem('auth_token');
+
+        // Guard: make sure order_id is never empty/undefined before sending
+        if (!paymentDetails.razorpay_order_id) {
+            throw new Error('Order ID missing from payment response — cannot verify');
+        }
+        if (!paymentDetails.razorpay_payment_id) {
+            throw new Error('Payment ID missing from payment response — cannot verify');
+        }
+        if (!paymentDetails.razorpay_signature) {
+            throw new Error('Signature missing from payment response — cannot verify');
+        }
+
+        const body = {
+            razorpay_order_id:   paymentDetails.razorpay_order_id,
+            razorpay_payment_id: paymentDetails.razorpay_payment_id,
+            razorpay_signature:  paymentDetails.razorpay_signature,
+            module_id:           purchaseData.moduleId,
+            module_title:        purchaseData.moduleTitle,
+            download_url:        purchaseData.downloadUrl
+        };
+
+        console.log('▶ Sending verify-payment payload:', {
+            order_id:   body.razorpay_order_id,
+            payment_id: body.razorpay_payment_id,
+            sig_ok:     body.razorpay_signature.length > 10,
+            module_id:  body.module_id
+        });
+
         const res = await fetch(`${API_BASE_URL}/api/verify-payment`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             },
-            body: JSON.stringify({
-                razorpay_order_id:   paymentDetails.razorpay_order_id,
-                razorpay_payment_id: paymentDetails.razorpay_payment_id,
-                razorpay_signature:  paymentDetails.razorpay_signature,
-                module_id:           purchaseData.moduleId,
-                module_title:        purchaseData.moduleTitle,
-                download_url:        purchaseData.downloadUrl
-            })
+            body: JSON.stringify(body)
         });
 
-        // Parse response body regardless of status
         const data = await res.json().catch(() => ({}));
-        console.log('Verify response:', res.status, data);
+        console.log('◀ verify-payment response:', res.status, data);
 
         if (!res.ok) {
-            // Throw with actual server error message
-            throw new Error(data.error || `Server error ${res.status}`);
+            // Show detailed error including reasons array if present
+            const reasons = data.reasons ? ' | ' + data.reasons.join(' | ') : '';
+            throw new Error((data.error || `Server error ${res.status}`) + reasons);
         }
         return data;
     }
@@ -710,23 +731,34 @@
                     ondismiss: function() {
                         showToast('⚠️ Payment cancelled.', 'error');
                         btn.disabled = false;
-                        btn.textContent = '🧪 Pay ₹10 (Test Mode)';
+                        btn.textContent = '💳 Pay ₹10';
                     }
                 },
                 handler: async function(response) {
                     btn.textContent = '✅ Verifying Payment…';
                     btn.disabled = true;
                     try {
+                        // FIX: Razorpay handler response may not include razorpay_order_id
+                        // in all SDK versions. We use orderId captured from the outer scope.
+                        const payloadToVerify = {
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id:   response.razorpay_order_id || orderId,
+                            razorpay_signature:  response.razorpay_signature
+                        };
+                        console.log('Sending to verify:', {
+                            payment_id: payloadToVerify.razorpay_payment_id,
+                            order_id:   payloadToVerify.razorpay_order_id,
+                            sig_length: payloadToVerify.razorpay_signature ? payloadToVerify.razorpay_signature.length : 0
+                        });
                         // Step 3: Backend verifies payment + saves lifetime access to DB
-                        const result = await verifyPayment(response);
+                        const result = await verifyPayment(payloadToVerify);
                         // ✅ Verified + DB updated — show success
-                        showSuccess(response.razorpay_payment_id);
+                        showSuccess(payloadToVerify.razorpay_payment_id);
                     } catch (verifyErr) {
                         console.error('Verify error:', verifyErr.message);
-                        // Show error with payment ID so user can contact support
                         showToast('❌ ' + verifyErr.message, 'error');
                         btn.disabled = false;
-                        btn.textContent = '🧪 Pay ₹10 (Test Mode)';
+                        btn.textContent = '💳 Pay ₹10';
                     }
                 }
             };
@@ -735,14 +767,14 @@
             rzp.on('payment.failed', function(response) {
                 showToast('❌ Payment failed: ' + response.error.description, 'error');
                 btn.disabled = false;
-                btn.textContent = '🧪 Pay ₹10 (Test Mode)';
+                btn.textContent = '💳 Pay ₹10';
             });
             rzp.open();
 
         } catch (err) {
             showToast('❌ ' + err.message, 'error');
             btn.disabled = false;
-            btn.textContent = '🧪 Pay ₹10 (Test Mode)';
+            btn.textContent = '💳 Pay ₹10';
         }
     }
 
@@ -750,7 +782,7 @@
     function showSuccess(paymentId) {
         sessionStorage.removeItem('pending_purchase');
 
-        // Update local cache so software page shows Download immediately on return
+        // Cache purchased module locally so software page updates instantly
         try {
             const owned = JSON.parse(localStorage.getItem('purchased_modules') || '[]');
             if (!owned.includes(purchaseData.moduleId)) {
@@ -759,14 +791,10 @@
             }
         } catch(e) {}
 
-        // Force a fresh server sync when the user lands back on software_downloads.html
-        sessionStorage.setItem('force_module_refresh', '1');
-
         document.getElementById('success-msg').innerHTML =
             'Payment ID: <strong style="color:#00FFB3">' + paymentId + '</strong><br>' +
             'Your purchase of <strong>' + purchaseData.moduleTitle + '</strong> is confirmed!<br>' +
             '🎉 You now have <strong>lifetime access</strong>.<br>' +
-            'A confirmation email has been sent to your registered address.<br>' +
             'Click below to start your download.';
         document.getElementById('download-link').href = purchaseData.downloadUrl;
         document.getElementById('success-overlay').classList.add('show');
