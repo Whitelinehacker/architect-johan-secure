@@ -558,13 +558,22 @@ def create_user(user_data):
         logger.error(f"Error creating user: {e}")
         return False
 
-def add_module_access(username, module_id, module_title, payment_id=None, download_url=None, amount_paid=1):
+def add_module_access(username, module_id, module_title, payment_id=None, download_url=None):
     """Add software module access to user's paid_modules array — idempotent, lifetime access"""
     try:
         users_coll = get_users_collection()
         if users_coll is None:
             return False
 
+        module_record = {
+            "module_id":    module_id,
+            "module_title": module_title,
+            "download_url": download_url or '',
+            "payment_id":   payment_id or '',
+            "purchased_at": datetime.datetime.utcnow().isoformat()
+        }
+
+        # $addToSet won't work for subdocs — use a flag field instead
         # Check if already purchased
         user = users_coll.find_one(
             {"username": username, "paid_modules.module_id": module_id},
@@ -572,20 +581,11 @@ def add_module_access(username, module_id, module_title, payment_id=None, downlo
         )
 
         if user:
+            # Already purchased — idempotent, just return True
             logger.info(f"Module already owned: {username} -> module {module_id}")
             return True
 
-        module_record = {
-            "module_id":    module_id,
-            "module_title": module_title,
-            "download_url": download_url or '',
-            "payment_id":   payment_id or '',
-            "amount_paid":  amount_paid,
-            "purchased_at": datetime.datetime.utcnow().isoformat(),
-            "purchase_date": datetime.datetime.utcnow().strftime('%Y-%m-%d'),
-            "access_type":  "lifetime"
-        }
-
+        # Add new module record
         result = users_coll.update_one(
             {"username": username},
             {
@@ -595,24 +595,7 @@ def add_module_access(username, module_id, module_title, payment_id=None, downlo
         )
 
         if result.matched_count > 0:
-            logger.info(f"Module access granted: {username} -> module {module_id} (Payment: {payment_id}, Amount: ₹{amount_paid})")
-
-            payment_coll = get_payment_logs_collection()
-            if payment_coll and payment_id:
-                try:
-                    payment_coll.insert_one({
-                        "razorpay_payment_id": payment_id,
-                        "username": username,
-                        "module_id": module_id,
-                        "module_title": module_title,
-                        "amount_paid": amount_paid,
-                        "purchase_type": "software_module",
-                        "purchased_at": datetime.datetime.utcnow(),
-                        "status": "completed"
-                    })
-                except Exception as log_err:
-                    logger.warning(f"Payment log insert failed: {log_err}")
-
+            logger.info(f"Module access granted: {username} -> module {module_id} (Payment: {payment_id})")
             return True
 
         return False
@@ -781,6 +764,102 @@ Architect Johan Security Team
         logger.error(f"Email configuration error: {e}")
         print(f"❌ Email configuration error: {e}")
         return False
+
+
+def send_payment_success_email(recipient_email, user_name, module_title, payment_id, download_url):
+    """Send payment success email with download link — fires after verified purchase."""
+    try:
+        if not EMAIL_USER or not EMAIL_PASSWORD:
+            logger.warning("Email config missing — skipping payment success email")
+            return False
+
+        msg = MIMEMultipart('alternative')
+        msg['From']    = f"Architect Johan <{EMAIL_USER}>"
+        msg['To']      = recipient_email
+        msg['Subject'] = "Payment Successful — Your Software is Ready 🎉"
+
+        text_body = f"""Hello {user_name},
+
+Your payment was successful! Here are your purchase details:
+
+  Module    : {module_title}
+  Payment ID: {payment_id}
+  Download  : {download_url}
+
+You now have LIFETIME access to this module.
+Visit your Software Downloads page anytime to re-download.
+
+Thank you for choosing Architect Johan!
+
+──────────────────────
+Architect Johan | Cybersecurity Training
+https://architect-johan-secure.onrender.com
+"""
+
+        html_body = f"""<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#02040A;font-family:'Courier New',monospace;color:#00FFB3;">
+  <div style="max-width:560px;margin:40px auto;background:rgba(2,4,10,0.98);
+              border:2px solid #00FFB3;border-radius:16px;padding:36px 32px;
+              box-shadow:0 0 40px rgba(0,255,179,0.25);">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:40px;">🎉</div>
+      <h1 style="color:#00FFB3;font-size:22px;letter-spacing:2px;text-transform:uppercase;margin:8px 0;">
+        Payment Successful!
+      </h1>
+      <p style="color:#2EC6FF;font-size:13px;margin:0;">Your software is ready to download</p>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+      <tr>
+        <td style="padding:10px 14px;border-bottom:1px solid rgba(0,255,179,0.2);color:rgba(0,255,179,0.6);font-size:12px;white-space:nowrap;">NAME</td>
+        <td style="padding:10px 14px;border-bottom:1px solid rgba(0,255,179,0.2);color:#fff;font-size:13px;">{user_name}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 14px;border-bottom:1px solid rgba(0,255,179,0.2);color:rgba(0,255,179,0.6);font-size:12px;white-space:nowrap;">MODULE</td>
+        <td style="padding:10px 14px;border-bottom:1px solid rgba(0,255,179,0.2);color:#fff;font-size:13px;">{module_title}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 14px;border-bottom:1px solid rgba(0,255,179,0.2);color:rgba(0,255,179,0.6);font-size:12px;white-space:nowrap;">PAYMENT ID</td>
+        <td style="padding:10px 14px;border-bottom:1px solid rgba(0,255,179,0.2);color:#00FFB3;font-size:12px;font-weight:bold;">{payment_id}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 14px;color:rgba(0,255,179,0.6);font-size:12px;white-space:nowrap;">ACCESS</td>
+        <td style="padding:10px 14px;color:#FFD700;font-size:13px;font-weight:bold;">🔓 Lifetime Access Granted</td>
+      </tr>
+    </table>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{download_url}"
+         style="display:inline-block;background:linear-gradient(135deg,#00FFB3,#2EC6FF);
+                color:#02040A;font-weight:bold;text-decoration:none;padding:14px 32px;
+                border-radius:8px;font-size:15px;letter-spacing:1px;text-transform:uppercase;">
+        📥 Download Now
+      </a>
+    </div>
+    <p style="text-align:center;color:rgba(0,255,179,0.4);font-size:11px;margin-top:24px;border-top:1px solid rgba(0,255,179,0.15);padding-top:16px;">
+      Architect Johan © 2025 | Cybersecurity Training Platform<br>
+      Keep this email — it contains your Payment ID for support requests.
+    </p>
+  </div>
+</body>
+</html>"""
+
+        msg.attach(MIMEText(text_body, 'plain'))
+        msg.attach(MIMEText(html_body, 'html'))
+
+        with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT, timeout=30) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(EMAIL_USER, EMAIL_PASSWORD)
+            server.sendmail(EMAIL_USER, recipient_email, msg.as_string())
+
+        logger.info(f"Payment success email sent → {recipient_email} | module={module_title}")
+        return True
+
+    except Exception as e:
+        logger.error(f"send_payment_success_email error: {e}")
+        return False
+
 
 def log_user_activity(username, action, ip_address=None, user_agent=None):
     """Log user activities for security monitoring"""
@@ -1625,38 +1704,50 @@ def verify_exam_level_password(current_user):
         logger.error(f"Exam level password verification error: {e}")
         return jsonify({'error': 'Password verification failed'}), 500
 
-# NEW: Razorpay Order Creation Endpoint
+# =============================================================
+# SOFTWARE MODULE ORDER CREATION — admin-aware, price server-side
+# =============================================================
+
+SOFTWARE_MODULE_PRICE_PAISE = int(os.getenv('SOFTWARE_MODULE_PRICE_PAISE', 1000))  # ₹10 default test price
+
 @app.route('/api/create-order', methods=['POST'])
 @token_required
 def create_order(current_user):
-    """Create Razorpay order — supports both course purchases and software module purchases"""
+    """Create Razorpay order — supports both course purchases and software module purchases."""
     try:
         if razorpay_client is None:
-            return jsonify({'error': 'Payment system not configured'}), 500
+            return jsonify({'error': 'Payment system not configured'}), 503
 
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
 
         # ── Detect purchase type: module (software) or course ──
         module_id    = data.get('module_id', '').strip()
         module_title = data.get('module_title', '').strip()
         course_id    = data.get('course_id', '').strip()
 
-        # ── Validate buyer details (for software module purchases) ──
         buyer_name   = data.get('buyer_name', '').strip()
         buyer_email  = data.get('buyer_email', '').strip().lower()
         buyer_mobile = data.get('buyer_mobile', '').strip()
 
-        # Get user info
         user = get_user_by_username(current_user)
         if not user:
             return jsonify({'error': 'User not found'}), 404
 
         if module_id:
-            # ── Software Module Purchase — fixed price ₹150 ──
+            # ── Software Module Purchase ──────────────────────────
             if not module_title:
                 return jsonify({'error': 'Module title required'}), 400
 
-            amount_paise = 100   # ₹10 — TEST MODE (change to 15000 for ₹150 in production)
+            # Admin accounts never need to purchase
+            if user.get('role') == 'admin':
+                return jsonify({'error': 'Admin accounts do not need to purchase modules'}), 400
+
+            # Idempotency: already purchased → no new order
+            for m in user.get('paid_modules', []):
+                if isinstance(m, dict) and m.get('module_id') == module_id:
+                    return jsonify({'error': 'Module already purchased'}), 409
+
+            amount_paise = SOFTWARE_MODULE_PRICE_PAISE
             receipt = f'module_{module_id}_{int(datetime.datetime.utcnow().timestamp())}'
             notes = {
                 'type':         'software_module',
@@ -1670,7 +1761,7 @@ def create_order(current_user):
             description = f'Module #{module_id} — {module_title}'
 
         elif course_id:
-            # ── Course Purchase ──
+            # ── Course Purchase ───────────────────────────────────
             course_titles = {
                 'ceh_v13': 'CEH v13 - Certified Ethical Hacker',
                 'ccna': 'CCNA - Cisco Certified Network Associate',
@@ -1684,7 +1775,7 @@ def create_order(current_user):
                 'cloud_security': 'Cloud Security'
             }
             course_title  = course_titles.get(course_id, course_id.replace('_', ' ').title())
-            amount_paise  = 15000  # ₹150 for courses too
+            amount_paise  = SOFTWARE_MODULE_PRICE_PAISE
             receipt       = f'course_{course_id}_{int(datetime.datetime.utcnow().timestamp())}'
             notes = {
                 'type':        'course',
@@ -1721,175 +1812,166 @@ def create_order(current_user):
         logger.error(f"Order creation error: {e}")
         return jsonify({'error': 'Failed to create order'}), 500
 
-# NEW: Payment Verification Endpoint
+# =============================================================
+# PAYMENT VERIFICATION — signature verified, email on success
+# =============================================================
+
 @app.route('/api/verify-payment', methods=['POST'])
 @token_required
 def verify_payment(current_user):
-    """Verify Razorpay payment — supports both software modules and courses"""
+    """Verify Razorpay payment — supports both software modules and courses."""
     try:
-        data = request.get_json()
-        
-        logger.info(f"=== Payment Verification Started ===")
-        logger.info(f"User: {current_user}")
-        logger.info(f"Data received: {json.dumps({k: v[:20] + '...' if len(str(v)) > 20 else v for k, v in data.items()})}")
+        data = request.get_json(silent=True) or {}
 
         razorpay_payment_id = data.get('razorpay_payment_id', '').strip()
-        razorpay_order_id = data.get('razorpay_order_id', '').strip()
-        razorpay_signature = data.get('razorpay_signature', '').strip()
+        razorpay_order_id   = data.get('razorpay_order_id', '').strip()
+        razorpay_signature  = data.get('razorpay_signature', '').strip()
 
-        module_id = data.get('module_id', '').strip()
+        module_id    = data.get('module_id', '').strip()
         module_title = data.get('module_title', '').strip()
         download_url = data.get('download_url', '').strip()
-        course_id = data.get('course_id', '').strip()
+        course_id    = data.get('course_id', '').strip()
 
         if not all([razorpay_payment_id, razorpay_order_id, razorpay_signature]):
-            logger.error("Missing Razorpay fields")
+            logger.error(f"Missing Razorpay fields: payment={bool(razorpay_payment_id)} order={bool(razorpay_order_id)} sig={bool(razorpay_signature)}")
             return jsonify({'error': 'Missing payment details'}), 400
 
         if not module_id and not course_id:
-            logger.error("Neither module_id nor course_id provided")
             return jsonify({'error': 'Missing purchase identifier'}), 400
 
-        # 🔥 SIMPLIFIED VERIFICATION - Just check with Razorpay API directly
-        signature_valid = False
-        payment_verified = False
-        verification_error = None
-        
-        if razorpay_client is None:
-            verification_error = "Razorpay client not initialized. Check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables."
-            logger.error(f"❌ {verification_error}")
-        else:
-            try:
-                # Fetch payment details from Razorpay
-                logger.info(f"🔍 Fetching payment from Razorpay: {razorpay_payment_id}")
-                payment = razorpay_client.payment.fetch(razorpay_payment_id)
-                logger.info(f"Payment fetched: Status={payment.get('status')}, Order={payment.get('order_id')}, Amount={payment.get('amount')}")
-                
-                # Check if payment is captured
-                if payment.get('status') != 'captured':
-                    verification_error = f"Payment status is '{payment.get('status')}', expected 'captured'"
-                    logger.error(f"❌ {verification_error}")
-                    
-                # Check if order ID matches
-                elif payment.get('order_id') != razorpay_order_id:
-                    verification_error = f"Order ID mismatch: Expected {razorpay_order_id}, got {payment.get('order_id')}"
-                    logger.error(f"❌ {verification_error}")
-                    
-                else:
-                    signature_valid = True
-                    payment_verified = True
-                    logger.info(f"✅ Payment verified via Razorpay API: {razorpay_payment_id}")
-                    
-                    # Verify amount is correct (₹1 = 100 paise for test, ₹150 = 15000 for production)
-                    amount_paid = payment.get('amount', 0)
-                    expected_amount = 100  # ₹1 for test
-                    if amount_paid != expected_amount:
-                        logger.warning(f"⚠️ Amount mismatch: Expected {expected_amount} paise (₹{expected_amount/100}), got {amount_paid} paise (₹{amount_paid/100})")
-                    else:
-                        logger.info(f"✅ Amount verified: ₹{amount_paid/100}")
-                    
-            except Exception as fetch_err:
-                logger.error(f"❌ Razorpay API fetch failed: {fetch_err}")
-                verification_error = f"Payment API error: {str(fetch_err)}"
-                
-                # Fallback: Try signature verification
-                logger.info(f"🔄 Attempting fallback signature verification...")
-                try:
-                    razorpay_client.utility.verify_payment_signature({
-                        'razorpay_order_id': razorpay_order_id,
-                        'razorpay_payment_id': razorpay_payment_id,
-                        'razorpay_signature': razorpay_signature
-                    })
-                    signature_valid = True
-                    payment_verified = True
-                    verification_error = None
-                    logger.info(f"✅ Payment verified via signature: {razorpay_payment_id}")
-                except Exception as sig_err:
-                    logger.error(f"❌ Signature verification also failed: {sig_err}")
-                    verification_error = f"Signature verification failed: {str(sig_err)}"
-            
-        # 🔥 DEVELOPMENT MODE BYPASS - REMOVE IN PRODUCTION
-        # Uncomment this for testing if Razorpay verification keeps failing
-        # signature_valid = True
-        # payment_verified = True
-        # logger.warning("⚠️ DEV MODE: Bypassing payment verification")
-
-        if not signature_valid and not payment_verified:
-            logger.error(f"❌ All verification methods failed for payment: {razorpay_payment_id}")
-            error_msg = verification_error or 'Payment verification failed'
-            logger.error(f"Detailed error: {error_msg}")
-            return jsonify({
-                'error': f'{error_msg}. Please contact support with Payment ID: {razorpay_payment_id}',
-                'payment_id': razorpay_payment_id,
-                'recovery_possible': True  # Indicates support can manually verify
-            }), 400
-
-        # ✅ Payment verified - Grant access
-        logger.info(f"✅ Payment verified successfully! Granting access...")
-        
-        if module_id:
-            # Grant module access
-            access_granted = add_module_access(
-                username=current_user,
-                module_id=module_id,
-                module_title=module_title,
-                payment_id=razorpay_payment_id,
-                download_url=download_url,
-                amount_paid=1
-            )
-            
-            if access_granted:
-                logger.info(f"✅ Module access granted: {current_user} -> {module_id}")
-                
-                # Log successful payment
-                payment_coll = get_payment_logs_collection()
-                if payment_coll:
-                    try:
-                        payment_coll.insert_one({
-                            "razorpay_payment_id": razorpay_payment_id,
-                            "razorpay_order_id": razorpay_order_id,
-                            "username": current_user,
-                            "purchase_type": "software_module",
-                            "module_id": module_id,
-                            "module_title": module_title,
-                            "amount_paid": 1,
-                            "status": "verified",
-                            "verified_at": datetime.datetime.utcnow(),
-                            "created_at": datetime.datetime.utcnow()
-                        })
-                    except DuplicateKeyError:
-                        logger.info(f"Payment already logged: {razorpay_payment_id}")
-                
+        # ── Duplicate-payment guard ────────────────────────────────
+        payment_coll = get_payment_logs_collection()
+        if payment_coll:
+            existing = payment_coll.find_one({'razorpay_payment_id': razorpay_payment_id})
+            if existing:
+                logger.info(f"Duplicate payment ignored: {razorpay_payment_id}")
                 return jsonify({
                     'success': True,
-                    'message': '✅ Payment verified — Lifetime access granted!',
-                    'payment_id': razorpay_payment_id,
-                    'module_id': module_id,
-                    'download_url': download_url
+                    'message': 'Payment already processed',
+                    'already_processed': True
                 }), 200
-            else:
-                logger.error(f"Failed to grant module access: {current_user} -> {module_id}")
-                return jsonify({'error': 'Failed to grant module access'}), 500
+
+        # ── Signature Verification (3 methods, any one passing = valid) ──
+        signature_valid = False
+
+        # Method 1: Razorpay SDK utility (most reliable)
+        if razorpay_client and not signature_valid:
+            try:
+                razorpay_client.utility.verify_payment_signature({
+                    'razorpay_order_id':   razorpay_order_id,
+                    'razorpay_payment_id': razorpay_payment_id,
+                    'razorpay_signature':  razorpay_signature
+                })
+                signature_valid = True
+                logger.info(f"Signature valid via Razorpay SDK: {razorpay_payment_id}")
+            except Exception as sdk_err:
+                logger.warning(f"Razorpay SDK verify failed: {sdk_err}")
+
+        # Method 2: Manual HMAC-SHA256
+        if RAZORPAY_KEY_SECRET and not signature_valid:
+            try:
+                body     = razorpay_order_id + "|" + razorpay_payment_id
+                expected = hmac.new(
+                    RAZORPAY_KEY_SECRET.encode('utf-8'),
+                    body.encode('utf-8'),
+                    hashlib.sha256
+                ).hexdigest()
+                if hmac.compare_digest(expected, razorpay_signature):
+                    signature_valid = True
+                    logger.info(f"Signature valid via HMAC: {razorpay_payment_id}")
+                else:
+                    logger.warning(f"HMAC mismatch — expected={expected[:20]} received={razorpay_signature[:20]}")
+            except Exception as hmac_err:
+                logger.warning(f"HMAC verify failed: {hmac_err}")
+
+        # Method 3: Fetch payment directly from Razorpay API
+        if razorpay_client and not signature_valid:
+            try:
+                payment = razorpay_client.payment.fetch(razorpay_payment_id)
+                if payment.get('status') in ('captured', 'authorized') and                    payment.get('order_id') == razorpay_order_id:
+                    signature_valid = True
+                    logger.info(f"Payment valid via Razorpay API fetch: {razorpay_payment_id}")
+                else:
+                    logger.warning(f"Razorpay API: status={payment.get('status')} order={payment.get('order_id')}")
+            except Exception as fetch_err:
+                logger.warning(f"Razorpay API fetch failed: {fetch_err}")
+
+        if not signature_valid:
+            logger.error(f"All verification methods failed for payment: {razorpay_payment_id}")
+            return jsonify({'error': 'Payment verification failed — contact support with payment ID: ' + razorpay_payment_id}), 400
+
+        # ── Log payment to MongoDB ─────────────────────────────────
+        if payment_coll:
+            try:
+                payment_coll.insert_one({
+                    "razorpay_payment_id": razorpay_payment_id,
+                    "razorpay_order_id":   razorpay_order_id,
+                    "username":            current_user,
+                    "purchase_type":       "software_module" if module_id else "course",
+                    "module_id":           module_id or None,
+                    "module_title":        module_title or None,
+                    "course_id":           course_id or None,
+                    "download_url":        download_url or None,
+                    "amount_paise":        SOFTWARE_MODULE_PRICE_PAISE,
+                    "currency":            "INR",
+                    "status":              "captured",
+                    "verified":            True,
+                    "verified_at":         datetime.datetime.utcnow(),
+                    "created_at":          datetime.datetime.utcnow(),
+                    "source":              "frontend_verification"
+                })
+            except Exception as db_err:
+                logger.error(f"DB log error (non-fatal): {db_err}")
+
+        # ── Grant access based on purchase type ───────────────────
+        if module_id:
+            add_module_access(
+                username     = current_user,
+                module_id    = module_id,
+                module_title = module_title,
+                payment_id   = razorpay_payment_id,
+                download_url = download_url
+            )
+            log_user_activity(current_user, f'module_purchased_{module_id}', request.remote_addr)
+            logger.info(f"Software module access granted: {current_user} -> module {module_id} | payment {razorpay_payment_id}")
+
+            # ── Send success email in background thread ────────────
+            user = get_user_by_username(current_user)
+            if user and user.get('email'):
+                try:
+                    import threading
+                    threading.Thread(
+                        target=send_payment_success_email,
+                        args=(user['email'], user.get('full_name', current_user), module_title, razorpay_payment_id, download_url),
+                        daemon=True
+                    ).start()
+                except Exception as email_err:
+                    logger.warning(f"Email thread failed: {email_err}")
+
+            return jsonify({
+                'success':      True,
+                'message':      'Payment verified — lifetime access granted',
+                'payment_id':   razorpay_payment_id,
+                'module_id':    module_id,
+                'download_url': download_url
+            }), 200
 
         elif course_id:
-            # Grant course access
             access_granted = add_course_access(current_user, course_id, razorpay_payment_id)
             if access_granted:
-                logger.info(f"✅ Course access granted: {current_user} -> {course_id}")
+                logger.info(f"Course payment verified: {current_user} -> {course_id} | payment {razorpay_payment_id}")
                 return jsonify({
-                    'success': True,
-                    'message': '✅ Payment verified — Course access granted!',
+                    'success':    True,
+                    'message':    'Payment verified and course access granted',
                     'payment_id': razorpay_payment_id,
-                    'course_id': course_id
+                    'course_id':  course_id
                 }), 200
             else:
                 return jsonify({'error': 'Failed to grant course access'}), 500
 
     except Exception as e:
-        logger.error(f"❌ Payment verification error: {e}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify({'error': f'Payment verification failed: {str(e)}'}), 500
+        logger.error(f"Payment verification error: {e}")
+        return jsonify({'error': 'Payment verification failed'}), 500
 
 # Razorpay Webhook Endpoint (existing - updated)
 @app.route('/api/razorpay/webhook', methods=['POST'])
@@ -2017,58 +2099,6 @@ def razorpay_webhook():
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Webhook processing failed'}), 500
-
-# DIAGNOSTIC: Check Razorpay Configuration (for debugging)
-@app.route('/api/payment/config-check', methods=['GET'])
-@token_required
-def check_payment_config(current_user):
-    """Diagnostic endpoint to verify Razorpay configuration - ADMIN ONLY"""
-    try:
-        user = get_user_by_username(current_user)
-        if not user or user.get('role') != 'admin':
-            return jsonify({'error': 'Admin access required'}), 403
-        
-        diagnostics = {
-            'razorpay_available': RAZORPAY_AVAILABLE,
-            'razorpay_client_initialized': razorpay_client is not None,
-            'key_id_configured': bool(RAZORPAY_KEY_ID),
-            'key_secret_configured': bool(RAZORPAY_KEY_SECRET),
-            'webhook_secret_configured': bool(RAZORPAY_WEBHOOK_SECRET),
-            'mongodb_available': MONGODB_AVAILABLE,
-            'mongodb_connected': get_db() is not None,
-            'issues': []
-        }
-        
-        # Check for issues
-        if not RAZORPAY_AVAILABLE:
-            diagnostics['issues'].append('razorpay package not installed (pip install razorpay)')
-        
-        if not RAZORPAY_KEY_ID:
-            diagnostics['issues'].append('RAZORPAY_KEY_ID not set in .env')
-        
-        if not RAZORPAY_KEY_SECRET:
-            diagnostics['issues'].append('RAZORPAY_KEY_SECRET not set in .env')
-        
-        if not razorpay_client and RAZORPAY_AVAILABLE:
-            diagnostics['issues'].append('Razorpay client failed to initialize (check credentials)')
-        
-        if not MONGODB_AVAILABLE:
-            diagnostics['issues'].append('pymongo not installed (pip install pymongo)')
-        
-        if get_db() is None and MONGODB_AVAILABLE:
-            diagnostics['issues'].append('MongoDB connection failed (check MONGODB_URI in .env)')
-        
-        logger.info(f"Payment diagnostics check by {current_user}: {diagnostics}")
-        
-        return jsonify({
-            'success': len(diagnostics['issues']) == 0,
-            'diagnostics': diagnostics,
-            'status': 'healthy' if len(diagnostics['issues']) == 0 else 'misconfigured'
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Payment config check error: {e}")
-        return jsonify({'error': str(e)}), 500
 
 # FORGOT PASSWORD ROUTES
 @app.route('/api/forgot-password', methods=['POST'])
@@ -3176,6 +3206,156 @@ def check_mobile():
     except Exception as e:
         logger.error(f"Mobile check error: {e}")
         return jsonify({'exists': False}), 200
+
+
+# =============================================================
+# CHECK MODULE ACCESS — Admin bypass built-in
+# =============================================================
+
+@app.route('/api/check-module-access', methods=['POST'])
+@token_required
+def check_module_access(current_user):
+    """
+    Check if authenticated user has access to a software module.
+    Admin → always True. User → checks paid_modules in MongoDB.
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        module_id = data.get('module_id', '').strip()
+
+        if not module_id:
+            return jsonify({'error': 'module_id is required'}), 400
+
+        user = get_user_by_username(current_user)
+        if user is None:
+            return jsonify({'error': 'User not found'}), 404
+
+        # ── ADMIN BYPASS ─────────────────────────────────────────
+        if user.get('role') == 'admin':
+            return jsonify({
+                'has_access': True,
+                'is_admin':   True,
+                'module_id':  module_id
+            }), 200
+
+        # ── REGULAR USER: check paid_modules ─────────────────────
+        paid_modules = user.get('paid_modules', [])
+        owned_ids    = {m.get('module_id') for m in paid_modules if isinstance(m, dict)}
+        has_access   = module_id in owned_ids
+
+        download_url = None
+        if has_access:
+            for m in paid_modules:
+                if isinstance(m, dict) and m.get('module_id') == module_id:
+                    download_url = m.get('download_url')
+                    break
+
+        return jsonify({
+            'has_access':   has_access,
+            'is_admin':     False,
+            'module_id':    module_id,
+            'download_url': download_url
+        }), 200
+
+    except Exception as e:
+        logger.error(f"check_module_access error: {e}")
+        return jsonify({'error': 'Access check failed'}), 500
+
+
+# =============================================================
+# SECURE DOWNLOAD GATE — Admin bypass built-in
+# =============================================================
+
+@app.route('/api/download-module', methods=['GET'])
+@token_required
+def download_module_secure(current_user):
+    """
+    Secure download endpoint.
+    Admin  → always allowed.
+    User   → allowed only if module_id is in paid_modules.
+    Returns JSON with download_url or 403.
+    """
+    try:
+        module_id = request.args.get('module_id', '').strip()
+        if not module_id:
+            return jsonify({'error': 'module_id is required'}), 400
+
+        user = get_user_by_username(current_user)
+        if user is None:
+            return jsonify({'error': 'User not found'}), 404
+
+        # ── ADMIN BYPASS ──────────────────────────────────────────
+        if user.get('role') == 'admin':
+            # Try to find a stored URL from paid_modules (if admin ever purchased)
+            download_url = None
+            for m in user.get('paid_modules', []):
+                if isinstance(m, dict) and m.get('module_id') == module_id:
+                    download_url = m.get('download_url')
+                    break
+            log_user_activity(current_user, f'admin_download_{module_id}', request.remote_addr)
+            return jsonify({
+                'success':      True,
+                'is_admin':     True,
+                'download_url': download_url,
+                'message':      'Admin access granted'
+            }), 200
+
+        # ── REGULAR USER ─────────────────────────────────────────
+        for m in user.get('paid_modules', []):
+            if isinstance(m, dict) and m.get('module_id') == module_id:
+                log_user_activity(current_user, f'software_download_{module_id}', request.remote_addr)
+                return jsonify({
+                    'success':      True,
+                    'is_admin':     False,
+                    'download_url': m.get('download_url'),
+                    'module_title': m.get('module_title')
+                }), 200
+
+        return jsonify({
+            'success': False,
+            'error':   'Access denied — purchase this module first'
+        }), 403
+
+    except Exception as e:
+        logger.error(f"download_module_secure error: {e}")
+        return jsonify({'error': 'Download check failed'}), 500
+
+
+# =============================================================
+# MY MODULES — Full details, admin-aware
+# =============================================================
+
+@app.route('/api/my-modules', methods=['GET'])
+@token_required
+def my_modules(current_user):
+    """
+    Return full purchased module details for the logged-in user.
+    Admin gets is_admin=True; regular user gets their purchases.
+    """
+    try:
+        user = get_user_by_username(current_user)
+        if user is None:
+            return jsonify({'error': 'User not found'}), 404
+
+        is_admin = user.get('role') == 'admin'
+        modules  = user.get('paid_modules', [])
+
+        clean = []
+        for m in modules:
+            if isinstance(m, dict):
+                clean.append({k: v for k, v in m.items() if k != '_id'})
+
+        return jsonify({
+            'success':         True,
+            'is_admin':        is_admin,
+            'modules':         clean,
+            'total_purchased': len(clean)
+        }), 200
+
+    except Exception as e:
+        logger.error(f"my_modules error: {e}")
+        return jsonify({'error': 'Failed to fetch modules'}), 500
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
