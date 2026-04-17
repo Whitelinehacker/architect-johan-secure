@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Payment [TEST ₹10] — Architect Johan</title>
+    <title>Secure Payment [₹1] — Architect Johan</title>
     <!-- Razorpay Checkout SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
@@ -21,7 +21,6 @@
             overflow-x: hidden;
         }
 
-        /* ── Matrix Canvas ── */
         #matrix-canvas {
             position: fixed;
             top: 0; left: 0;
@@ -31,7 +30,6 @@
             pointer-events: none;
         }
 
-        /* ── Card ── */
         .payment-card {
             position: relative;
             z-index: 10;
@@ -51,7 +49,6 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* ── Header ── */
         .pay-header {
             text-align: center;
             margin-bottom: 30px;
@@ -79,7 +76,6 @@
             letter-spacing: 1px;
         }
 
-        /* ── Product Summary ── */
         .product-box {
             background: rgba(0,255,179,0.06);
             border: 1px solid rgba(0,255,179,0.3);
@@ -140,7 +136,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* ── Form ── */
         .form-section { margin-bottom: 24px; }
 
         .form-section h3 {
@@ -198,7 +193,6 @@
             display: none;
         }
 
-        /* ── Security Badges ── */
         .security-row {
             display: flex;
             gap: 10px;
@@ -223,7 +217,6 @@
 
         .sec-badge .icon { font-size: 16px; }
 
-        /* ── Pay Button ── */
         .pay-btn {
             width: 100%;
             padding: 16px;
@@ -267,7 +260,6 @@
             transform: none;
         }
 
-        /* ── Footer note ── */
         .footer-note {
             text-align: center;
             margin-top: 20px;
@@ -284,7 +276,6 @@
 
         .footer-note a:hover { text-shadow: 0 0 8px rgba(46,198,255,0.8); }
 
-        /* ── Back Link ── */
         .back-link {
             display: inline-flex;
             align-items: center;
@@ -304,7 +295,6 @@
             text-shadow: 0 0 8px rgba(0,255,179,0.5);
         }
 
-        /* ── Success Overlay ── */
         .success-overlay {
             display: none;
             position: fixed;
@@ -365,7 +355,6 @@
             box-shadow: 0 12px 35px rgba(0,255,179,0.7);
         }
 
-        /* ── Toast ── */
         .toast {
             position: fixed;
             top: 24px; right: 24px;
@@ -406,35 +395,30 @@
 
 <canvas id="matrix-canvas"></canvas>
 
-<!-- Toast notification -->
 <div class="toast" id="toast"></div>
 
-<!-- Main Payment Card -->
 <a href="software_downloads.html" class="back-link">← Back to Software Tools</a>
 
 <div class="payment-card">
-
     <div class="pay-header">
         <span class="lock-icon">🔐</span>
         <h1>Secure Checkout</h1>
         <p>256-bit SSL Encrypted &nbsp;|&nbsp; Powered by Razorpay</p>
     </div>
 
-    <!-- Product Summary -->
     <div class="product-box">
         <div class="product-label">You are purchasing</div>
         <div class="product-title" id="module-title">Loading...</div>
         <div class="price-row">
             <span class="label">Total Amount</span>
             <div style="display:flex; align-items:baseline; gap:4px;">
-                <span class="amount">₹10</span>
+                <span class="amount">₹1</span>
                 <span class="original-price">₹150</span>
-                <span class="discount-tag">🧪 TEST</span>
+                <span class="discount-tag">🎯 99% OFF</span>
             </div>
         </div>
     </div>
 
-    <!-- Buyer Details -->
     <div class="form-section">
         <h3>📋 Your Details</h3>
 
@@ -457,7 +441,6 @@
         </div>
     </div>
 
-    <!-- Security Badges -->
     <div class="security-row">
         <div class="sec-badge"><span class="icon">🔒</span> SSL Secured</div>
         <div class="sec-badge"><span class="icon">🛡️</span> PCI DSS Safe</div>
@@ -465,9 +448,8 @@
         <div class="sec-badge"><span class="icon">💳</span> UPI / Cards</div>
     </div>
 
-    <!-- Pay Button -->
     <button class="pay-btn" id="pay-btn" onclick="initiatePayment()">
-        🧪 Pay ₹10 (Test Mode)
+        🔓 Pay ₹1 (99% OFF)
     </button>
 
     <div class="footer-note">
@@ -476,10 +458,8 @@
         Your data is encrypted and never stored on our servers.<br>
         <strong style="color:rgba(0,255,179,0.5);">Architect Johan © 2025</strong>
     </div>
-
 </div>
 
-<!-- Success Overlay -->
 <div class="success-overlay" id="success-overlay">
     <span class="success-icon">🎉</span>
     <h2>Payment Successful!</h2>
@@ -492,7 +472,6 @@
     </p>
 </div>
 
-<!-- Matrix Script -->
 <script>
     (function initMatrix() {
         const canvas = document.getElementById('matrix-canvas');
@@ -524,14 +503,11 @@
 </script>
 
 <script>
-    // ── Config ──────────────────────────────────────────────
-    // NO keys stored here — all secrets live in .env on the server
     const API_BASE_URL  = 'https://architect-johan-secure.onrender.com';
-    const PRICE_PAISE   = 1000;   // ₹150 — enforced server-side, shown for UX only
+    const PRICE_PAISE   = 100;   // ₹1 = 100 paise
     const CURRENCY      = 'INR';
     const COMPANY_NAME  = 'Architect Johan';
 
-    // ── Purchase data (set by software_downloads.html) ──────
     let purchaseData = null;
 
     function loadPurchaseData() {
@@ -540,14 +516,12 @@
             if (!raw) throw new Error('No purchase data');
             purchaseData = JSON.parse(raw);
 
-            // Reject sessions older than 30 minutes
             if (Date.now() - purchaseData.timestamp > 30 * 60 * 1000)
                 throw new Error('Session expired');
 
             document.getElementById('module-title').textContent =
                 'Module #' + purchaseData.moduleId + ' — ' + purchaseData.moduleTitle;
 
-            // Pre-fill saved user info
             const savedName  = localStorage.getItem('full_name');
             const savedEmail = localStorage.getItem('email');
             if (savedName)  document.getElementById('buyer-name').value  = savedName;
@@ -559,7 +533,6 @@
         }
     }
 
-    // ── Form Validation ──────────────────────────────────────
     function validateForm() {
         let valid = true;
         const name   = document.getElementById('buyer-name').value.trim();
@@ -599,7 +572,6 @@
         return valid ? { name, email, mobile } : null;
     }
 
-    // ── Step 1: Create order — backend returns key_id + order_id ──
     async function createOrder(buyerInfo) {
         const token = localStorage.getItem('auth_token');
         const res = await fetch(`${API_BASE_URL}/api/create-order`, {
@@ -622,12 +594,9 @@
             throw new Error(err.error || 'Order creation failed');
         }
 
-        // Backend returns: { order_id, amount, currency, key_id }
-        // key_id comes from RAZORPAY_KEY_ID env var — never stored in this file
         return res.json();
     }
 
-    // ── Step 3: Verify payment signature on backend ──────────
     async function verifyPayment(paymentDetails) {
         const token = localStorage.getItem('auth_token');
         const res = await fetch(`${API_BASE_URL}/api/verify-payment`, {
@@ -646,18 +615,15 @@
             })
         });
 
-        // Parse response body regardless of status
         const data = await res.json().catch(() => ({}));
         console.log('Verify response:', res.status, data);
 
         if (!res.ok) {
-            // Throw with actual server error message
             throw new Error(data.error || `Server error ${res.status}`);
         }
         return data;
     }
 
-    // ── Main Payment Flow ────────────────────────────────────
     async function initiatePayment() {
         const buyerInfo = validateForm();
         if (!buyerInfo) {
@@ -674,17 +640,15 @@
         btn.textContent = '⏳ Creating Secure Session…';
 
         try {
-            // Step 1: Hit backend — get order_id AND key_id from env
             const order = await createOrder(buyerInfo);
             const orderId = order.order_id;
-            const keyId   = order.key_id;   // ← comes from server env, never hardcoded
+            const keyId   = order.key_id;
             const amount  = order.amount;
 
             if (!keyId) throw new Error('Payment configuration error. Contact support.');
 
             btn.textContent = '🔐 Opening Secure Payment…';
 
-            // Step 2: Open Razorpay with key from server
             const options = {
                 key:         keyId,
                 amount:      amount,
@@ -710,23 +674,20 @@
                     ondismiss: function() {
                         showToast('⚠️ Payment cancelled.', 'error');
                         btn.disabled = false;
-                        btn.textContent = '🧪 Pay ₹10 (Test Mode)';
+                        btn.textContent = '🔓 Pay ₹1 (99% OFF)';
                     }
                 },
                 handler: async function(response) {
                     btn.textContent = '✅ Verifying Payment…';
                     btn.disabled = true;
                     try {
-                        // Step 3: Backend verifies payment + saves lifetime access to DB
                         const result = await verifyPayment(response);
-                        // ✅ Verified + DB updated — show success
                         showSuccess(response.razorpay_payment_id);
                     } catch (verifyErr) {
                         console.error('Verify error:', verifyErr.message);
-                        // Show error with payment ID so user can contact support
                         showToast('❌ ' + verifyErr.message, 'error');
                         btn.disabled = false;
-                        btn.textContent = '🧪 Pay ₹10 (Test Mode)';
+                        btn.textContent = '🔓 Pay ₹1 (99% OFF)';
                     }
                 }
             };
@@ -735,22 +696,20 @@
             rzp.on('payment.failed', function(response) {
                 showToast('❌ Payment failed: ' + response.error.description, 'error');
                 btn.disabled = false;
-                btn.textContent = '🧪 Pay ₹10 (Test Mode)';
+                btn.textContent = '🔓 Pay ₹1 (99% OFF)';
             });
             rzp.open();
 
         } catch (err) {
             showToast('❌ ' + err.message, 'error');
             btn.disabled = false;
-            btn.textContent = '🧪 Pay ₹10 (Test Mode)';
+            btn.textContent = '🔓 Pay ₹1 (99% OFF)';
         }
     }
 
-    // ── Show Success ─────────────────────────────────────────
     function showSuccess(paymentId) {
         sessionStorage.removeItem('pending_purchase');
 
-        // Cache purchased module locally so software page updates instantly
         try {
             const owned = JSON.parse(localStorage.getItem('purchased_modules') || '[]');
             if (!owned.includes(purchaseData.moduleId)) {
@@ -769,7 +728,6 @@
         showToast('✅ Payment successful! Lifetime access granted.', 'success');
     }
 
-    // ── Toast ────────────────────────────────────────────────
     function showToast(message, type) {
         const toast = document.getElementById('toast');
         toast.textContent = message;
@@ -777,7 +735,6 @@
         setTimeout(() => { toast.className = 'toast'; }, 4000);
     }
 
-    // ── Auth Check ───────────────────────────────────────────
     async function checkAuth() {
         const token = localStorage.getItem('auth_token');
         if (!token) { window.location.href = 'index.html'; return; }
@@ -793,7 +750,6 @@
         } catch (e) { /* allow offline */ }
     }
 
-    // ── Init ─────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function() {
         checkAuth();
         loadPurchaseData();
