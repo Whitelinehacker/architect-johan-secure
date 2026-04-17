@@ -558,22 +558,13 @@ def create_user(user_data):
         logger.error(f"Error creating user: {e}")
         return False
 
-def add_module_access(username, module_id, module_title, payment_id=None, download_url=None):
+def add_module_access(username, module_id, module_title, payment_id=None, download_url=None, amount_paid=1):
     """Add software module access to user's paid_modules array — idempotent, lifetime access"""
     try:
         users_coll = get_users_collection()
         if users_coll is None:
             return False
 
-        module_record = {
-            "module_id":    module_id,
-            "module_title": module_title,
-            "download_url": download_url or '',
-            "payment_id":   payment_id or '',
-            "purchased_at": datetime.datetime.utcnow().isoformat()
-        }
-
-        # $addToSet won't work for subdocs — use a flag field instead
         # Check if already purchased
         user = users_coll.find_one(
             {"username": username, "paid_modules.module_id": module_id},
@@ -581,11 +572,20 @@ def add_module_access(username, module_id, module_title, payment_id=None, downlo
         )
 
         if user:
-            # Already purchased — idempotent, just return True
             logger.info(f"Module already owned: {username} -> module {module_id}")
             return True
 
-        # Add new module record
+        module_record = {
+            "module_id":    module_id,
+            "module_title": module_title,
+            "download_url": download_url or '',
+            "payment_id":   payment_id or '',
+            "amount_paid":  amount_paid,
+            "purchased_at": datetime.datetime.utcnow().isoformat(),
+            "purchase_date": datetime.datetime.utcnow().strftime('%Y-%m-%d'),
+            "access_type":  "lifetime"
+        }
+
         result = users_coll.update_one(
             {"username": username},
             {
@@ -595,7 +595,24 @@ def add_module_access(username, module_id, module_title, payment_id=None, downlo
         )
 
         if result.matched_count > 0:
-            logger.info(f"Module access granted: {username} -> module {module_id} (Payment: {payment_id})")
+            logger.info(f"Module access granted: {username} -> module {module_id} (Payment: {payment_id}, Amount: ₹{amount_paid})")
+
+            payment_coll = get_payment_logs_collection()
+            if payment_coll and payment_id:
+                try:
+                    payment_coll.insert_one({
+                        "razorpay_payment_id": razorpay_payment_id if False else payment_id,
+                        "username": username,
+                        "module_id": module_id,
+                        "module_title": module_title,
+                        "amount_paid": amount_paid,
+                        "purchase_type": "software_module",
+                        "purchased_at": datetime.datetime.utcnow(),
+                        "status": "completed"
+                    })
+                except Exception as log_err:
+                    logger.warning(f"Payment log insert failed: {log_err}")
+
             return True
 
         return False
