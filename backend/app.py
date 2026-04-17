@@ -1728,136 +1728,147 @@ def verify_payment(current_user):
     """Verify Razorpay payment — supports both software modules and courses"""
     try:
         data = request.get_json()
+        
+        logger.info(f"=== Payment Verification Started ===")
+        logger.info(f"User: {current_user}")
+        logger.info(f"Data received: {json.dumps({k: v[:20] + '...' if len(str(v)) > 20 else v for k, v in data.items()})}")
 
         razorpay_payment_id = data.get('razorpay_payment_id', '').strip()
-        razorpay_order_id   = data.get('razorpay_order_id', '').strip()
-        razorpay_signature  = data.get('razorpay_signature', '').strip()
+        razorpay_order_id = data.get('razorpay_order_id', '').strip()
+        razorpay_signature = data.get('razorpay_signature', '').strip()
 
-        # Support both purchase types
-        module_id    = data.get('module_id', '').strip()
+        module_id = data.get('module_id', '').strip()
         module_title = data.get('module_title', '').strip()
         download_url = data.get('download_url', '').strip()
-        course_id    = data.get('course_id', '').strip()
+        course_id = data.get('course_id', '').strip()
 
-        # Must have the 3 Razorpay fields + at least one purchase identifier
         if not all([razorpay_payment_id, razorpay_order_id, razorpay_signature]):
-            logger.error(f"Missing Razorpay fields: payment={bool(razorpay_payment_id)} order={bool(razorpay_order_id)} sig={bool(razorpay_signature)}")
+            logger.error("Missing Razorpay fields")
             return jsonify({'error': 'Missing payment details'}), 400
 
         if not module_id and not course_id:
             logger.error("Neither module_id nor course_id provided")
             return jsonify({'error': 'Missing purchase identifier'}), 400
 
-        # ── Signature Verification (3 methods, any one passing = valid) ─────
+        # 🔥 SIMPLIFIED VERIFICATION - Just check with Razorpay API directly
         signature_valid = False
-
-        # Method 1: Razorpay SDK utility (most reliable)
-        if razorpay_client and not signature_valid:
+        payment_verified = False
+        
+        if razorpay_client:
             try:
-                razorpay_client.utility.verify_payment_signature({
-                    'razorpay_order_id':   razorpay_order_id,
-                    'razorpay_payment_id': razorpay_payment_id,
-                    'razorpay_signature':  razorpay_signature
-                })
-                signature_valid = True
-                logger.info(f"Signature valid via Razorpay SDK: {razorpay_payment_id}")
-            except Exception as sdk_err:
-                logger.warning(f"Razorpay SDK verify failed: {sdk_err}")
-
-        # Method 2: Manual HMAC-SHA256
-        if RAZORPAY_KEY_SECRET and not signature_valid:
-            try:
-                body = razorpay_order_id + "|" + razorpay_payment_id
-                expected = hmac.new(
-                    RAZORPAY_KEY_SECRET.encode('utf-8'),
-                    body.encode('utf-8'),
-                    hashlib.sha256
-                ).hexdigest()
-                logger.info(f"HMAC expected={expected[:20]}... received={razorpay_signature[:20]}...")
-                if hmac.compare_digest(expected, razorpay_signature):
-                    signature_valid = True
-                    logger.info(f"Signature valid via HMAC: {razorpay_payment_id}")
-                else:
-                    logger.warning(f"HMAC mismatch — expected={expected} received={razorpay_signature}")
-            except Exception as hmac_err:
-                logger.warning(f"HMAC verify failed: {hmac_err}")
-
-        # Method 3: Fetch payment directly from Razorpay API and check status
-        if razorpay_client and not signature_valid:
-            try:
+                # Fetch payment details from Razorpay
                 payment = razorpay_client.payment.fetch(razorpay_payment_id)
-                if payment.get('status') in ('captured', 'authorized') and                    payment.get('order_id') == razorpay_order_id:
+                logger.info(f"Payment fetched from Razorpay: Status={payment.get('status')}, Order={payment.get('order_id')}")
+                
+                # Check if payment is captured and matches the order
+                if payment.get('status') == 'captured' and payment.get('order_id') == razorpay_order_id:
                     signature_valid = True
-                    logger.info(f"Payment valid via Razorpay API fetch: {razorpay_payment_id} status={payment.get('status')}")
+                    payment_verified = True
+                    logger.info(f"✅ Payment verified via Razorpay API: {razorpay_payment_id}")
+                    
+                    # Also verify amount is correct (₹1 = 100 paise)
+                    amount_paid = payment.get('amount', 0)
+                    if amount_paid != 100:  # ₹1
+                        logger.warning(f"⚠️ Amount mismatch: Expected 100 paise, got {amount_paid}")
+                    else:
+                        logger.info(f"✅ Amount verified: ₹{amount_paid/100}")
                 else:
-                    logger.warning(f"Razorpay API: status={payment.get('status')} order={payment.get('order_id')}")
+                    logger.error(f"❌ Payment status: {payment.get('status')}, Order ID match: {payment.get('order_id') == razorpay_order_id}")
+                    
             except Exception as fetch_err:
-                logger.warning(f"Razorpay API fetch failed: {fetch_err}")
+                logger.error(f"Razorpay API fetch failed: {fetch_err}")
+                
+                # Fallback: Try signature verification
+                try:
+                    razorpay_client.utility.verify_payment_signature({
+                        'razorpay_order_id': razorpay_order_id,
+                        'razorpay_payment_id': razorpay_payment_id,
+                        'razorpay_signature': razorpay_signature
+                    })
+                    signature_valid = True
+                    payment_verified = True
+                    logger.info(f"✅ Payment verified via signature: {razorpay_payment_id}")
+                except Exception as sig_err:
+                    logger.error(f"Signature verification failed: {sig_err}")
+        else:
+            logger.error("❌ Razorpay client not initialized")
+            
+        # 🔥 DEVELOPMENT MODE BYPASS - REMOVE IN PRODUCTION
+        # Uncomment this for testing if Razorpay verification keeps failing
+        # signature_valid = True
+        # payment_verified = True
+        # logger.warning("⚠️ DEV MODE: Bypassing payment verification")
 
-        if not signature_valid:
-            logger.error(f"All verification methods failed for payment: {razorpay_payment_id}")
-            return jsonify({'error': 'Payment verification failed — contact support with payment ID: ' + razorpay_payment_id}), 400
+        if not signature_valid and not payment_verified:
+            logger.error(f"❌ All verification methods failed for payment: {razorpay_payment_id}")
+            return jsonify({'error': 'Payment verification failed. Please contact support with Payment ID: ' + razorpay_payment_id}), 400
 
-        # ── Log payment to MongoDB ───────────────────────────────
-        payment_coll = get_payment_logs_collection()
-        if payment_coll:
-            try:
-                payment_coll.insert_one({
-                    "razorpay_payment_id": razorpay_payment_id,
-                    "razorpay_order_id":   razorpay_order_id,
-                    "username":            current_user,
-                    "purchase_type":       "software_module" if module_id else "course",
-                    "module_id":           module_id or None,
-                    "module_title":        module_title or None,
-                    "course_id":           course_id or None,
-                    "download_url":        download_url or None,
-                    "amount":              1000 / 100,   # paise to rupees
-                    "currency":            "INR",
-                    "status":              "captured",
-                    "verified":            True,
-                    "verified_at":         datetime.datetime.utcnow(),
-                    "created_at":          datetime.datetime.utcnow(),
-                    "source":              "frontend_verification"
-                })
-            except Exception as db_err:
-                logger.error(f"DB log error (non-fatal): {db_err}")
-
-        # ── Grant access based on purchase type ──────────────────
+        # ✅ Payment verified - Grant access
+        logger.info(f"✅ Payment verified successfully! Granting access...")
+        
         if module_id:
-            # Software module — signature verified → grant lifetime access
-            add_module_access(
-                username     = current_user,
-                module_id    = module_id,
-                module_title = module_title,
-                payment_id   = razorpay_payment_id,
-                download_url = download_url
+            # Grant module access
+            access_granted = add_module_access(
+                username=current_user,
+                module_id=module_id,
+                module_title=module_title,
+                payment_id=razorpay_payment_id,
+                download_url=download_url,
+                amount_paid=1
             )
-            logger.info(f"Software module payment verified + access granted: {current_user} -> module {module_id} | payment {razorpay_payment_id}")
-            return jsonify({
-                'success':      True,
-                'message':      'Payment verified — lifetime access granted',
-                'payment_id':   razorpay_payment_id,
-                'module_id':    module_id,
-                'download_url': download_url
-            }), 200
+            
+            if access_granted:
+                logger.info(f"✅ Module access granted: {current_user} -> {module_id}")
+                
+                # Log successful payment
+                payment_coll = get_payment_logs_collection()
+                if payment_coll:
+                    try:
+                        payment_coll.insert_one({
+                            "razorpay_payment_id": razorpay_payment_id,
+                            "razorpay_order_id": razorpay_order_id,
+                            "username": current_user,
+                            "purchase_type": "software_module",
+                            "module_id": module_id,
+                            "module_title": module_title,
+                            "amount_paid": 1,
+                            "status": "verified",
+                            "verified_at": datetime.datetime.utcnow(),
+                            "created_at": datetime.datetime.utcnow()
+                        })
+                    except DuplicateKeyError:
+                        logger.info(f"Payment already logged: {razorpay_payment_id}")
+                
+                return jsonify({
+                    'success': True,
+                    'message': '✅ Payment verified — Lifetime access granted!',
+                    'payment_id': razorpay_payment_id,
+                    'module_id': module_id,
+                    'download_url': download_url
+                }), 200
+            else:
+                logger.error(f"Failed to grant module access: {current_user} -> {module_id}")
+                return jsonify({'error': 'Failed to grant module access'}), 500
 
         elif course_id:
-            # Course — grant DB access
+            # Grant course access
             access_granted = add_course_access(current_user, course_id, razorpay_payment_id)
             if access_granted:
-                logger.info(f"Course payment verified: {current_user} -> {course_id} | payment {razorpay_payment_id}")
+                logger.info(f"✅ Course access granted: {current_user} -> {course_id}")
                 return jsonify({
-                    'success':    True,
-                    'message':    'Payment verified and course access granted',
+                    'success': True,
+                    'message': '✅ Payment verified — Course access granted!',
                     'payment_id': razorpay_payment_id,
-                    'course_id':  course_id
+                    'course_id': course_id
                 }), 200
             else:
                 return jsonify({'error': 'Failed to grant course access'}), 500
 
     except Exception as e:
-        logger.error(f"Payment verification error: {e}")
-        return jsonify({'error': 'Payment verification failed'}), 500
+        logger.error(f"❌ Payment verification error: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Payment verification failed: {str(e)}'}), 500
 
 # Razorpay Webhook Endpoint (existing - updated)
 @app.route('/api/razorpay/webhook', methods=['POST'])
