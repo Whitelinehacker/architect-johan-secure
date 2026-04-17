@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+  from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import jwt
 import bcrypt
@@ -1753,32 +1753,47 @@ def verify_payment(current_user):
         # 🔥 SIMPLIFIED VERIFICATION - Just check with Razorpay API directly
         signature_valid = False
         payment_verified = False
+        verification_error = None
         
-        if razorpay_client:
+        if razorpay_client is None:
+            verification_error = "Razorpay client not initialized. Check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables."
+            logger.error(f"❌ {verification_error}")
+        else:
             try:
                 # Fetch payment details from Razorpay
+                logger.info(f"🔍 Fetching payment from Razorpay: {razorpay_payment_id}")
                 payment = razorpay_client.payment.fetch(razorpay_payment_id)
-                logger.info(f"Payment fetched from Razorpay: Status={payment.get('status')}, Order={payment.get('order_id')}")
+                logger.info(f"Payment fetched: Status={payment.get('status')}, Order={payment.get('order_id')}, Amount={payment.get('amount')}")
                 
-                # Check if payment is captured and matches the order
-                if payment.get('status') == 'captured' and payment.get('order_id') == razorpay_order_id:
+                # Check if payment is captured
+                if payment.get('status') != 'captured':
+                    verification_error = f"Payment status is '{payment.get('status')}', expected 'captured'"
+                    logger.error(f"❌ {verification_error}")
+                    
+                # Check if order ID matches
+                elif payment.get('order_id') != razorpay_order_id:
+                    verification_error = f"Order ID mismatch: Expected {razorpay_order_id}, got {payment.get('order_id')}"
+                    logger.error(f"❌ {verification_error}")
+                    
+                else:
                     signature_valid = True
                     payment_verified = True
                     logger.info(f"✅ Payment verified via Razorpay API: {razorpay_payment_id}")
                     
-                    # Also verify amount is correct (₹1 = 100 paise)
+                    # Verify amount is correct (₹1 = 100 paise for test, ₹150 = 15000 for production)
                     amount_paid = payment.get('amount', 0)
-                    if amount_paid != 100:  # ₹1
-                        logger.warning(f"⚠️ Amount mismatch: Expected 100 paise, got {amount_paid}")
+                    expected_amount = 100  # ₹1 for test
+                    if amount_paid != expected_amount:
+                        logger.warning(f"⚠️ Amount mismatch: Expected {expected_amount} paise (₹{expected_amount/100}), got {amount_paid} paise (₹{amount_paid/100})")
                     else:
                         logger.info(f"✅ Amount verified: ₹{amount_paid/100}")
-                else:
-                    logger.error(f"❌ Payment status: {payment.get('status')}, Order ID match: {payment.get('order_id') == razorpay_order_id}")
                     
             except Exception as fetch_err:
-                logger.error(f"Razorpay API fetch failed: {fetch_err}")
+                logger.error(f"❌ Razorpay API fetch failed: {fetch_err}")
+                verification_error = f"Payment API error: {str(fetch_err)}"
                 
                 # Fallback: Try signature verification
+                logger.info(f"🔄 Attempting fallback signature verification...")
                 try:
                     razorpay_client.utility.verify_payment_signature({
                         'razorpay_order_id': razorpay_order_id,
@@ -1787,11 +1802,11 @@ def verify_payment(current_user):
                     })
                     signature_valid = True
                     payment_verified = True
+                    verification_error = None
                     logger.info(f"✅ Payment verified via signature: {razorpay_payment_id}")
                 except Exception as sig_err:
-                    logger.error(f"Signature verification failed: {sig_err}")
-        else:
-            logger.error("❌ Razorpay client not initialized")
+                    logger.error(f"❌ Signature verification also failed: {sig_err}")
+                    verification_error = f"Signature verification failed: {str(sig_err)}"
             
         # 🔥 DEVELOPMENT MODE BYPASS - REMOVE IN PRODUCTION
         # Uncomment this for testing if Razorpay verification keeps failing
@@ -1801,7 +1816,13 @@ def verify_payment(current_user):
 
         if not signature_valid and not payment_verified:
             logger.error(f"❌ All verification methods failed for payment: {razorpay_payment_id}")
-            return jsonify({'error': 'Payment verification failed. Please contact support with Payment ID: ' + razorpay_payment_id}), 400
+            error_msg = verification_error or 'Payment verification failed'
+            logger.error(f"Detailed error: {error_msg}")
+            return jsonify({
+                'error': f'{error_msg}. Please contact support with Payment ID: {razorpay_payment_id}',
+                'payment_id': razorpay_payment_id,
+                'recovery_possible': True  # Indicates support can manually verify
+            }), 400
 
         # ✅ Payment verified - Grant access
         logger.info(f"✅ Payment verified successfully! Granting access...")
@@ -1996,6 +2017,58 @@ def razorpay_webhook():
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Webhook processing failed'}), 500
+
+# DIAGNOSTIC: Check Razorpay Configuration (for debugging)
+@app.route('/api/payment/config-check', methods=['GET'])
+@token_required
+def check_payment_config(current_user):
+    """Diagnostic endpoint to verify Razorpay configuration - ADMIN ONLY"""
+    try:
+        user = get_user_by_username(current_user)
+        if not user or user.get('role') != 'admin':
+            return jsonify({'error': 'Admin access required'}), 403
+        
+        diagnostics = {
+            'razorpay_available': RAZORPAY_AVAILABLE,
+            'razorpay_client_initialized': razorpay_client is not None,
+            'key_id_configured': bool(RAZORPAY_KEY_ID),
+            'key_secret_configured': bool(RAZORPAY_KEY_SECRET),
+            'webhook_secret_configured': bool(RAZORPAY_WEBHOOK_SECRET),
+            'mongodb_available': MONGODB_AVAILABLE,
+            'mongodb_connected': get_db() is not None,
+            'issues': []
+        }
+        
+        # Check for issues
+        if not RAZORPAY_AVAILABLE:
+            diagnostics['issues'].append('razorpay package not installed (pip install razorpay)')
+        
+        if not RAZORPAY_KEY_ID:
+            diagnostics['issues'].append('RAZORPAY_KEY_ID not set in .env')
+        
+        if not RAZORPAY_KEY_SECRET:
+            diagnostics['issues'].append('RAZORPAY_KEY_SECRET not set in .env')
+        
+        if not razorpay_client and RAZORPAY_AVAILABLE:
+            diagnostics['issues'].append('Razorpay client failed to initialize (check credentials)')
+        
+        if not MONGODB_AVAILABLE:
+            diagnostics['issues'].append('pymongo not installed (pip install pymongo)')
+        
+        if get_db() is None and MONGODB_AVAILABLE:
+            diagnostics['issues'].append('MongoDB connection failed (check MONGODB_URI in .env)')
+        
+        logger.info(f"Payment diagnostics check by {current_user}: {diagnostics}")
+        
+        return jsonify({
+            'success': len(diagnostics['issues']) == 0,
+            'diagnostics': diagnostics,
+            'status': 'healthy' if len(diagnostics['issues']) == 0 else 'misconfigured'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Payment config check error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 # FORGOT PASSWORD ROUTES
 @app.route('/api/forgot-password', methods=['POST'])
