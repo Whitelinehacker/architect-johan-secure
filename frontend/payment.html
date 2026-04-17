@@ -629,15 +629,12 @@
     console.log('Verify response data:', data);
 
     if (!res.ok) {
-        // If verification fails, still check if payment was captured
+        // If verification fails, log detailed error info
         console.error('❌ Verification failed:', data.error);
-        
-        // Try to grant access anyway if payment was successful
-        // This is a fallback for when signature verification fails but payment is captured
-        if (data.error && data.error.includes('verification failed')) {
-            // Still try to grant access since payment went through
-            console.log('⚠️ Attempting fallback access grant...');
-        }
+        console.log('💡 Debugging tips:');
+        console.log('  1. Check browser console for payment details above');
+        console.log('  2. Verify payment was captured in Razorpay dashboard');
+        console.log('  3. Contact support with Payment ID:', data.payment_id);
         
         throw new Error(data.error || `Server error ${res.status}`);
     }
