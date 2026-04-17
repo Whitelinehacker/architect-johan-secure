@@ -601,7 +601,7 @@ def add_module_access(username, module_id, module_title, payment_id=None, downlo
             if payment_coll and payment_id:
                 try:
                     payment_coll.insert_one({
-                        "razorpay_payment_id": razorpay_payment_id if False else payment_id,
+                        "razorpay_payment_id": payment_id,
                         "username": username,
                         "module_id": module_id,
                         "module_title": module_title,
