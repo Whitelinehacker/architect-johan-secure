@@ -914,8 +914,8 @@
                     actionHtml =
                         '<div class="price-badge">' +
                             '<div><div class="price-label">Price</div><div class="price-amount">&#x20B9;59</div></div>' +
-'<div class="price-tag"><div class="price-original">&#x20B9;199</div>' +
-                            
+                            '<div class="price-tag"><div class="price-original">&#x20B9;199</div>' +
+                            '<div style="color:#FFD700;font-size:11px;font-weight:bold;">&#x1F512; LIFETIME</div></div>' +
                         '</div>' +
                         '<button class="buy-btn" id="buy-' + module.id + '">&#x1F512; Buy Now — &#x20B9;59</button>' +
                         '<div class="security-badge">&#x1F512; Secure Payment &nbsp;|&nbsp; Razorpay Protected</div>';
@@ -1004,7 +1004,7 @@
                 currency: 'INR',
                 timestamp: Date.now(),
                 // HMAC-like integrity token so payment.html can verify data wasn't tampered with
-                token: btoa(moduleId + '|' + moduleTitle + '|150|' + Date.now()).replace(/=/g,'')
+                token: btoa(moduleId + '|' + moduleTitle + '|59|' + Date.now()).replace(/=/g,'')
             };
             sessionStorage.setItem('pending_purchase', JSON.stringify(purchaseData));
             window.location.href = 'payment.html';
