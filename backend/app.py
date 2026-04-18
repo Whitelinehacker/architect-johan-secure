@@ -1755,7 +1755,7 @@ def create_order(current_user):
                 if isinstance(m, dict) and m.get('module_id') == module_id:
                     return jsonify({'error': 'Module already purchased'}), 409
 
-                                'amount_paise':        MODULE_PRICES.get(module_id, SOFTWARE_MODULE_PRICE_PAISE) if module_id else SOFTWARE_MODULE_PRICE_PAISE,
+            amount_paise = MODULE_PRICES.get(module_id, SOFTWARE_MODULE_PRICE_PAISE) if module_id else SOFTWARE_MODULE_PRICE_PAISE
             
             receipt = f'module_{module_id}_{int(datetime.datetime.utcnow().timestamp())}'
             notes = {
