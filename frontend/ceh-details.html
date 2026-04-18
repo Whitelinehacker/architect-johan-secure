@@ -239,7 +239,7 @@
         /* Download sections */
         .download-sections {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 30px;
             margin-top: 40px;
         }
@@ -267,9 +267,10 @@
 
         .section-header {
             display: flex;
+            flex-direction: column;
             align-items: center;
             margin-bottom: 25px;
-            justify-content: center;
+            text-align: center;
         }
 
         .section-icon {
@@ -280,21 +281,22 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 20px;
+            margin-bottom: 15px;
             background: rgba(0, 255, 179, 0.1);
             box-shadow: 0 0 20px rgba(0, 255, 179, 0.4);
             transition: all 0.4s ease;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
         }
 
         .download-section:hover .section-icon {
             border-color: #2EC6FF;
             box-shadow: 0 0 30px rgba(46, 198, 255, 0.8);
+            transform: scale(1.1);
         }
 
         .section-title {
-            font-size: 28px;
+            font-size: 24px;
             text-transform: uppercase;
             letter-spacing: 2px;
             background: linear-gradient(135deg, #00FFB3 0%, #2EC6FF 100%);
@@ -308,7 +310,7 @@
             color: #2EC6FF;
             text-align: center;
             margin-top: 15px;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         /* Password Modal */
@@ -506,16 +508,6 @@
                 grid-template-columns: 1fr;
             }
 
-            .section-header {
-                flex-direction: column;
-                text-align: center;
-                gap: 15px;
-            }
-
-            .section-icon {
-                margin-right: 0;
-            }
-
             .back-buttons {
                 flex-direction: column;
                 gap: 20px;
@@ -546,7 +538,7 @@
             }
 
             .section-title {
-                font-size: 22px;
+                font-size: 20px;
             }
 
             .course-overview {
@@ -609,7 +601,7 @@
 
         <div class="download-sections">
             <!-- Software Downloads -->
-            <div class="download-section" onclick="handleDownloadClick('software_downloads.html', 'CEH Software Downloads')">
+            <div class="download-section" onclick="handleDownloadClick('software_construction.html', 'CEH Software Downloads')">
                 <div class="section-header">
                     <div class="section-icon">💻</div>
                     <h2 class="section-title">Software Downloads</h2>
@@ -618,7 +610,7 @@
             </div>
 
             <!-- Notes -->
-           <div class="download-section" onclick="window.location.href='cehv13_notes.html'">
+            <div class="download-section" onclick="openPasswordModal()">
                 <div class="section-header">
                     <div class="section-icon">📝</div>
                     <h2 class="section-title">Study Notes</h2>
@@ -630,9 +622,18 @@
             <div class="download-section" onclick="handleDownloadClick('cehv13.html', 'CEH Theory Exam')">
                 <div class="section-header">
                     <div class="section-icon">🔍</div>
-                    <h2 class="section-title">Cehv13 Theory Exam</h2>
+                    <h2 class="section-title">Theory Exam</h2>
                 </div>
                 <p class="section-description">Exams, labs, and real-world scenarios</p>
+            </div>
+
+            <!-- NEW: Automation Script -->
+            <div class="download-section" onclick="handleDownloadClick('automation_scripts.html', 'CEH Automation Scripts')">
+                <div class="section-header">
+                    <div class="section-icon">🤖</div>
+                    <h2 class="section-title">Automation Script</h2>
+                </div>
+                <p class="section-description">Python & Bash scripts for penetration testing automation</p>
             </div>
         </div>
 
@@ -803,19 +804,19 @@
         }
 
         // Password Modal Functions
-       function openPasswordModal() {
-    currentTargetUrl = 'cehv13_notes.html'; // Make sure this file exists!
-    const modal = document.getElementById('passwordModal');
-    const passwordInput = document.getElementById('passwordInput');
-    const errorMessage = document.getElementById('passwordError');
-    
-    console.log('Opening password modal for:', currentTargetUrl);
-    
-    modal.style.display = 'flex';
-    passwordInput.value = '';
-    errorMessage.style.display = 'none';
-    passwordInput.focus();
-}
+        function openPasswordModal() {
+            currentTargetUrl = 'cehv13_notes.html';
+            const modal = document.getElementById('passwordModal');
+            const passwordInput = document.getElementById('passwordInput');
+            const errorMessage = document.getElementById('passwordError');
+            
+            console.log('Opening password modal for:', currentTargetUrl);
+            
+            modal.style.display = 'flex';
+            passwordInput.value = '';
+            errorMessage.style.display = 'none';
+            passwordInput.focus();
+        }
 
         function closePasswordModal() {
             const modal = document.getElementById('passwordModal');
@@ -823,75 +824,75 @@
             currentTargetUrl = '';
         }
 
-  async function verifyPassword() {
-    const password = document.getElementById('passwordInput').value;
-    const errorMessage = document.getElementById('passwordError');
-    const token = localStorage.getItem('auth_token');
+        async function verifyPassword() {
+            const password = document.getElementById('passwordInput').value;
+            const errorMessage = document.getElementById('passwordError');
+            const token = localStorage.getItem('auth_token');
 
-    if (!password) {
-        errorMessage.textContent = 'Please enter a password';
-        errorMessage.style.display = 'block';
-        return;
-    }
-
-    if (!token) {
-        alert('Please log in to access this content.');
-        window.location.href = 'index.html';
-        return;
-    }
-
-    try {
-        console.log('Verifying password for CEH Study Notes...');
-        
-        // Verify password with backend - using ceh_study_notes
-        const response = await fetch(`${API_BASE_URL}/api/verify-practice-password`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                password: password,
-                practice_set: 'ceh_study_notes'
-            })
-        });
-
-        console.log('Response status:', response.status);
-
-        if (response.ok) {
-            const result = await response.json();
-            console.log('Response data:', result);
-            
-            if (result.success) {
-                // Password verified successfully
-                console.log('Password verified!');
-                closePasswordModal();
-                
-                // Track access and navigate
-                await trackAccess('CEH Study Notes', 'CEH v13');
-                
-                // Force redirect to cehv13_notes.html
-                setTimeout(() => {
-                    window.location.href = 'cehv13_notes.html';
-                }, 100);
-                
-            } else {
-                errorMessage.textContent = result.error || 'Incorrect password. Please try again.';
+            if (!password) {
+                errorMessage.textContent = 'Please enter a password';
                 errorMessage.style.display = 'block';
-                console.log('Password incorrect');
+                return;
             }
-        } else {
-            const errorText = await response.text();
-            console.error('Server error:', errorText);
-            errorMessage.textContent = 'Server error. Please try again.';
-            errorMessage.style.display = 'block';
+
+            if (!token) {
+                alert('Please log in to access this content.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                console.log('Verifying password for CEH Study Notes...');
+                
+                // Verify password with backend - using ceh_study_notes
+                const response = await fetch(`${API_BASE_URL}/api/verify-practice-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        password: password,
+                        practice_set: 'ceh_study_notes'
+                    })
+                });
+
+                console.log('Response status:', response.status);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Response data:', result);
+                    
+                    if (result.success) {
+                        // Password verified successfully
+                        console.log('Password verified!');
+                        closePasswordModal();
+                        
+                        // Track access and navigate
+                        await trackAccess('CEH Study Notes', 'CEH v13');
+                        
+                        // Force redirect to cehv13_notes.html
+                        setTimeout(() => {
+                            window.location.href = 'cehv13_notes.html';
+                        }, 100);
+                        
+                    } else {
+                        errorMessage.textContent = result.error || 'Incorrect password. Please try again.';
+                        errorMessage.style.display = 'block';
+                        console.log('Password incorrect');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error('Server error:', errorText);
+                    errorMessage.textContent = 'Server error. Please try again.';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Password verification error:', error);
+                errorMessage.textContent = 'Network error. Please check your connection.';
+                errorMessage.style.display = 'block';
+            }
         }
-    } catch (error) {
-        console.error('Password verification error:', error);
-        errorMessage.textContent = 'Network error. Please check your connection.';
-        errorMessage.style.display = 'block';
-    }
-}
 
         // Handle download section clicks with API tracking
         async function handleDownloadClick(url, sectionName) {
@@ -1043,5 +1044,3 @@
     </script>
 </body>
 </html>
-
-
