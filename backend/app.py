@@ -1708,7 +1708,15 @@ def verify_exam_level_password(current_user):
 # SOFTWARE MODULE ORDER CREATION — admin-aware, price server-side
 # =============================================================
 
-SOFTWARE_MODULE_PRICE_PAISE = int(os.getenv('SOFTWARE_MODULE_PRICE_PAISE', 5900))  # ₹10 default test price
+# Default price for software modules (₹59)
+SOFTWARE_MODULE_PRICE_PAISE = int(os.getenv('SOFTWARE_MODULE_PRICE_PAISE', 5900))
+
+# Special pricing for specific modules (in paise)
+MODULE_PRICES = {
+    'nmap_ai_v1': 100,  # ₹1 for Nmap AI Script
+    # Add more special prices here as needed
+    # Format: 'module_id': price_in_paise,
+}
 
 @app.route('/api/create-order', methods=['POST'])
 @token_required
@@ -1747,7 +1755,8 @@ def create_order(current_user):
                 if isinstance(m, dict) and m.get('module_id') == module_id:
                     return jsonify({'error': 'Module already purchased'}), 409
 
-            amount_paise = SOFTWARE_MODULE_PRICE_PAISE
+                                'amount_paise':        MODULE_PRICES.get(module_id, SOFTWARE_MODULE_PRICE_PAISE) if module_id else SOFTWARE_MODULE_PRICE_PAISE,
+            
             receipt = f'module_{module_id}_{int(datetime.datetime.utcnow().timestamp())}'
             notes = {
                 'type':         'software_module',
@@ -1756,7 +1765,8 @@ def create_order(current_user):
                 'username':     current_user,
                 'email':        buyer_email or user.get('email', ''),
                 'buyer_name':   buyer_name or user.get('full_name', ''),
-                'buyer_mobile': buyer_mobile
+                'buyer_mobile': buyer_mobile,
+                'price_paise':  amount_paise  # ← ADD THIS LINE
             }
             description = f'Module #{module_id} — {module_title}'
 
@@ -2027,6 +2037,7 @@ def verify_payment(current_user):
         print(f"[VERIFY] ✅ Verified via {method_used} | module={module_id} course={course_id}")
 
         # ── STEP 7: Log to payment_logs ──────────────────────────
+               # ── STEP 7: Log to payment_logs ──────────────────────────
         step = "log_payment"
         if payment_coll is not None:
             try:
@@ -2039,7 +2050,7 @@ def verify_payment(current_user):
                     'module_title':        module_title or None,
                     'course_id':           course_id or None,
                     'download_url':        download_url or None,
-                    'amount_paise':        SOFTWARE_MODULE_PRICE_PAISE,
+                    'amount_paise':        SOFTWARE_MODULE_PRICE_PAISE,  # ← CHANGE THIS LINE
                     'currency':            'INR',
                     'status':              'captured',
                     'verified':            True,
