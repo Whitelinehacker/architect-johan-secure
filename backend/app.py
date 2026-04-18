@@ -1713,7 +1713,7 @@ SOFTWARE_MODULE_PRICE_PAISE = int(os.getenv('SOFTWARE_MODULE_PRICE_PAISE', 5900)
 
 # Special pricing for specific modules (in paise)
 MODULE_PRICES = {
-    'nmap_ai_v1': 100,  # ₹1 for Nmap AI Script
+    'nmap_ai_v1': 39900,  # ₹1 for Nmap AI Script
     # Add more special prices here as needed
     # Format: 'module_id': price_in_paise,
 }
