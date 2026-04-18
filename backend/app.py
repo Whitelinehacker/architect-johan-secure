@@ -357,7 +357,7 @@ def add_course_access(username, course_id, payment_id=None):
             # Log payment event if payment_id provided
             if payment_id:
                 payment_coll = get_payment_logs_collection()
-                if payment_coll:
+                if payment_coll is not None:
                     payment_coll.insert_one({
                         "razorpay_payment_id": payment_id,
                         "username": username,
@@ -1878,7 +1878,7 @@ def verify_payment(current_user):
         payment_coll = None
         try:
             payment_coll = get_payment_logs_collection()
-            if payment_coll:
+            if payment_coll is not None:
                 existing = payment_coll.find_one({'razorpay_payment_id': razorpay_payment_id})
                 if existing:
                     print(f"[VERIFY] Already processed: {razorpay_payment_id}")
@@ -2028,7 +2028,7 @@ def verify_payment(current_user):
 
         # ── STEP 7: Log to payment_logs ──────────────────────────
         step = "log_payment"
-        if payment_coll:
+        if payment_coll is not None:
             try:
                 payment_coll.insert_one({
                     'razorpay_payment_id': razorpay_payment_id,
@@ -2201,7 +2201,7 @@ def razorpay_webhook():
 
             # ── Idempotency check ─────────────────────────────────
             payment_coll = get_payment_logs_collection()
-            if payment_coll:
+            if payment_coll is not None:
                 try:
                     existing = payment_coll.find_one({'razorpay_payment_id': payment_id})
                     if existing:
@@ -2264,7 +2264,7 @@ def razorpay_webhook():
                 return jsonify({'error': 'Cannot determine purchase type from notes'}), 400
 
             # ── Log to payment_logs ───────────────────────────────
-            if payment_coll:
+            if payment_coll is not None:
                 try:
                     payment_coll.insert_one({
                         'razorpay_payment_id': payment_id,
@@ -2303,7 +2303,7 @@ def razorpay_webhook():
             logger.warning(f"[WEBHOOK] Payment failed: {payment_id} — {error_code}: {error_description}")
 
             payment_coll = get_payment_logs_collection()
-            if payment_coll:
+            if payment_coll is not None:
                 try:
                     payment_coll.insert_one({
                         'razorpay_payment_id': payment_id,
