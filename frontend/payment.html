@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Payment [TEST ₹10] — Architect Johan</title>
+    <title>Secure Payment  — Architect Johan</title>
     <!-- Razorpay Checkout SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
@@ -427,9 +427,9 @@
         <div class="price-row">
             <span class="label">Total Amount</span>
             <div style="display:flex; align-items:baseline; gap:4px;">
-                <span class="amount">₹10</span>
-                <span class="original-price">₹150</span>
-                <span class="discount-tag">🧪 TEST</span>
+               <span class="amount">₹59</span>
+<span class="original-price">₹199</span>
+<span class="discount-tag">🔒 LIFETIME</span>
             </div>
         </div>
     </div>
@@ -527,7 +527,7 @@
     // ── Config ──────────────────────────────────────────────
     // NO keys stored here — all secrets live in .env on the server
     const API_BASE_URL  = 'https://architect-johan-secure.onrender.com';
-    const PRICE_PAISE   = 1000;   // ₹150 — enforced server-side, shown for UX only
+    const PRICE_PAISE   = 5900;   // ₹150 — enforced server-side, shown for UX only
     const CURRENCY      = 'INR';
     const COMPANY_NAME  = 'Architect Johan';
 
@@ -731,7 +731,7 @@
                     ondismiss: function() {
                         showToast('⚠️ Payment cancelled.', 'error');
                         btn.disabled = false;
-                        btn.textContent = '💳 Pay ₹10';
+                        btn.textContent = '💳 Pay ₹59';
                     }
                 },
                 handler: async function(response) {
