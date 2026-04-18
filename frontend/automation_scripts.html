@@ -724,7 +724,7 @@
                         <span style="color: #2EC6FF;">7.95 (Latest Stable)</span>
                     </div>
                 </div>
-                <a href="https://nmap.org/dist/nmap-7.95-setup.exe" class="action-btn download-btn" target="_blank" id="nmap-free-download">
+                <a href="https://drive.google.com/uc?export=download&id=1goAjzlpUXjz1_yeO3BTdwHbrVMNX3nIe" class="action-btn download-btn" target="_blank" id="nmap-free-download">
                     📥 Download Free Edition
                 </a>
                 <div class="security-badge">
@@ -732,7 +732,7 @@
                 </div>
             </div>
 
-            <!-- Nmap AI Powered Edition Card (Paid) -->
+            <!-- Nmap AI Powered Edition Card (Paid - ₹1) -->
             <div class="script-card premium" id="nmap-ai-card">
                 <div class="card-header">
                     <div class="card-icon">🤖</div>
@@ -759,9 +759,9 @@
                     <div class="price-row">
                         <span class="price-label">One-time Payment</span>
                         <div style="display: flex; align-items: baseline;">
-                            <span class="price-value">₹399</span>
+                            <span class="price-value">₹1</span>
                             <span class="price-original">₹999</span>
-                            <span class="discount-badge">60% OFF</span>
+                            <span class="discount-badge">99% OFF</span>
                         </div>
                     </div>
                     <div class="price-row">
@@ -792,10 +792,14 @@
         // API Base URL
         const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
 
-        // Module ID for Nmap AI
+        // Module ID for Nmap AI Script (must match MODULE_PRICES in app.py)
         const NMAP_AI_MODULE_ID = 'nmap_ai_v1';
         const NMAP_AI_TITLE = 'Nmap AI Powered Edition';
-        const NMAP_AI_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=YOUR_NMAP_AI_FILE_ID'; // Replace with actual download URL
+        // Google Drive direct download link for Nmap AI Edition (Paid)
+        const NMAP_AI_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=10L80DWOx64CL_TedVVaLXv7I09yKb3Rn';
+        
+        // Price configuration (must match MODULE_PRICES in app.py)
+        const NMAP_AI_PRICE = 1; // ₹1
 
         // State
         let isNmapAIOwned = false;
@@ -854,7 +858,7 @@
                 // User doesn't own - show buy button
                 actionSection.innerHTML = `
                     <button class="action-btn buy-btn" id="buy-nmap-ai-btn">
-                        🛒 Buy Now - ₹399
+                        🛒 Buy Now - ₹${NMAP_AI_PRICE}
                     </button>
                 `;
 
@@ -874,10 +878,10 @@
                 moduleId: NMAP_AI_MODULE_ID,
                 moduleTitle: NMAP_AI_TITLE,
                 downloadUrl: NMAP_AI_DOWNLOAD_URL,
-                price: 399,
+                price: NMAP_AI_PRICE,
                 currency: 'INR',
                 timestamp: Date.now(),
-                token: btoa(NMAP_AI_MODULE_ID + '|' + NMAP_AI_TITLE + '|399|' + Date.now()).replace(/=/g, '')
+                token: btoa(NMAP_AI_MODULE_ID + '|' + NMAP_AI_TITLE + '|' + NMAP_AI_PRICE + '|' + Date.now()).replace(/=/g, '')
             };
             sessionStorage.setItem('pending_purchase', JSON.stringify(purchaseData));
             window.location.href = 'payment.html';
