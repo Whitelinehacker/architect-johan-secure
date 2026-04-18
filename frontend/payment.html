@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Payment  — Architect Johan</title>
+    <title>Secure Payment ₹59 — Architect Johan</title>
     <!-- Razorpay Checkout SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
@@ -427,9 +427,9 @@
         <div class="price-row">
             <span class="label">Total Amount</span>
             <div style="display:flex; align-items:baseline; gap:4px;">
-               <span class="amount">₹59</span>
-<span class="original-price">₹199</span>
-<span class="discount-tag">🔒 LIFETIME</span>
+                <span class="amount">₹59</span>
+                <span class="original-price">₹199</span>
+                <span class="discount-tag">🔒 LIFETIME</span>
             </div>
         </div>
     </div>
@@ -467,7 +467,7 @@
 
     <!-- Pay Button -->
     <button class="pay-btn" id="pay-btn" onclick="initiatePayment()">
-        🧪 Pay ₹10 (Test Mode)
+        💳 Pay ₹59
     </button>
 
     <div class="footer-note">
@@ -525,9 +525,8 @@
 
 <script>
     // ── Config ──────────────────────────────────────────────
-    // NO keys stored here — all secrets live in .env on the server
     const API_BASE_URL  = 'https://architect-johan-secure.onrender.com';
-    const PRICE_PAISE   = 5900;   // ₹150 — enforced server-side, shown for UX only
+    const PRICE_PAISE   = 5900;   // ₹59
     const CURRENCY      = 'INR';
     const COMPANY_NAME  = 'Architect Johan';
 
@@ -622,8 +621,6 @@
             throw new Error(err.error || 'Order creation failed');
         }
 
-        // Backend returns: { order_id, amount, currency, key_id }
-        // key_id comes from RAZORPAY_KEY_ID env var — never stored in this file
         return res.json();
     }
 
@@ -631,7 +628,6 @@
     async function verifyPayment(paymentDetails) {
         const token = localStorage.getItem('auth_token');
 
-        // Guard: make sure order_id is never empty/undefined before sending
         if (!paymentDetails.razorpay_order_id) {
             throw new Error('Order ID missing from payment response — cannot verify');
         }
@@ -671,7 +667,6 @@
         console.log('◀ verify-payment response:', res.status, data);
 
         if (!res.ok) {
-            // Show detailed error including reasons array if present
             const reasons = data.reasons ? ' | ' + data.reasons.join(' | ') : '';
             throw new Error((data.error || `Server error ${res.status}`) + reasons);
         }
@@ -695,17 +690,15 @@
         btn.textContent = '⏳ Creating Secure Session…';
 
         try {
-            // Step 1: Hit backend — get order_id AND key_id from env
             const order = await createOrder(buyerInfo);
             const orderId = order.order_id;
-            const keyId   = order.key_id;   // ← comes from server env, never hardcoded
+            const keyId   = order.key_id;
             const amount  = order.amount;
 
             if (!keyId) throw new Error('Payment configuration error. Contact support.');
 
             btn.textContent = '🔐 Opening Secure Payment…';
 
-            // Step 2: Open Razorpay with key from server
             const options = {
                 key:         keyId,
                 amount:      amount,
@@ -738,8 +731,6 @@
                     btn.textContent = '✅ Verifying Payment…';
                     btn.disabled = true;
                     try {
-                        // FIX: Razorpay handler response may not include razorpay_order_id
-                        // in all SDK versions. We use orderId captured from the outer scope.
                         const payloadToVerify = {
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_order_id:   response.razorpay_order_id || orderId,
@@ -750,15 +741,13 @@
                             order_id:   payloadToVerify.razorpay_order_id,
                             sig_length: payloadToVerify.razorpay_signature ? payloadToVerify.razorpay_signature.length : 0
                         });
-                        // Step 3: Backend verifies payment + saves lifetime access to DB
                         const result = await verifyPayment(payloadToVerify);
-                        // ✅ Verified + DB updated — show success
                         showSuccess(payloadToVerify.razorpay_payment_id);
                     } catch (verifyErr) {
                         console.error('Verify error:', verifyErr.message);
                         showToast('❌ ' + verifyErr.message, 'error');
                         btn.disabled = false;
-                        btn.textContent = '💳 Pay ₹10';
+                        btn.textContent = '💳 Pay ₹59';
                     }
                 }
             };
@@ -767,14 +756,14 @@
             rzp.on('payment.failed', function(response) {
                 showToast('❌ Payment failed: ' + response.error.description, 'error');
                 btn.disabled = false;
-                btn.textContent = '💳 Pay ₹10';
+                btn.textContent = '💳 Pay ₹59';
             });
             rzp.open();
 
         } catch (err) {
             showToast('❌ ' + err.message, 'error');
             btn.disabled = false;
-            btn.textContent = '💳 Pay ₹10';
+            btn.textContent = '💳 Pay ₹59';
         }
     }
 
@@ -782,7 +771,6 @@
     function showSuccess(paymentId) {
         sessionStorage.removeItem('pending_purchase');
 
-        // Cache purchased module locally so software page updates instantly
         try {
             const owned = JSON.parse(localStorage.getItem('purchased_modules') || '[]');
             if (!owned.includes(purchaseData.moduleId)) {
