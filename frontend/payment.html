@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Payment ₹59 — Architect Johan</title>
+    <title>Secure Payment — Architect Johan</title>
     <!-- Razorpay Checkout SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
@@ -410,7 +410,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- Main Payment Card -->
-<a href="software_downloads.html" class="back-link">← Back to Software Tools</a>
+<a href="#" id="back-link" class="back-link">← Back</a>
 
 <div class="payment-card">
 
@@ -427,9 +427,9 @@
         <div class="price-row">
             <span class="label">Total Amount</span>
             <div style="display:flex; align-items:baseline; gap:4px;">
-                <span class="amount">₹59</span>
-                <span class="original-price">₹199</span>
-                <span class="discount-tag">🔒 LIFETIME</span>
+                <span class="amount" id="display-amount">₹--</span>
+                <span class="original-price" id="display-original">₹--</span>
+                <span class="discount-tag" id="display-discount">--</span>
             </div>
         </div>
     </div>
@@ -467,7 +467,7 @@
 
     <!-- Pay Button -->
     <button class="pay-btn" id="pay-btn" onclick="initiatePayment()">
-        💳 Pay ₹59
+        <span id="pay-btn-text">💳 Pay ₹--</span>
     </button>
 
     <div class="footer-note">
@@ -526,12 +526,19 @@
 <script>
     // ── Config ──────────────────────────────────────────────
     const API_BASE_URL  = 'https://architect-johan-secure.onrender.com';
-    const PRICE_PAISE   = 5900;   // ₹59
     const CURRENCY      = 'INR';
     const COMPANY_NAME  = 'Architect Johan';
 
-    // ── Purchase data (set by software_downloads.html) ──────
+    // Product price mapping for display purposes
+    const PRODUCT_PRICES = {
+        'nmap_ai_v1': { price: 399, original: 999, discount: '60% OFF' },
+        'default':     { price: 59,  original: 199, discount: '🔒 LIFETIME' }
+    };
+
+    // ── Purchase data (set by source page) ──────
     let purchaseData = null;
+    let currentPrice = 59;
+    let backPage = 'software_downloads.html';
 
     function loadPurchaseData() {
         try {
@@ -543,8 +550,29 @@
             if (Date.now() - purchaseData.timestamp > 30 * 60 * 1000)
                 throw new Error('Session expired');
 
+            // Get price from purchase data (default to 59 if not set)
+            currentPrice = purchaseData.price || 59;
+            
+            // Determine which product config to use
+            const priceConfig = PRODUCT_PRICES[purchaseData.moduleId] || PRODUCT_PRICES['default'];
+            
+            // Update back link based on source
+            if (purchaseData.moduleId === 'nmap_ai_v1') {
+                backPage = 'automation_scripts.html';
+            } else {
+                backPage = 'software_downloads.html';
+            }
+            document.getElementById('back-link').href = backPage;
+
+            // Update title
             document.getElementById('module-title').textContent =
                 'Module #' + purchaseData.moduleId + ' — ' + purchaseData.moduleTitle;
+
+            // Update price display dynamically
+            document.getElementById('display-amount').textContent = '₹' + currentPrice;
+            document.getElementById('display-original').textContent = '₹' + priceConfig.original;
+            document.getElementById('display-discount').textContent = priceConfig.discount;
+            document.getElementById('pay-btn-text').textContent = '💳 Pay ₹' + currentPrice;
 
             // Pre-fill saved user info
             const savedName  = localStorage.getItem('full_name');
@@ -553,6 +581,7 @@
             if (savedEmail) document.getElementById('buyer-email').value = savedEmail;
 
         } catch (e) {
+            console.error('Load error:', e);
             showToast('❌ Invalid session. Redirecting…', 'error');
             setTimeout(() => window.location.href = 'software_downloads.html', 2500);
         }
@@ -686,8 +715,9 @@
         }
 
         const btn = document.getElementById('pay-btn');
+        const btnText = document.getElementById('pay-btn-text');
         btn.disabled = true;
-        btn.textContent = '⏳ Creating Secure Session…';
+        btnText.textContent = '⏳ Creating Secure Session…';
 
         try {
             const order = await createOrder(buyerInfo);
@@ -697,7 +727,7 @@
 
             if (!keyId) throw new Error('Payment configuration error. Contact support.');
 
-            btn.textContent = '🔐 Opening Secure Payment…';
+            btnText.textContent = '🔐 Opening Secure Payment…';
 
             const options = {
                 key:         keyId,
@@ -724,11 +754,11 @@
                     ondismiss: function() {
                         showToast('⚠️ Payment cancelled.', 'error');
                         btn.disabled = false;
-                        btn.textContent = '💳 Pay ₹59';
+                        btnText.textContent = '💳 Pay ₹' + currentPrice;
                     }
                 },
                 handler: async function(response) {
-                    btn.textContent = '✅ Verifying Payment…';
+                    btnText.textContent = '✅ Verifying Payment…';
                     btn.disabled = true;
                     try {
                         const payloadToVerify = {
@@ -747,7 +777,7 @@
                         console.error('Verify error:', verifyErr.message);
                         showToast('❌ ' + verifyErr.message, 'error');
                         btn.disabled = false;
-                        btn.textContent = '💳 Pay ₹59';
+                        btnText.textContent = '💳 Pay ₹' + currentPrice;
                     }
                 }
             };
@@ -756,14 +786,14 @@
             rzp.on('payment.failed', function(response) {
                 showToast('❌ Payment failed: ' + response.error.description, 'error');
                 btn.disabled = false;
-                btn.textContent = '💳 Pay ₹59';
+                btnText.textContent = '💳 Pay ₹' + currentPrice;
             });
             rzp.open();
 
         } catch (err) {
             showToast('❌ ' + err.message, 'error');
             btn.disabled = false;
-            btn.textContent = '💳 Pay ₹59';
+            btnText.textContent = '💳 Pay ₹' + currentPrice;
         }
     }
 
