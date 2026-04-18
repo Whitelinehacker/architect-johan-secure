@@ -1708,7 +1708,7 @@ def verify_exam_level_password(current_user):
 # SOFTWARE MODULE ORDER CREATION — admin-aware, price server-side
 # =============================================================
 
-SOFTWARE_MODULE_PRICE_PAISE = int(os.getenv('SOFTWARE_MODULE_PRICE_PAISE', 1000))  # ₹10 default test price
+SOFTWARE_MODULE_PRICE_PAISE = int(os.getenv('SOFTWARE_MODULE_PRICE_PAISE', 5900))  # ₹10 default test price
 
 @app.route('/api/create-order', methods=['POST'])
 @token_required
