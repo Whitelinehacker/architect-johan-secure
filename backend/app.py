@@ -1713,9 +1713,8 @@ SOFTWARE_MODULE_PRICE_PAISE = int(os.getenv('SOFTWARE_MODULE_PRICE_PAISE', 5900)
 
 # Special pricing for specific modules (in paise)
 MODULE_PRICES = {
-    'nmap_ai_v1': 39900,  # ₹1 for Nmap AI Script
-    # Add more special prices here as needed
-    # Format: 'module_id': price_in_paise,
+    'nmap_ai_v1': 39900,              # ₹399 for Nmap AI Script
+    'premium_practice_set_9': 5900,   # ₹59 for Premium Practice Set 9
 }
 
 @app.route('/api/create-order', methods=['POST'])
