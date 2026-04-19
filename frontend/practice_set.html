@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CEH v13 Practice Sets - Architect Johan</title>
     <style>
-        /* Your existing CSS styles remain the same */
         * {
             margin: 0;
             padding: 0;
@@ -366,15 +365,17 @@
             display: flex;
             gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
 
         .action-btn {
             flex: 1;
-            padding: 12px 20px;
+            min-width: 100px;
+            padding: 12px 15px;
             border: none;
             border-radius: 8px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -398,12 +399,17 @@
             color: #02040A;
         }
 
+        .buy-btn {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #02040A;
+        }
+
         .action-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 255, 179, 0.4);
         }
 
-        .resume-btn:hover {
+        .resume-btn:hover, .buy-btn:hover {
             box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
         }
 
@@ -453,6 +459,62 @@
         .status-not-started {
             background: linear-gradient(135deg, #666666 0%, #999999 100%);
             color: #02040A;
+        }
+
+        .status-locked {
+            background: linear-gradient(135deg, #FF004C 0%, #CC0033 100%);
+            color: #FFFFFF;
+        }
+
+        /* Price display for premium */
+        .price-section {
+            margin: 15px 0;
+            padding: 12px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(255,165,0,0.1) 100%);
+            border-radius: 10px;
+            border: 1px solid rgba(255,215,0,0.3);
+        }
+
+        .price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .price-label {
+            color: #FFD700;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .price-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+
+        .price-original {
+            font-size: 12px;
+            color: rgba(255,255,255,0.3);
+            text-decoration: line-through;
+            margin-left: 8px;
+        }
+
+        .owned-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 8px;
+            background: rgba(0,255,179,0.15);
+            border: 1px solid rgba(0,255,179,0.5);
+            border-radius: 8px;
+            color: #00FFB3;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 11px;
+            margin-top: 10px;
         }
 
         /* Password Modal */
@@ -825,7 +887,7 @@
     <div class="main-content">
         <div class="page-header">
             <h1>CEH v13 Practice Sets</h1>
-            <p>12 Comprehensive Practice Exams</p>
+            <p>9 Comprehensive Practice Exams</p>
         </div>
 
         <div class="practice-grid" id="practice-container">
@@ -848,32 +910,83 @@
         // API Base URL
         const API_BASE_URL = 'https://architect-johan-secure.onrender.com';
 
-        // Practice sets data
+        // Practice sets data - descriptions removed
         const practiceSets = [
-            { id: 1, title: "Practice Set 1", questions: 125, description: "Footprinting & Reconnaissance", premium: false },
-            { id: 2, title: "Practice Set 2", questions: 125, description: "Scanning Networks", premium: false },
-            { id: 3, title: "Practice Set 3", questions: 125, description: "Enumeration & Vulnerability Analysis", premium: false },
-            { id: 4, title: "Practice Set 4", questions: 125, description: "System Hacking", premium: false },
-            { id: 5, title: "Practice Set 5", questions: 125, description: "Malware Threats", premium: false },
-            { id: 6, title: "Practice Set 6", questions: 125, description: "Sniffing & Social Engineering", premium: false },
-            { id: 7, title: "Practice Set 7", questions: 125, description: "Denial-of-Service & Session Hijacking", premium: false },
-            { id: 8, title: "Practice Set 8", questions: 125, description: "Web Server & Application Attacks", premium: false },
-            { id: 9, title: "Premium Practice Set", questions: 250, description: "Advanced Scenarios & Real-world Challenges", premium: true }
+            { id: 1, title: "Practice Set 1", questions: 125, premium: false },
+            { id: 2, title: "Practice Set 2", questions: 125, premium: false },
+            { id: 3, title: "Practice Set 3", questions: 125, premium: false },
+            { id: 4, title: "Practice Set 4", questions: 125, premium: false },
+            { id: 5, title: "Practice Set 5", questions: 125, premium: false },
+            { id: 6, title: "Practice Set 6", questions: 125, premium: false },
+            { id: 7, title: "Practice Set 7", questions: 125, premium: false },
+            { id: 8, title: "Practice Set 8", questions: 125, premium: false },
+            { id: 9, title: "Premium Practice Set", questions: 250, premium: true, price: 59, originalPrice: 199 }
         ];
 
-        // Global variable to store progress data
+        // Module ID for Premium Practice Set (for payment)
+        const PREMIUM_PRACTICE_MODULE_ID = 'premium_practice_set_9';
+        const PREMIUM_PRACTICE_TITLE = 'Premium Practice Set 9';
+        const PREMIUM_PRACTICE_DOWNLOAD_URL = 'practice_set_9.html';
+
+        // Global variables
         let practiceProgress = {};
+        let isPremiumOwned = false;
+        let currentUserIsAdmin = false;
+
+        // Check if user owns premium practice set
+        async function checkPremiumOwnership() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) return false;
+
+                const res = await fetch(`${API_BASE_URL}/api/check-module-access`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ module_id: PREMIUM_PRACTICE_MODULE_ID })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    currentUserIsAdmin = data.is_admin || false;
+                    isPremiumOwned = data.has_access || currentUserIsAdmin;
+                    return isPremiumOwned;
+                }
+            } catch (e) {
+                console.error('Premium ownership check error:', e);
+            }
+            return false;
+        }
+
+        // Navigate to payment page for premium set
+        function goToPayment() {
+            const purchaseData = {
+                moduleId: PREMIUM_PRACTICE_MODULE_ID,
+                moduleTitle: PREMIUM_PRACTICE_TITLE,
+                downloadUrl: PREMIUM_PRACTICE_DOWNLOAD_URL,
+                price: 59,
+                currency: 'INR',
+                timestamp: Date.now(),
+                token: btoa(PREMIUM_PRACTICE_MODULE_ID + '|' + PREMIUM_PRACTICE_TITLE + '|59|' + Date.now()).replace(/=/g, '')
+            };
+            sessionStorage.setItem('pending_purchase', JSON.stringify(purchaseData));
+            window.location.href = 'payment.html';
+        }
 
         // Initialize practice sets with backend progress tracking
         async function initializePracticeSets() {
             const container = document.getElementById('practice-container');
             const loadingSpinner = document.getElementById('loadingSpinner');
             
-            // Show loading spinner
             loadingSpinner.style.display = 'block';
             container.innerHTML = '';
 
             try {
+                // Check premium ownership first
+                await checkPremiumOwnership();
+                
                 // Load progress from backend
                 await loadPracticeProgress();
                 
@@ -885,14 +998,12 @@
                 
             } catch (error) {
                 console.error('Error initializing practice sets:', error);
-                // Fallback to local storage if backend fails
                 practiceSets.forEach(set => {
                     const progress = getPracticeProgressFromLocal(set.id);
                     const card = createPracticeCard(set, progress);
                     container.appendChild(card);
                 });
             } finally {
-                // Hide loading spinner
                 loadingSpinner.style.display = 'none';
             }
         }
@@ -905,13 +1016,21 @@
             // Determine status
             let status = 'not-started';
             let statusText = 'Not Started';
-            if (progress.completed) {
+            
+            // For premium set, check if owned
+            if (set.premium && !isPremiumOwned && !currentUserIsAdmin) {
+                status = 'locked';
+                statusText = '🔒 Locked';
+            } else if (progress.completed) {
                 status = 'completed';
                 statusText = 'Completed';
             } else if (progress.currentQuestion > 1) {
                 status = 'in-progress';
                 statusText = 'In Progress';
             }
+            
+            const isLocked = set.premium && !isPremiumOwned && !currentUserIsAdmin;
+            const isOwnedPremium = set.premium && (isPremiumOwned || currentUserIsAdmin);
             
             card.innerHTML = `
                 ${set.premium ? '<div class="premium-badge">PREMIUM</div>' : ''}
@@ -921,8 +1040,9 @@
                     <div class="practice-icon">${set.premium ? '⭐' : set.id}</div>
                     <h2 class="practice-title">${set.title}</h2>
                 </div>
-                <p class="practice-info">${set.questions} Questions | ${set.description}</p>
+                <p class="practice-info">${set.questions} Questions</p>
                 
+                ${!isLocked ? `
                 <div class="progress-section">
                     <div class="progress-info">
                         <span>Progress</span>
@@ -932,23 +1052,65 @@
                         <div class="progress-fill" style="width: ${progress.percentage}%"></div>
                     </div>
                 </div>
+                ` : ''}
+                
+                ${isLocked ? `
+                <div class="price-section">
+                    <div class="price-row">
+                        <span class="price-label">One-time Purchase</span>
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="price-value">₹${set.price}</span>
+                            <span class="price-original">₹${set.originalPrice}</span>
+                        </div>
+                    </div>
+                    ${currentUserIsAdmin ? '<div class="owned-badge">👑 Admin Access</div>' : ''}
+                </div>
+                ` : ''}
+                
+                ${isOwnedPremium && !currentUserIsAdmin ? `
+                <div class="owned-badge">✅ Purchased - Lifetime Access</div>
+                ` : ''}
                 
                 <div class="action-buttons">
-                    ${progress.completedQuestions > 0 ? `
-                        <button class="action-btn resume-btn" onclick="openPasswordModalForSet(${set.id}, 'resume')">
-                            🔄 Resume (Q${progress.currentQuestion})
+                    ${isLocked ? `
+                        <button class="action-btn buy-btn" onclick="goToPayment()">
+                            🛒 Buy Now - ₹${set.price}
                         </button>
-                        <button class="action-btn start-btn" onclick="openPasswordModalForSet(${set.id}, 'restart')">
-                            🚀 Start Over
-                        </button>
-                        <button class="action-btn reset-btn" onclick="resetPracticeProgress(${set.id})">
-                            🗑️ Reset
-                        </button>
-                    ` : `
-                        <button class="action-btn start-btn" onclick="openPasswordModalForSet(${set.id}, 'start')">
-                            🚀 Start Practice
-                        </button>
-                    `}
+                    ` : (
+                        isOwnedPremium ? `
+                            ${progress.completedQuestions > 0 ? `
+                                <button class="action-btn resume-btn" onclick="redirectToPracticeSet(${set.id}, 'resume')">
+                                    🔄 Resume (Q${progress.currentQuestion})
+                                </button>
+                                <button class="action-btn start-btn" onclick="redirectToPracticeSet(${set.id}, 'restart')">
+                                    🚀 Start Over
+                                </button>
+                                <button class="action-btn reset-btn" onclick="resetPracticeProgress(${set.id})">
+                                    🗑️ Reset
+                                </button>
+                            ` : `
+                                <button class="action-btn start-btn" onclick="redirectToPracticeSet(${set.id}, 'start')">
+                                    🚀 Start Practice
+                                </button>
+                            `}
+                        ` : `
+                            ${progress.completedQuestions > 0 ? `
+                                <button class="action-btn resume-btn" onclick="openPasswordModalForSet(${set.id}, 'resume')">
+                                    🔄 Resume (Q${progress.currentQuestion})
+                                </button>
+                                <button class="action-btn start-btn" onclick="openPasswordModalForSet(${set.id}, 'restart')">
+                                    🚀 Start Over
+                                </button>
+                                <button class="action-btn reset-btn" onclick="resetPracticeProgress(${set.id})">
+                                    🗑️ Reset
+                                </button>
+                            ` : `
+                                <button class="action-btn start-btn" onclick="openPasswordModalForSet(${set.id}, 'start')">
+                                    🚀 Start Practice
+                                </button>
+                            `}
+                        `
+                    )}
                 </div>
             `;
             
@@ -980,7 +1142,6 @@
                 }
             } catch (error) {
                 console.error('❌ Error loading practice progress:', error);
-                // Fallback to localStorage
                 practiceProgress = getPracticeProgressFromLocalStorage();
             }
         }
@@ -1003,7 +1164,6 @@
                 };
             }
             
-            // Fallback to localStorage
             return getPracticeProgressFromLocal(setId);
         }
 
@@ -1024,7 +1184,6 @@
                 };
             }
             
-            // Default progress for new sets
             return {
                 currentQuestion: 1,
                 completedQuestions: 0,
@@ -1047,50 +1206,6 @@
                 };
             });
             return progress;
-        }
-
-        // Save practice progress to backend
-        async function savePracticeProgressToBackend(setId, progressData) {
-            try {
-                const token = localStorage.getItem('auth_token');
-                if (!token) {
-                    throw new Error('No authentication token');
-                }
-
-                const response = await fetch(`${API_BASE_URL}/api/save-practice-progress`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        practice_set: `practice_set_${setId}`,
-                        current_question: progressData.currentQuestion,
-                        user_answers: progressData.userAnswers || [],
-                        score: progressData.score || 0,
-                        completed: progressData.completed || false
-                    })
-                });
-
-                if (response.ok) {
-                    console.log('✅ Progress saved to backend for set:', setId);
-                    // Update local progress cache
-                    await loadPracticeProgress();
-                } else {
-                    throw new Error('Failed to save progress to backend');
-                }
-            } catch (error) {
-                console.error('❌ Error saving progress to backend:', error);
-                // Fallback to localStorage
-                savePracticeProgressToLocal(setId, progressData);
-            }
-        }
-
-        // Save practice progress to localStorage (fallback)
-        function savePracticeProgressToLocal(setId, progressData) {
-            const progressKey = `practice_${setId}_progress`;
-            localStorage.setItem(progressKey, JSON.stringify(progressData));
-            console.log('✅ Progress saved to localStorage for set:', setId);
         }
 
         // Reset practice progress
@@ -1118,14 +1233,65 @@
                     console.error('❌ Error resetting progress on backend:', error);
                 }
 
-                // Always reset local storage
                 const progressKey = `practice_${setId}_progress`;
                 localStorage.removeItem(progressKey);
                 
-                // Reload the practice sets to reflect changes
                 await initializePracticeSets();
-                
                 alert('Progress reset successfully!');
+            }
+        }
+
+        // 🔥 NEW: Redirect function (no password for owned premium)
+        function redirectToPracticeSet(setId, action) {
+            let redirectUrl;
+            switch(setId) {
+                case 1: redirectUrl = 'practice_set_1.html'; break;
+                case 2: redirectUrl = 'practice_set_2.html'; break;
+                case 3: redirectUrl = 'practice_set_3.html'; break;
+                case 4: redirectUrl = 'practice_set_4.html'; break;
+                case 5: redirectUrl = 'practice_set_5.html'; break;
+                case 6: redirectUrl = 'practice_set_6.html'; break;
+                case 7: redirectUrl = 'practice_set_7.html'; break;
+                case 8: redirectUrl = 'practice_set_8.html'; break;
+                case 9: redirectUrl = 'practice_set_9.html'; break;
+                default:
+                    console.error('Unknown practice set ID:', setId);
+                    return;
+            }
+            
+            const url = new URL(redirectUrl, window.location.origin);
+            url.searchParams.set('action', action);
+            
+            if (action === 'resume') {
+                const progress = getPracticeProgress(setId);
+                url.searchParams.set('question', progress.currentQuestion);
+            }
+            
+            // Track access
+            trackPracticeAccess(setId);
+            
+            window.location.href = url.toString();
+        }
+
+        // Track practice set access
+        async function trackPracticeAccess(setId) {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) return;
+                
+                await fetch(`${API_BASE_URL}/api/track-access`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        section: `practice_set_${setId}`,
+                        course: 'CEH v13'
+                    })
+                });
+            } catch (error) {
+                console.error('Access tracking failed:', error);
             }
         }
 
@@ -1182,18 +1348,25 @@
             currentSetId = parseInt(setId, 10);
             currentAction = action;
             
+            const set = practiceSets.find(s => s.id === setId);
+            
+            // 🔥 For premium set that's already owned, skip password entirely
+            if (set.premium && (isPremiumOwned || currentUserIsAdmin)) {
+                redirectToPracticeSet(setId, action);
+                return;
+            }
+            
             const modal = document.getElementById('passwordModal');
             const modalTitle = document.getElementById('modal-title');
             const modalDescription = document.getElementById('modal-description');
-            const set = practiceSets.find(s => s.id === setId);
             
             modalTitle.textContent = `${set.title} Access`;
             
             if (action === 'resume') {
                 const progress = getPracticeProgress(setId);
-                modalDescription.textContent = `Resume from question ${progress.currentQuestion} of ${set.description}`;
+                modalDescription.textContent = `Resume from question ${progress.currentQuestion}`;
             } else {
-                modalDescription.textContent = `Start ${set.description} practice`;
+                modalDescription.textContent = `Start ${set.title} practice`;
             }
             
             modal.classList.add('active');
@@ -1209,7 +1382,7 @@
             currentAction = 'start';
         }
 
-        // Password Verification with Backend Progress Tracking
+        // Password Verification
         document.getElementById('passwordForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -1220,6 +1393,15 @@
             if (!currentSetId) {
                 errorMessage.textContent = 'No practice set selected';
                 errorMessage.classList.add('show');
+                return;
+            }
+
+            const set = practiceSets.find(s => s.id === currentSetId);
+            
+            // 🔥 For premium set, check if owned (safety check)
+            if (set.premium && (isPremiumOwned || currentUserIsAdmin)) {
+                closePasswordModal();
+                redirectToPracticeSet(currentSetId, currentAction);
                 return;
             }
 
@@ -1249,68 +1431,16 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Password correct - handle different actions
                     sessionStorage.setItem(`practice_set_${currentSetId}_verified`, 'true');
                     
-                    // Update progress if starting over
                     if (currentAction === 'restart') {
                         await resetPracticeProgress(currentSetId);
                     }
                     
-                    const setIdToRedirect = currentSetId; // save before closePasswordModal resets it
+                    const setIdToRedirect = currentSetId;
                     closePasswordModal();
                     
-                    // Redirect to practice set with action parameter
-                    let redirectUrl;
-                    switch(setIdToRedirect) {
-                        case 1:
-                            redirectUrl = 'practice_set_1.html';
-                            break;
-                        case 2:
-                            redirectUrl = 'practice_set_2.html';
-                            break;
-                        case 3:
-                            redirectUrl = 'practice_set_3.html';
-                            break;
-                        case 4:
-                            redirectUrl = 'practice_set_4.html';
-                            break;
-                        case 5:
-                            redirectUrl = 'practice_set_5.html';
-                            break;
-                        case 6:
-                            redirectUrl = 'practice_set_6.html';
-                            break;
-                        case 7:
-                            redirectUrl = 'practice_set_7.html';
-                            break;
-                        case 8:
-                            redirectUrl = 'practice_set_8.html';
-                            break;
-                        case 9:
-                            redirectUrl = 'practice_set_9.html';
-                            break;
-                        default:
-                            console.error('Unknown practice set ID:', currentSetId);
-                            errorMessage.textContent = 'Unknown practice set. Please try again.';
-                            errorMessage.classList.add('show');
-                            submitBtn.textContent = 'Access Practice Set';
-                            submitBtn.disabled = false;
-                            return;
-                    }
-                    
-                    console.log('Redirecting to:', redirectUrl);
-                    
-                    // Add action parameter to URL for the practice set page
-                    const url = new URL(redirectUrl, window.location.origin);
-                    url.searchParams.set('action', currentAction);
-                    
-                    if (currentAction === 'resume') {
-                        const progress = getPracticeProgress(setIdToRedirect);
-                        url.searchParams.set('question', progress.currentQuestion);
-                    }
-                    
-                    window.location.href = url.toString();
+                    redirectToPracticeSet(setIdToRedirect, currentAction);
                 } else {
                     errorMessage.textContent = data.error || 'Incorrect password';
                     errorMessage.classList.add('show');
@@ -1378,10 +1508,7 @@
         async function loadUserProfileForNavbar() {
             try {
                 const token = localStorage.getItem('auth_token');
-                if (!token) {
-                    console.log('No authentication token found');
-                    return;
-                }
+                if (!token) return;
 
                 const response = await fetch(`${API_BASE_URL}/api/user-profile`, {
                     method: 'GET',
@@ -1394,17 +1521,12 @@
                 if (response.ok) {
                     const userData = await response.json();
                     updateNavbarProfile(userData);
-                    
-                    // Save user data to localStorage for fallback
                     saveUserDataToLocalStorage(userData);
                 } else {
-                    console.error('Failed to fetch user profile:', response.status);
-                    // Fallback to localStorage data
                     loadUserDataFromLocalStorage();
                 }
             } catch (error) {
-                console.error('Error loading profile for navbar:', error);
-                // Fallback to localStorage data
+                console.error('Error loading profile:', error);
                 loadUserDataFromLocalStorage();
             }
         }
@@ -1413,7 +1535,6 @@
             const navProfileImage = document.getElementById('nav-profile-image');
             if (!navProfileImage) return;
 
-            // Update profile image or initials
             if (userData.profile_image) {
                 navProfileImage.innerHTML = '';
                 navProfileImage.style.backgroundImage = `url(${userData.profile_image})`;
@@ -1431,23 +1552,13 @@
             localStorage.setItem('full_name', userData.full_name);
             localStorage.setItem('email', userData.email);
             localStorage.setItem('username', userData.username);
-            if (userData.join_date) {
-                localStorage.setItem('join_date', new Date(userData.join_date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long'
-                }));
-            }
             if (userData.profile_image) {
                 localStorage.setItem('profileImage', userData.profile_image);
             }
         }
 
         function loadUserDataFromLocalStorage() {
-            const username = localStorage.getItem('username') || 'ArchitectJohan';
             const fullName = localStorage.getItem('full_name') || 'Architect Johan';
-            const email = localStorage.getItem('email') || 'admin@architectjohan.com';
-
-            // Update profile image from localStorage
             const navProfileImage = document.getElementById('nav-profile-image');
             const savedImage = localStorage.getItem('profileImage');
             
@@ -1458,7 +1569,6 @@
                     navProfileImage.style.backgroundSize = 'cover';
                     navProfileImage.style.backgroundPosition = 'center';
                 } else {
-                    // Use initials if no image
                     const initials = fullName.split(' ').map(name => name[0]).join('').toUpperCase();
                     navProfileImage.innerHTML = initials || 'AJ';
                     navProfileImage.style.backgroundImage = 'none';
@@ -1472,21 +1582,18 @@
             const logoutBtn = document.getElementById('logout-btn');
             const profileSection = document.getElementById('profile-section');
 
-            // Profile section click handler
             if (profileSection) {
                 profileSection.addEventListener('click', function() {
                     window.location.href = 'profile.html';
                 });
             }
 
-            // Logout button click handler
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', async function(e) {
                     e.preventDefault();
                     if (confirm('Are you sure you want to logout?')) {
                         const token = localStorage.getItem('auth_token');
                         
-                        // Call logout API if token exists
                         if (token) {
                             try {
                                 await fetch(`${API_BASE_URL}/api/logout`, {
@@ -1501,7 +1608,6 @@
                             }
                         }
                         
-                        // Clear authentication data
                         localStorage.removeItem('auth_token');
                         localStorage.removeItem('token_timestamp');
                         localStorage.removeItem('username');
@@ -1510,7 +1616,6 @@
                         localStorage.removeItem('profileImage');
                         sessionStorage.clear();
                         
-                        // Redirect to login page
                         window.location.href = 'index.html';
                     }
                 });
